@@ -37,3 +37,6 @@ npm-debug.log
 
 # Local Codex state
 /.codex/
+
+# macOS Finder metadata
+.DS_Store

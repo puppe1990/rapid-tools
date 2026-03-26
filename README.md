@@ -1,18 +1,29 @@
 # RapidTools
 
-To start your Phoenix server:
+RapidTools is a Phoenix LiveView app with a batch image converter for `JPG`, `PNG`, `WEBP`, `HEIC`, and `AVIF`.
 
-* Run `mix setup` to install and setup dependencies
-* Start Phoenix endpoint with `mix phx.server` or inside IEx with `iex -S mix phx.server`
+## Preview
 
-Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.
+![RapidTools screenshot](docs/rapid-tools-screenshot.png)
 
-Ready to run in production? Please [check our deployment guides](https://hexdocs.pm/phoenix/deployment.html).
+## Features
 
-## Learn more
+- Convert multiple images in one batch
+- Download each converted file individually
+- Download the whole batch as a ZIP
+- Sidebar layout prepared for more tools
 
-* Official website: https://www.phoenixframework.org/
-* Guides: https://hexdocs.pm/phoenix/overview.html
-* Docs: https://hexdocs.pm/phoenix
-* Forum: https://elixirforum.com/c/phoenix-forum
-* Source: https://github.com/phoenixframework/phoenix
+## Development
+
+```bash
+mix setup
+mix phx.server
+```
+
+Open [http://localhost:4000](http://localhost:4000).
+
+## Test
+
+```bash
+mix test
+```
