@@ -4,16 +4,20 @@ defmodule RapidToolsWeb.ImageConverterLiveTest do
   alias RapidTools.TestSupport.ImageFixtures
 
   test "renders the converter interface", %{conn: conn} do
-    {:ok, _view, html} = live(conn, ~p"/")
+    {:ok, view, html} = live(conn, ~p"/")
 
+    assert has_element?(view, "form#converter-form")
+    assert has_element?(view, "#image-convert-button")
+    assert has_element?(view, "#converter-form .phx-submit-loading\\:flex")
+    assert has_element?(view, "a[href=\"/video-converter\"]", "Video Converter")
     assert html =~ "Tools"
     assert html =~ "Image Converter"
     assert html =~ "Batch image conversion"
-    assert html =~ "Image Converter"
     assert html =~ "Convert JPG, PNG, WEBP, HEIC and AVIF"
     assert html =~ "You can select multiple images"
+    assert html =~ "Converting image"
+    assert html =~ "Please wait while the files are processed."
     assert html =~ ~s(value="png")
-    assert html =~ ~s(selected="")
   end
 
   test "accepts multiple selected images in the upload list", %{conn: conn} do
