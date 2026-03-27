@@ -146,7 +146,7 @@ defmodule RapidToolsWeb.TogetherAudiosLive do
     ~H"""
     <Layouts.app
       flash={@flash}
-      main_class="px-0 py-8 sm:px-0 lg:px-0"
+      main_class="px-0 pb-8 pt-0 sm:px-0 lg:px-0"
       content_class="w-full"
       show_header={false}
     >
@@ -173,14 +173,15 @@ defmodule RapidToolsWeb.TogetherAudiosLive do
                     navigate={tool.path}
                     class={[
                       "block rounded-[1.5rem] border px-4 py-4 transition duration-200",
-                      tool.current &&
-                        "border-amber-300 bg-amber-50 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]",
-                      !tool.current &&
-                        "border-slate-200 bg-white hover:border-amber-200 hover:bg-amber-50/40"
+                      tool.current && tool.current_class,
+                      !tool.current && tool.idle_class
                     ]}
                   >
-                    <p class="text-sm font-semibold text-slate-950">{tool.name}</p>
-                    <p class="mt-1 text-sm text-slate-600">{tool.blurb}</p>
+                    <div class="flex items-center gap-3">
+                      <span class={["inline-block size-2.5 rounded-full", tool.dot_class]} />
+                      <p class={["text-sm font-semibold", tool.name_class]}>{tool.name}</p>
+                    </div>
+                    <p class={["mt-1 text-sm", tool.blurb_class]}>{tool.blurb}</p>
                   </.link>
                 </nav>
               </div>

@@ -8,17 +8,22 @@ defmodule RapidToolsWeb.ImageConverterLiveTest do
 
     assert has_element?(view, "form#converter-form")
     assert has_element?(view, "#image-convert-button")
+    assert has_element?(view, "#image-upload-list")
     assert has_element?(view, "#converter-form .phx-submit-loading\\:flex")
+    assert has_element?(view, "a[href=\"/\"]", "Image Converter")
     assert has_element?(view, "a[href=\"/video-converter\"]", "Video Converter")
     assert has_element?(view, "a[href=\"/audio-converter\"]", "Audio Converter")
     assert has_element?(view, "a[href=\"/together-audios\"]", "Together Audios")
     assert html =~ "Tools"
     assert html =~ "Image Converter"
-    assert html =~ "Batch image conversion"
-    assert html =~ "Convert JPG, PNG, WEBP, HEIC and AVIF"
-    assert html =~ "You can select multiple images"
-    assert html =~ "Converting image"
-    assert html =~ "Please wait while the files are processed."
+    assert html =~ "Image workflow"
+    assert html =~ "Converta imagens para PNG, JPG, WEBP, HEIC e AVIF"
+
+    assert html =~
+             "Ideal para exportar assets para web, social, aplicativos e bibliotecas de design."
+
+    assert html =~ "Convertendo imagens"
+    assert html =~ "Isso pode levar alguns segundos."
     assert html =~ ~s(value="png")
   end
 
@@ -46,5 +51,6 @@ defmodule RapidToolsWeb.ImageConverterLiveTest do
     rendered_upload = render_upload(upload, "sample-1.png")
     assert rendered_upload =~ "sample-1.png"
     assert rendered_upload =~ "sample-2.png"
+    assert rendered_upload =~ "2 imagens na fila. 1/2 concluidas ate agora"
   end
 end

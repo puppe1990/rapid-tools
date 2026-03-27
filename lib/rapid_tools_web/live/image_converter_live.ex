@@ -6,19 +6,24 @@ defmodule RapidToolsWeb.ImageConverterLive do
   alias RapidTools.ZipArchive
   alias RapidToolsWeb.ToolNavigation
 
+  @image_accept ~w(.jpg .jpeg .png .webp .heic .avif)
+
   @impl true
   def mount(_params, _session, socket) do
+    form =
+      to_form(
+        %{"target_format" => default_target_format()},
+        as: :conversion
+      )
+
     {:ok,
      socket
      |> assign(:formats, ImageConverter.supported_formats())
      |> assign(:tools, ToolNavigation.tools("image"))
-     |> assign(:form, to_form(%{"target_format" => "png"}, as: :conversion))
+     |> assign(:form, form)
      |> assign(:results, [])
      |> assign(:batch_download_path, nil)
-     |> allow_upload(:image,
-       accept: ~w(.jpg .jpeg .png .webp .heic .avif),
-       max_entries: 10
-     )}
+     |> allow_upload(:image, accept: @image_accept, max_entries: 10, auto_upload: true)}
   end
 
   @impl true
@@ -27,13 +32,18 @@ defmodule RapidToolsWeb.ImageConverterLive do
   end
 
   @impl true
+  def handle_event("cancel-upload", %{"ref" => ref}, socket) do
+    {:noreply, cancel_upload(socket, :image, ref)}
+  end
+
+  @impl true
   def handle_event("convert", %{"conversion" => %{"target_format" => target_format}}, socket) do
     case uploaded_entries(socket, :image) do
       {[], []} ->
-        {:noreply, put_flash(socket, :error, "Select an image before converting.")}
+        {:noreply, put_flash(socket, :error, "Selecione ao menos uma imagem antes de converter.")}
 
       {_completed, [_ | _]} ->
-        {:noreply, put_flash(socket, :error, "Wait for all uploads to finish before converting.")}
+        {:noreply, put_flash(socket, :error, "Aguarde o upload terminar antes de converter.")}
 
       _ ->
         {:noreply, convert_upload(socket, target_format)}
@@ -102,7 +112,7 @@ defmodule RapidToolsWeb.ImageConverterLive do
               socket
               |> assign(:results, successful_results)
               |> assign(:batch_download_path, ~p"/downloads/#{zip_id}")
-              |> put_flash(:info, "#{length(successful_results)} files converted.")
+              |> put_flash(:info, "#{length(successful_results)} imagens convertidas.")
 
             {:error, _reason} ->
               socket
@@ -110,15 +120,54 @@ defmodule RapidToolsWeb.ImageConverterLive do
               |> assign(:batch_download_path, nil)
               |> put_flash(
                 :error,
-                "Files were converted, but the ZIP package could not be created."
+                "As imagens foram convertidas, mas o pacote ZIP nao pode ser gerado."
               )
           end
         else
-          put_flash(socket, :error, "The image could not be converted.")
+          put_flash(socket, :error, "A imagem nao pode ser convertida.")
         end
 
       _ ->
-        put_flash(socket, :error, "The image could not be converted.")
+        put_flash(socket, :error, "A imagem nao pode ser convertida.")
+    end
+  end
+
+  defp default_target_format, do: "png"
+
+  defp completed_upload_count(entries) do
+    Enum.count(entries, &(&1.progress == 100))
+  end
+
+  defp upload_in_progress?(entries) do
+    Enum.any?(entries, &(&1.progress < 100))
+  end
+
+  defp upload_status_message(entries) do
+    cond do
+      entries == [] ->
+        "Selecione uma ou mais imagens para habilitar a conversao."
+
+      upload_in_progress?(entries) ->
+        "Enviando imagens para o servidor. Aguarde todas chegarem a 100%."
+
+      true ->
+        "Uploads concluidos. Agora voce pode converter em lote."
+    end
+  end
+
+  defp upload_summary(entries) do
+    total = length(entries)
+    completed = completed_upload_count(entries)
+
+    cond do
+      total == 0 ->
+        "Nenhuma imagem selecionada ainda."
+
+      upload_in_progress?(entries) ->
+        "#{total} imagens na fila. #{completed}/#{total} concluidas ate agora, o restante ainda esta enviando."
+
+      true ->
+        "#{total} imagens selecionadas. Todas aparecem nesta caixa com scroll."
     end
   end
 
@@ -127,23 +176,23 @@ defmodule RapidToolsWeb.ImageConverterLive do
     ~H"""
     <Layouts.app
       flash={@flash}
-      main_class="px-0 py-8 sm:px-0 lg:px-0"
+      main_class="px-0 pb-8 pt-0 sm:px-0 lg:px-0"
       content_class="w-full"
       show_header={false}
     >
-      <section class="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(255,118,35,0.12),_transparent_28%),linear-gradient(180deg,_rgba(245,246,248,1)_0%,_rgba(255,255,255,1)_52%,_rgba(244,245,246,1)_100%)]">
+      <section class="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(255,118,35,0.16),_transparent_28%),radial-gradient(circle_at_bottom_right,_rgba(251,191,36,0.14),_transparent_26%),linear-gradient(180deg,_rgba(250,245,239,1)_0%,_rgba(255,255,255,1)_50%,_rgba(248,244,238,1)_100%)]">
         <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
           <div class="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
-            <aside class="rounded-[2rem] border border-base-300/80 bg-base-100/85 p-5 shadow-[0_18px_50px_rgba(24,24,27,0.08)] backdrop-blur">
+            <aside class="rounded-[2rem] border border-orange-100 bg-white/85 p-5 shadow-[0_18px_50px_rgba(15,23,42,0.08)] backdrop-blur">
               <div class="space-y-6">
                 <div class="space-y-2">
-                  <p class="text-sm font-semibold uppercase tracking-[0.3em] text-primary">
+                  <p class="text-sm font-semibold uppercase tracking-[0.3em] text-orange-600">
                     Rapid Tools
                   </p>
                   <div>
-                    <h2 class="text-2xl font-black tracking-tight">Tools</h2>
-                    <p class="mt-1 text-sm text-base-content/60">
-                      Utilities available in this workspace.
+                    <h2 class="text-2xl font-black tracking-tight text-slate-950">Tools</h2>
+                    <p class="mt-1 text-sm text-slate-600">
+                      Conversao rapida para imagem, video e audio.
                     </p>
                   </div>
                 </div>
@@ -153,15 +202,16 @@ defmodule RapidToolsWeb.ImageConverterLive do
                     :for={tool <- @tools}
                     navigate={tool.path}
                     class={[
-                      "block rounded-[1.5rem] border px-4 py-4 transition",
-                      tool.current &&
-                        "border-primary/30 bg-primary/8 shadow-[inset_0_1px_0_rgba(255,255,255,0.65)]",
-                      !tool.current &&
-                        "border-base-300 bg-base-100 hover:border-primary/20 hover:bg-base-200/70"
+                      "block rounded-[1.5rem] border px-4 py-4 transition duration-200",
+                      tool.current && tool.current_class,
+                      !tool.current && tool.idle_class
                     ]}
                   >
-                    <p class="text-sm font-semibold">{tool.name}</p>
-                    <p class="mt-1 text-sm text-base-content/60">{tool.blurb}</p>
+                    <div class="flex items-center gap-3">
+                      <span class={["inline-block size-2.5 rounded-full", tool.dot_class]} />
+                      <p class={["text-sm font-semibold", tool.name_class]}>{tool.name}</p>
+                    </div>
+                    <p class={["mt-1 text-sm", tool.blurb_class]}>{tool.blurb}</p>
                   </.link>
                 </nav>
               </div>
@@ -169,17 +219,22 @@ defmodule RapidToolsWeb.ImageConverterLive do
 
             <div class="space-y-6">
               <div class="space-y-4 px-2 py-2">
-                <h1 class="text-4xl font-black tracking-tight sm:text-5xl">Image Converter</h1>
-                <p class="max-w-2xl text-base text-base-content/70 sm:text-lg">
-                  Convert JPG, PNG, WEBP, HEIC and AVIF directly in the browser with Phoenix LiveView.
+                <span class="inline-flex items-center rounded-full border border-orange-200 bg-white/80 px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-orange-700">
+                  Image workflow
+                </span>
+                <h1 class="text-4xl font-black tracking-tight text-slate-950 sm:text-5xl">
+                  Image Converter
+                </h1>
+                <p class="max-w-3xl text-base text-slate-600 sm:text-lg">
+                  Converta imagens para PNG, JPG, WEBP, HEIC e AVIF com downloads individuais ou em lote.
                 </p>
-                <p class="text-sm text-base-content/60">
-                  You can select multiple images and convert them in one batch.
+                <p class="text-sm text-slate-500">
+                  Ideal para exportar assets para web, social, aplicativos e bibliotecas de design.
                 </p>
               </div>
 
               <div id="converter-panel" class="grid gap-6 xl:grid-cols-[1.35fr_0.65fr]">
-                <div class="relative rounded-[2rem] border border-base-300 bg-base-100 p-6 shadow-xl">
+                <div class="relative rounded-[2rem] border border-white/70 bg-white p-6 shadow-[0_24px_60px_rgba(15,23,42,0.08)]">
                   <.form
                     for={@form}
                     id="converter-form"
@@ -187,82 +242,144 @@ defmodule RapidToolsWeb.ImageConverterLive do
                     phx-submit="convert"
                     class="space-y-6"
                   >
-                    <div class="pointer-events-none absolute inset-0 z-10 hidden items-center justify-center rounded-[2rem] bg-base-100/80 backdrop-blur-sm phx-submit-loading:flex">
-                      <div class="flex items-center gap-3 rounded-full border border-primary/20 bg-base-100 px-5 py-3 shadow-lg">
-                        <span class="inline-block size-5 animate-spin rounded-full border-2 border-primary/20 border-t-primary" />
+                    <div class="pointer-events-none absolute inset-0 z-10 hidden items-center justify-center rounded-[2rem] bg-white/80 backdrop-blur-sm phx-submit-loading:flex">
+                      <div class="flex items-center gap-3 rounded-full border border-orange-200 bg-white px-5 py-3 shadow-lg">
+                        <span class="inline-block size-5 animate-spin rounded-full border-2 border-orange-200 border-t-orange-600" />
                         <div>
-                          <p class="text-sm font-semibold text-base-content">Converting image</p>
-                          <p class="text-xs text-base-content/60">
-                            Please wait while the files are processed.
-                          </p>
+                          <p class="text-sm font-semibold text-slate-950">Convertendo imagens</p>
+                          <p class="text-xs text-slate-500">Isso pode levar alguns segundos.</p>
                         </div>
                       </div>
                     </div>
 
-                    <div class="space-y-2">
-                      <label for="image-upload" class="text-sm font-semibold">Image</label>
-                      <.live_file_input
-                        upload={@uploads.image}
-                        id="image-upload"
-                        class="file-input file-input-bordered w-full"
-                      />
+                    <div class="rounded-[1.75rem] border border-dashed border-orange-200 bg-orange-50/60 p-5">
+                      <div class="space-y-2">
+                        <label for="image-upload" class="text-sm font-semibold text-slate-900">
+                          Imagens de origem
+                        </label>
+                        <.live_file_input
+                          upload={@uploads.image}
+                          id="image-upload"
+                          class="block w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 shadow-sm transition file:mr-4 file:rounded-xl file:border-0 file:bg-slate-950 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:border-orange-300"
+                        />
+                        <p class="text-sm text-slate-500">
+                          Entradas aceitas: JPG, JPEG, PNG, WEBP, HEIC e AVIF.
+                        </p>
+                      </div>
+
                       <div
-                        :for={entry <- @uploads.image.entries}
-                        class="rounded-box bg-base-200 px-3 py-2 text-sm"
+                        id="image-upload-list"
+                        class="mt-4 max-h-[22rem] space-y-2 overflow-y-auto pr-1"
                       >
-                        {entry.client_name}
+                        <div class="sticky top-0 z-10 rounded-2xl border border-orange-100 bg-orange-50/95 px-4 py-3 text-sm font-medium text-orange-900 backdrop-blur">
+                          {upload_summary(@uploads.image.entries)}
+                        </div>
+                        <div
+                          :for={entry <- @uploads.image.entries}
+                          class="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700"
+                        >
+                          <div class="min-w-0 flex-1 pr-4">
+                            <p class="truncate font-medium">{entry.client_name}</p>
+                            <div class="mt-2 h-2 rounded-full bg-slate-100">
+                              <div
+                                class="h-2 rounded-full bg-orange-400 transition-all"
+                                style={"width: #{entry.progress}%"}
+                              />
+                            </div>
+                          </div>
+                          <span class="text-xs uppercase tracking-[0.2em] text-slate-400">
+                            <%= if entry.progress == 100 do %>
+                              pronto
+                            <% else %>
+                              {entry.progress}%
+                            <% end %>
+                          </span>
+                          <button
+                            type="button"
+                            phx-click="cancel-upload"
+                            phx-value-ref={entry.ref}
+                            aria-label={"Remover #{entry.client_name}"}
+                            class="inline-flex size-8 shrink-0 items-center justify-center rounded-full border border-slate-200 text-sm font-bold text-slate-500 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600"
+                          >
+                            X
+                          </button>
+                        </div>
                       </div>
                     </div>
 
                     <.input
                       field={@form[:target_format]}
                       type="select"
-                      id="target_format"
-                      label="Target format"
+                      id="image-target-format"
+                      label="Formato de destino"
                       options={Enum.map(@formats, &{String.upcase(&1), &1})}
-                      class="select select-bordered w-full"
+                      class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-orange-400"
                     />
 
                     <button
                       type="submit"
                       id="image-convert-button"
-                      phx-disable-with="Converting image..."
-                      class="btn btn-primary w-full disabled:cursor-wait"
+                      phx-disable-with="Convertendo imagens..."
+                      disabled={
+                        @uploads.image.entries == [] || upload_in_progress?(@uploads.image.entries)
+                      }
+                      class="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-orange-600 disabled:cursor-wait disabled:opacity-90"
                     >
                       <span class="inline-block size-4 animate-spin rounded-full border-2 border-white/30 border-t-white opacity-0 phx-submit-loading:opacity-100" />
-                      <span>Convert image</span>
+                      <span>Converter imagens</span>
                     </button>
+
+                    <p id="image-converter-status" class="text-sm text-slate-500">
+                      {upload_status_message(@uploads.image.entries)}
+                    </p>
                   </.form>
                 </div>
 
-                <aside class="rounded-[2rem] border border-base-300 bg-base-100 p-6 shadow-xl">
+                <aside class="rounded-[2rem] border border-white/70 bg-slate-950 p-6 text-white shadow-[0_24px_60px_rgba(15,23,42,0.16)]">
                   <div :if={@results != []} class="space-y-4">
-                    <p class="text-sm font-semibold uppercase tracking-[0.25em] text-success">
-                      {length(@results)} files converted
+                    <p class="text-sm font-semibold uppercase tracking-[0.25em] text-orange-300">
+                      {length(@results)} imagens convertidas
                     </p>
                     <a
                       :if={@batch_download_path}
                       href={@batch_download_path}
-                      class="btn btn-accent w-full"
+                      class="inline-flex w-full items-center justify-center rounded-2xl bg-orange-400 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-orange-300"
                     >
-                      Download all as ZIP
+                      Baixar pacote ZIP
                     </a>
                     <div class="space-y-3">
                       <div
                         :for={result <- @results}
-                        class="rounded-box border border-base-300 bg-base-200/60 p-3"
+                        class="rounded-[1.5rem] border border-white/10 bg-white/5 p-4"
                       >
                         <p class="font-semibold">{result.filename}</p>
-                        <a href={result.download_path} class="btn btn-secondary mt-3 w-full">
-                          Download converted file
+                        <p class="mt-1 text-sm text-slate-300">
+                          Saida em {String.upcase(result.target_format)}
+                        </p>
+                        <a
+                          href={result.download_path}
+                          class="mt-3 inline-flex w-full items-center justify-center rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/20"
+                        >
+                          Baixar imagem convertida
                         </a>
                       </div>
                     </div>
                   </div>
-                  <div :if={@results == []} class="space-y-3 text-sm text-base-content/70">
-                    <p class="font-semibold text-base-content">Supported outputs</p>
-                    <p>{Enum.map_join(@formats, ", ", &String.upcase/1)}</p>
-                    <p>The converted files will appear here as soon as the upload finishes.</p>
+                  <div :if={@results == []} class="space-y-4">
+                    <div class="rounded-[1.5rem] border border-white/10 bg-white/5 p-4">
+                      <p class="text-sm font-semibold uppercase tracking-[0.25em] text-orange-300">
+                        Lote pronto para exportar
+                      </p>
+                      <p class="mt-3 text-sm text-slate-300">
+                        Envie varias imagens, escolha o formato final e baixe cada arquivo convertido ou um ZIP com tudo junto.
+                      </p>
+                    </div>
+                    <div class="rounded-[1.5rem] border border-white/10 bg-white/5 p-4">
+                      <p class="text-sm font-semibold text-white">Saidas suportadas</p>
+                      <p class="mt-2 text-sm text-slate-300">
+                        {Enum.map_join(@formats, ", ", &String.upcase/1)}
+                      </p>
+                    </div>
                   </div>
                 </aside>
               </div>

@@ -22,6 +22,7 @@ The app currently supports:
 - Converted files are stored temporarily and registered in `RapidTools.ConversionStore`
 - Batch downloads are generated as ZIP files by `RapidTools.ZipArchive`
 - UI navigation between tools is duplicated per LiveView today; keep the three tool entries in sync when editing one screen
+- Each tool must keep a unique visual color identity; do not reuse the same primary/background accent palette across different tool screens
 
 ## Development rules
 

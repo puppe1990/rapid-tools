@@ -131,11 +131,11 @@ defmodule RapidToolsWeb.VideoConverterLive do
     ~H"""
     <Layouts.app
       flash={@flash}
-      main_class="px-0 py-8 sm:px-0 lg:px-0"
+      main_class="px-0 pb-8 pt-0 sm:px-0 lg:px-0"
       content_class="w-full"
       show_header={false}
     >
-      <section class="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(0,163,255,0.14),_transparent_30%),radial-gradient(circle_at_bottom_right,_rgba(255,118,35,0.16),_transparent_28%),linear-gradient(180deg,_rgba(245,247,250,1)_0%,_rgba(255,255,255,1)_52%,_rgba(242,245,249,1)_100%)]">
+      <section class="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(99,102,241,0.18),_transparent_30%),radial-gradient(circle_at_bottom_right,_rgba(56,189,248,0.14),_transparent_28%),linear-gradient(180deg,_rgba(241,244,252,1)_0%,_rgba(255,255,255,1)_52%,_rgba(238,242,252,1)_100%)]">
         <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
           <div class="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
             <aside class="rounded-[2rem] border border-white/70 bg-white/80 p-5 shadow-[0_18px_50px_rgba(15,23,42,0.08)] backdrop-blur">
@@ -158,14 +158,15 @@ defmodule RapidToolsWeb.VideoConverterLive do
                     navigate={tool.path}
                     class={[
                       "block rounded-[1.5rem] border px-4 py-4 transition duration-200",
-                      tool.current &&
-                        "border-sky-300 bg-sky-50 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]",
-                      !tool.current &&
-                        "border-slate-200 bg-white hover:border-sky-200 hover:bg-slate-50"
+                      tool.current && tool.current_class,
+                      !tool.current && tool.idle_class
                     ]}
                   >
-                    <p class="text-sm font-semibold text-slate-950">{tool.name}</p>
-                    <p class="mt-1 text-sm text-slate-600">{tool.blurb}</p>
+                    <div class="flex items-center gap-3">
+                      <span class={["inline-block size-2.5 rounded-full", tool.dot_class]} />
+                      <p class={["text-sm font-semibold", tool.name_class]}>{tool.name}</p>
+                    </div>
+                    <p class={["mt-1 text-sm", tool.blurb_class]}>{tool.blurb}</p>
                   </.link>
                 </nav>
               </div>
