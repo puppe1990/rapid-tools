@@ -8,6 +8,7 @@ defmodule RapidToolsWeb.VideoConverterLiveTest do
 
     assert has_element?(view, "form#video-converter-form")
     assert has_element?(view, "#video-convert-button")
+    assert has_element?(view, "#video-upload-list")
     assert has_element?(view, "#video-converter-form .phx-submit-loading\\:flex")
     assert has_element?(view, "a[href=\"/\"]", "Image Converter")
     assert has_element?(view, "a[href=\"/video-converter\"]", "Video Converter")
@@ -16,6 +17,7 @@ defmodule RapidToolsWeb.VideoConverterLiveTest do
     assert render(view) =~ "Converta videos para MP4, MOV, WEBM, MKV e AVI"
     assert render(view) =~ "Convertendo video"
     assert render(view) =~ "Isso pode levar alguns segundos."
+    assert render(view) =~ "Nenhum video selecionado ainda."
     assert render(view) =~ ~s(value="mp4")
   end
 
@@ -43,5 +45,14 @@ defmodule RapidToolsWeb.VideoConverterLiveTest do
     rendered_upload = render_upload(upload, "sample-1.mp4")
     assert rendered_upload =~ "sample-1.mp4"
     assert rendered_upload =~ "sample-2.mp4"
+    assert rendered_upload =~ "2 videos na fila. 1/2 concluidos ate agora"
+    assert rendered_upload =~ "Remover sample-1.mp4"
+    assert rendered_upload =~ "phx-click=\"cancel-upload\""
+  end
+
+  test "shows an explicit initial status message", %{conn: conn} do
+    {:ok, view, _html} = live(conn, ~p"/video-converter")
+
+    assert render(view) =~ "Selecione um ou mais videos para habilitar a conversao."
   end
 end

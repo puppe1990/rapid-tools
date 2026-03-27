@@ -8,6 +8,7 @@ defmodule RapidToolsWeb.AudioConverterLiveTest do
 
     assert has_element?(view, "form#audio-converter-form")
     assert has_element?(view, "#audio-convert-button")
+    assert has_element?(view, "#audio-upload-list")
     assert has_element?(view, "#audio-converter-form .phx-submit-loading\\:flex")
     assert has_element?(view, "a[href=\"/\"]", "Image Converter")
     assert has_element?(view, "a[href=\"/video-converter\"]", "Video Converter")
@@ -16,6 +17,7 @@ defmodule RapidToolsWeb.AudioConverterLiveTest do
     assert render(view) =~ "Converta arquivos de audio para MP3, WAV, OGG, AAC e FLAC"
     assert render(view) =~ "Convertendo audio"
     assert render(view) =~ "Isso pode levar alguns segundos."
+    assert render(view) =~ "Nenhum audio selecionado ainda."
     assert render(view) =~ ~s(value="mp3")
   end
 
@@ -43,5 +45,14 @@ defmodule RapidToolsWeb.AudioConverterLiveTest do
     rendered_upload = render_upload(upload, "sample-1.wav")
     assert rendered_upload =~ "sample-1.wav"
     assert rendered_upload =~ "sample-2.ogg"
+    assert rendered_upload =~ "2 audios na fila. 1/2 concluidos ate agora"
+    assert rendered_upload =~ "Remover sample-1.wav"
+    assert rendered_upload =~ "phx-click=\"cancel-upload\""
+  end
+
+  test "shows an explicit initial status message", %{conn: conn} do
+    {:ok, view, _html} = live(conn, ~p"/audio-converter")
+
+    assert render(view) =~ "Selecione um ou mais audios para habilitar a conversao."
   end
 end

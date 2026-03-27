@@ -23,12 +23,17 @@ defmodule RapidToolsWeb.AudioConverterLive do
      |> assign(:form, form)
      |> assign(:results, [])
      |> assign(:batch_download_path, nil)
-     |> allow_upload(:audio, accept: @audio_accept, max_entries: 10)}
+     |> allow_upload(:audio, accept: @audio_accept, max_entries: 10, auto_upload: true)}
   end
 
   @impl true
   def handle_event("validate", %{"conversion" => conversion_params}, socket) do
     {:noreply, assign(socket, :form, to_form(conversion_params, as: :conversion))}
+  end
+
+  @impl true
+  def handle_event("cancel-upload", %{"ref" => ref}, socket) do
+    {:noreply, cancel_upload(socket, :audio, ref)}
   end
 
   @impl true
@@ -126,6 +131,43 @@ defmodule RapidToolsWeb.AudioConverterLive do
 
   defp default_target_format, do: "mp3"
 
+  defp completed_upload_count(entries) do
+    Enum.count(entries, &(&1.progress == 100))
+  end
+
+  defp upload_in_progress?(entries) do
+    Enum.any?(entries, &(&1.progress < 100))
+  end
+
+  defp upload_status_message(entries) do
+    cond do
+      entries == [] ->
+        "Selecione um ou mais audios para habilitar a conversao."
+
+      upload_in_progress?(entries) ->
+        "Enviando audios para o servidor. Aguarde todos chegarem a 100%."
+
+      true ->
+        "Uploads concluidos. Agora voce pode converter em lote."
+    end
+  end
+
+  defp upload_summary(entries) do
+    total = length(entries)
+    completed = completed_upload_count(entries)
+
+    cond do
+      total == 0 ->
+        "Nenhum audio selecionado ainda."
+
+      upload_in_progress?(entries) ->
+        "#{total} audios na fila. #{completed}/#{total} concluidos ate agora, o restante ainda esta enviando."
+
+      true ->
+        "#{total} audios selecionados. Todos aparecem nesta caixa com scroll."
+    end
+  end
+
   @impl true
   def render(assigns) do
     ~H"""
@@ -222,15 +264,42 @@ defmodule RapidToolsWeb.AudioConverterLive do
                         </p>
                       </div>
 
-                      <div class="mt-4 space-y-2">
+                      <div
+                        id="audio-upload-list"
+                        class="mt-4 max-h-[22rem] space-y-2 overflow-y-auto pr-1"
+                      >
+                        <div class="sticky top-0 z-10 rounded-2xl border border-emerald-100 bg-emerald-50/95 px-4 py-3 text-sm font-medium text-emerald-900 backdrop-blur">
+                          {upload_summary(@uploads.audio.entries)}
+                        </div>
                         <div
                           :for={entry <- @uploads.audio.entries}
-                          class="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700"
+                          class="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700"
                         >
-                          <span class="truncate pr-3 font-medium">{entry.client_name}</span>
+                          <div class="min-w-0 flex-1 pr-4">
+                            <p class="truncate font-medium">{entry.client_name}</p>
+                            <div class="mt-2 h-2 rounded-full bg-slate-100">
+                              <div
+                                class="h-2 rounded-full bg-emerald-400 transition-all"
+                                style={"width: #{entry.progress}%"}
+                              />
+                            </div>
+                          </div>
                           <span class="text-xs uppercase tracking-[0.2em] text-slate-400">
-                            pronto
+                            <%= if entry.progress == 100 do %>
+                              pronto
+                            <% else %>
+                              {entry.progress}%
+                            <% end %>
                           </span>
+                          <button
+                            type="button"
+                            phx-click="cancel-upload"
+                            phx-value-ref={entry.ref}
+                            aria-label={"Remover #{entry.client_name}"}
+                            class="inline-flex size-8 shrink-0 items-center justify-center rounded-full border border-slate-200 text-sm font-bold text-slate-500 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600"
+                          >
+                            X
+                          </button>
                         </div>
                       </div>
                     </div>
@@ -248,11 +317,18 @@ defmodule RapidToolsWeb.AudioConverterLive do
                       type="submit"
                       id="audio-convert-button"
                       phx-disable-with="Convertendo audio..."
+                      disabled={
+                        @uploads.audio.entries == [] || upload_in_progress?(@uploads.audio.entries)
+                      }
                       class="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-emerald-700 disabled:cursor-wait disabled:opacity-90"
                     >
                       <span class="inline-block size-4 animate-spin rounded-full border-2 border-white/30 border-t-white opacity-0 phx-submit-loading:opacity-100" />
                       <span>Converter audio</span>
                     </button>
+
+                    <p id="audio-converter-status" class="text-sm text-slate-500">
+                      {upload_status_message(@uploads.audio.entries)}
+                    </p>
                   </.form>
                 </div>
 

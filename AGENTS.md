@@ -23,6 +23,9 @@ The app currently supports:
 - Batch downloads are generated as ZIP files by `RapidTools.ZipArchive`
 - UI navigation between tools is duplicated per LiveView today; keep the three tool entries in sync when editing one screen
 - Each tool must keep a unique visual color identity; do not reuse the same primary/background accent palette across different tool screens
+- Tool screens should follow the same visual pattern: left sidebar with the shared tool navigation, a hero block with badge/title/short description, a main upload card with clear accepted-format guidance, upload progress list and status message, plus a right-side result/info panel
+- Image, video, and audio converters should expose the same interaction model when possible: auto-upload, scrollable upload list, per-file progress, remove-upload action, disabled submit while uploads are incomplete, and explanatory empty states
+- Together Audios is the reference for the richer tool layout; new tool screens and visual refreshes should match that level of clarity and structure even when the copy differs
 
 ## Development rules
 
