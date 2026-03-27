@@ -20,6 +20,7 @@ defmodule RapidToolsWeb.Router do
     live "/", ImageConverterLive
     live "/video-converter", VideoConverterLive
     live "/audio-converter", AudioConverterLive
+    live "/together-audios", TogetherAudiosLive
     get "/downloads/batches/:id", DownloadController, :batch
     get "/downloads/:id", DownloadController, :show
   end

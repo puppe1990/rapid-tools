@@ -4,6 +4,7 @@ defmodule RapidToolsWeb.VideoConverterLive do
   alias RapidTools.ConversionStore
   alias RapidTools.VideoConverter
   alias RapidTools.ZipArchive
+  alias RapidToolsWeb.ToolNavigation
 
   @video_accept ~w(video/mp4 video/quicktime video/webm video/x-msvideo)
 
@@ -18,7 +19,7 @@ defmodule RapidToolsWeb.VideoConverterLive do
     {:ok,
      socket
      |> assign(:formats, VideoConverter.supported_formats())
-     |> assign(:tools, tools("video"))
+     |> assign(:tools, ToolNavigation.tools("video"))
      |> assign(:form, form)
      |> assign(:results, [])
      |> assign(:batch_download_path, nil)
@@ -124,29 +125,6 @@ defmodule RapidToolsWeb.VideoConverterLive do
   end
 
   defp default_target_format, do: "mp4"
-
-  defp tools(current) do
-    [
-      %{
-        name: "Image Converter",
-        blurb: "Batch image conversion",
-        current: current == "image",
-        path: ~p"/"
-      },
-      %{
-        name: "Video Converter",
-        blurb: "Convert MP4, MOV, WEBM, MKV and AVI",
-        current: current == "video",
-        path: ~p"/video-converter"
-      },
-      %{
-        name: "Audio Converter",
-        blurb: "Convert MP3, WAV, OGG, AAC and FLAC",
-        current: current == "audio",
-        path: ~p"/audio-converter"
-      }
-    ]
-  end
 
   @impl true
   def render(assigns) do

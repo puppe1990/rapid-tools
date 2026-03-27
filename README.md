@@ -11,6 +11,7 @@ RapidTools is a Phoenix LiveView app for batch image, video, and audio conversio
 - Image converter at `/`
 - Video converter at `/video-converter`
 - Audio converter at `/audio-converter`
+- Together audios at `/together-audios`
 
 ## Supported formats
 
@@ -41,9 +42,10 @@ RapidTools is a Phoenix LiveView app for batch image, video, and audio conversio
 ## Features
 
 - Batch upload and conversion per tool
+- Audio joining into a single downloadable file
 - Individual file download after conversion
 - ZIP package download for converted batches
-- Phoenix LiveView interface with dedicated screens for image, video, and audio workflows
+- Phoenix LiveView interface with dedicated screens for image, video, audio, and audio assembly workflows
 
 ## Requirements
 
@@ -73,4 +75,6 @@ For focused iteration:
 ```bash
 mix test test/rapid_tools/audio_converter_test.exs
 mix test test/rapid_tools_web/live/audio_converter_live_test.exs
+mix test test/rapid_tools/audio_joiner_test.exs
+mix test test/rapid_tools_web/live/together_audios_live_test.exs
 ```

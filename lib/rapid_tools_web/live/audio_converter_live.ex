@@ -4,6 +4,7 @@ defmodule RapidToolsWeb.AudioConverterLive do
   alias RapidTools.AudioConverter
   alias RapidTools.ConversionStore
   alias RapidTools.ZipArchive
+  alias RapidToolsWeb.ToolNavigation
 
   @audio_accept ~w(.mp3 .wav .ogg .aac)
 
@@ -18,7 +19,7 @@ defmodule RapidToolsWeb.AudioConverterLive do
     {:ok,
      socket
      |> assign(:formats, AudioConverter.supported_formats())
-     |> assign(:tools, tools("audio"))
+     |> assign(:tools, ToolNavigation.tools("audio"))
      |> assign(:form, form)
      |> assign(:results, [])
      |> assign(:batch_download_path, nil)
@@ -124,29 +125,6 @@ defmodule RapidToolsWeb.AudioConverterLive do
   end
 
   defp default_target_format, do: "mp3"
-
-  defp tools(current) do
-    [
-      %{
-        name: "Image Converter",
-        blurb: "Batch image conversion",
-        current: current == "image",
-        path: ~p"/"
-      },
-      %{
-        name: "Video Converter",
-        blurb: "Convert MP4, MOV, WEBM, MKV and AVI",
-        current: current == "video",
-        path: ~p"/video-converter"
-      },
-      %{
-        name: "Audio Converter",
-        blurb: "Convert MP3, WAV, OGG, AAC and FLAC",
-        current: current == "audio",
-        path: ~p"/audio-converter"
-      }
-    ]
-  end
 
   @impl true
   def render(assigns) do

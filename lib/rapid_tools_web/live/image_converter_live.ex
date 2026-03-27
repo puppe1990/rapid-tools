@@ -4,13 +4,14 @@ defmodule RapidToolsWeb.ImageConverterLive do
   alias RapidTools.ConversionStore
   alias RapidTools.ImageConverter
   alias RapidTools.ZipArchive
+  alias RapidToolsWeb.ToolNavigation
 
   @impl true
   def mount(_params, _session, socket) do
     {:ok,
      socket
      |> assign(:formats, ImageConverter.supported_formats())
-     |> assign(:tools, tools("image"))
+     |> assign(:tools, ToolNavigation.tools("image"))
      |> assign(:form, to_form(%{"target_format" => "png"}, as: :conversion))
      |> assign(:results, [])
      |> assign(:batch_download_path, nil)
@@ -119,29 +120,6 @@ defmodule RapidToolsWeb.ImageConverterLive do
       _ ->
         put_flash(socket, :error, "The image could not be converted.")
     end
-  end
-
-  defp tools(current) do
-    [
-      %{
-        name: "Image Converter",
-        blurb: "Batch image conversion",
-        current: current == "image",
-        path: ~p"/"
-      },
-      %{
-        name: "Video Converter",
-        blurb: "Convert MP4, MOV, WEBM, MKV and AVI",
-        current: current == "video",
-        path: ~p"/video-converter"
-      },
-      %{
-        name: "Audio Converter",
-        blurb: "Convert MP3, WAV, OGG, AAC and FLAC",
-        current: current == "audio",
-        path: ~p"/audio-converter"
-      }
-    ]
   end
 
   @impl true
