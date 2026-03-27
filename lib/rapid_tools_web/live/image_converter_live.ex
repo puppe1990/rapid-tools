@@ -134,6 +134,12 @@ defmodule RapidToolsWeb.ImageConverterLive do
         blurb: "Convert MP4, MOV, WEBM, MKV and AVI",
         current: current == "video",
         path: ~p"/video-converter"
+      },
+      %{
+        name: "Audio Converter",
+        blurb: "Convert MP3, WAV, OGG, AAC and FLAC",
+        current: current == "audio",
+        path: ~p"/audio-converter"
       }
     ]
   end

@@ -60,6 +60,7 @@ config :logger, :default_formatter,
 config :phoenix, :json_library, Jason
 
 config :mime, :types, %{
+  "audio/ogg" => ["ogg"],
   "video/x-matroska" => ["mkv"]
 }
 

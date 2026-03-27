@@ -1,11 +1,11 @@
-defmodule RapidToolsWeb.VideoConverterLive do
+defmodule RapidToolsWeb.AudioConverterLive do
   use RapidToolsWeb, :live_view
 
+  alias RapidTools.AudioConverter
   alias RapidTools.ConversionStore
-  alias RapidTools.VideoConverter
   alias RapidTools.ZipArchive
 
-  @video_accept ~w(video/mp4 video/quicktime video/webm video/x-msvideo)
+  @audio_accept ~w(.mp3 .wav .ogg .aac)
 
   @impl true
   def mount(_params, _session, socket) do
@@ -17,12 +17,12 @@ defmodule RapidToolsWeb.VideoConverterLive do
 
     {:ok,
      socket
-     |> assign(:formats, VideoConverter.supported_formats())
-     |> assign(:tools, tools("video"))
+     |> assign(:formats, AudioConverter.supported_formats())
+     |> assign(:tools, tools("audio"))
      |> assign(:form, form)
      |> assign(:results, [])
      |> assign(:batch_download_path, nil)
-     |> allow_upload(:video, accept: @video_accept, max_entries: 10)}
+     |> allow_upload(:audio, accept: @audio_accept, max_entries: 10)}
   end
 
   @impl true
@@ -32,9 +32,9 @@ defmodule RapidToolsWeb.VideoConverterLive do
 
   @impl true
   def handle_event("convert", %{"conversion" => %{"target_format" => target_format}}, socket) do
-    case uploaded_entries(socket, :video) do
+    case uploaded_entries(socket, :audio) do
       {[], []} ->
-        {:noreply, put_flash(socket, :error, "Selecione um video antes de converter.")}
+        {:noreply, put_flash(socket, :error, "Selecione um audio antes de converter.")}
 
       {_completed, [_ | _]} ->
         {:noreply, put_flash(socket, :error, "Aguarde o upload terminar antes de converter.")}
@@ -46,7 +46,7 @@ defmodule RapidToolsWeb.VideoConverterLive do
 
   defp convert_upload(socket, target_format) do
     results =
-      consume_uploaded_entries(socket, :video, fn %{path: path}, entry ->
+      consume_uploaded_entries(socket, :audio, fn %{path: path}, entry ->
         output_dir =
           Path.join(
             System.tmp_dir!(),
@@ -58,7 +58,7 @@ defmodule RapidToolsWeb.VideoConverterLive do
         source_path = Path.join(output_dir, entry.client_name)
         File.cp!(path, source_path)
 
-        case VideoConverter.convert(source_path, target_format, output_dir: output_dir) do
+        case AudioConverter.convert(source_path, target_format, output_dir: output_dir) do
           {:ok, result} ->
             store_entry = %{
               path: result.output_path,
@@ -106,24 +106,24 @@ defmodule RapidToolsWeb.VideoConverterLive do
               socket
               |> assign(:results, successful_results)
               |> assign(:batch_download_path, ~p"/downloads/#{zip_id}")
-              |> put_flash(:info, "#{length(successful_results)} videos convertidos.")
+              |> put_flash(:info, "#{length(successful_results)} audios convertidos.")
 
             {:error, _reason} ->
               socket
               |> assign(:results, successful_results)
               |> assign(:batch_download_path, nil)
-              |> put_flash(:error, "Os videos foram convertidos, mas o ZIP nao pode ser gerado.")
+              |> put_flash(:error, "Os audios foram convertidos, mas o ZIP nao pode ser gerado.")
           end
         else
-          put_flash(socket, :error, "O video nao pode ser convertido.")
+          put_flash(socket, :error, "O audio nao pode ser convertido.")
         end
 
       _ ->
-        put_flash(socket, :error, "O video nao pode ser convertido.")
+        put_flash(socket, :error, "O audio nao pode ser convertido.")
     end
   end
 
-  defp default_target_format, do: "mp4"
+  defp default_target_format, do: "mp3"
 
   defp tools(current) do
     [
@@ -157,19 +157,19 @@ defmodule RapidToolsWeb.VideoConverterLive do
       content_class="w-full"
       show_header={false}
     >
-      <section class="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(0,163,255,0.14),_transparent_30%),radial-gradient(circle_at_bottom_right,_rgba(255,118,35,0.16),_transparent_28%),linear-gradient(180deg,_rgba(245,247,250,1)_0%,_rgba(255,255,255,1)_52%,_rgba(242,245,249,1)_100%)]">
+      <section class="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(16,185,129,0.16),_transparent_28%),radial-gradient(circle_at_bottom_right,_rgba(59,130,246,0.12),_transparent_26%),linear-gradient(180deg,_rgba(244,248,246,1)_0%,_rgba(255,255,255,1)_50%,_rgba(241,247,249,1)_100%)]">
         <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
           <div class="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
-            <aside class="rounded-[2rem] border border-white/70 bg-white/80 p-5 shadow-[0_18px_50px_rgba(15,23,42,0.08)] backdrop-blur">
+            <aside class="rounded-[2rem] border border-emerald-100 bg-white/85 p-5 shadow-[0_18px_50px_rgba(15,23,42,0.08)] backdrop-blur">
               <div class="space-y-6">
                 <div class="space-y-2">
-                  <p class="text-sm font-semibold uppercase tracking-[0.3em] text-sky-600">
+                  <p class="text-sm font-semibold uppercase tracking-[0.3em] text-emerald-600">
                     Rapid Tools
                   </p>
                   <div>
                     <h2 class="text-2xl font-black tracking-tight text-slate-950">Tools</h2>
                     <p class="mt-1 text-sm text-slate-600">
-                      Conversores rapidos para formatos usados no mercado.
+                      Conversao rapida para imagem, video e audio.
                     </p>
                   </div>
                 </div>
@@ -181,9 +181,9 @@ defmodule RapidToolsWeb.VideoConverterLive do
                     class={[
                       "block rounded-[1.5rem] border px-4 py-4 transition duration-200",
                       tool.current &&
-                        "border-sky-300 bg-sky-50 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]",
+                        "border-emerald-300 bg-emerald-50 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]",
                       !tool.current &&
-                        "border-slate-200 bg-white hover:border-sky-200 hover:bg-slate-50"
+                        "border-slate-200 bg-white hover:border-emerald-200 hover:bg-emerald-50/40"
                     ]}
                   >
                     <p class="text-sm font-semibold text-slate-950">{tool.name}</p>
@@ -195,57 +195,57 @@ defmodule RapidToolsWeb.VideoConverterLive do
 
             <div class="space-y-6">
               <div class="space-y-4 px-2 py-2">
-                <span class="inline-flex items-center rounded-full border border-sky-200 bg-white/80 px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-sky-700">
-                  Video workflow
+                <span class="inline-flex items-center rounded-full border border-emerald-200 bg-white/80 px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-emerald-700">
+                  Audio workflow
                 </span>
                 <h1 class="text-4xl font-black tracking-tight text-slate-950 sm:text-5xl">
-                  Video Converter
+                  Audio Converter
                 </h1>
                 <p class="max-w-3xl text-base text-slate-600 sm:text-lg">
-                  Converta videos para MP4, MOV, WEBM, MKV e AVI com um fluxo simples e downloads individuais ou em lote.
+                  Converta arquivos de audio para MP3, WAV, OGG, AAC e FLAC com downloads individuais ou em lote.
                 </p>
                 <p class="text-sm text-slate-500">
-                  Ideal para exportar assets para web, social, compatibilidade com players e arquivos mestre.
+                  Ideal para podcasts, trilhas, cortes para social e distribuicao multiplataforma.
                 </p>
               </div>
 
-              <div id="video-converter-panel" class="grid gap-6 xl:grid-cols-[1.35fr_0.65fr]">
+              <div id="audio-converter-panel" class="grid gap-6 xl:grid-cols-[1.35fr_0.65fr]">
                 <div class="relative rounded-[2rem] border border-white/70 bg-white p-6 shadow-[0_24px_60px_rgba(15,23,42,0.08)]">
                   <.form
                     for={@form}
-                    id="video-converter-form"
+                    id="audio-converter-form"
                     phx-change="validate"
                     phx-submit="convert"
                     class="space-y-6"
                   >
                     <div class="pointer-events-none absolute inset-0 z-10 hidden items-center justify-center rounded-[2rem] bg-white/80 backdrop-blur-sm phx-submit-loading:flex">
-                      <div class="flex items-center gap-3 rounded-full border border-sky-200 bg-white px-5 py-3 shadow-lg">
-                        <span class="inline-block size-5 animate-spin rounded-full border-2 border-sky-200 border-t-sky-600" />
+                      <div class="flex items-center gap-3 rounded-full border border-emerald-200 bg-white px-5 py-3 shadow-lg">
+                        <span class="inline-block size-5 animate-spin rounded-full border-2 border-emerald-200 border-t-emerald-600" />
                         <div>
-                          <p class="text-sm font-semibold text-slate-950">Convertendo video</p>
+                          <p class="text-sm font-semibold text-slate-950">Convertendo audio</p>
                           <p class="text-xs text-slate-500">Isso pode levar alguns segundos.</p>
                         </div>
                       </div>
                     </div>
 
-                    <div class="rounded-[1.75rem] border border-dashed border-sky-200 bg-sky-50/60 p-5">
+                    <div class="rounded-[1.75rem] border border-dashed border-emerald-200 bg-emerald-50/60 p-5">
                       <div class="space-y-2">
-                        <label for="video-upload" class="text-sm font-semibold text-slate-900">
-                          Video de origem
+                        <label for="audio-upload" class="text-sm font-semibold text-slate-900">
+                          Audio de origem
                         </label>
                         <.live_file_input
-                          upload={@uploads.video}
-                          id="video-upload"
-                          class="block w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 shadow-sm transition file:mr-4 file:rounded-xl file:border-0 file:bg-slate-950 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:border-sky-300"
+                          upload={@uploads.audio}
+                          id="audio-upload"
+                          class="block w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 shadow-sm transition file:mr-4 file:rounded-xl file:border-0 file:bg-slate-950 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:border-emerald-300"
                         />
                         <p class="text-sm text-slate-500">
-                          Entradas aceitas: MP4, MOV, WEBM, MKV e AVI.
+                          Entradas aceitas: MP3, WAV, OGG e AAC.
                         </p>
                       </div>
 
                       <div class="mt-4 space-y-2">
                         <div
-                          :for={entry <- @uploads.video.entries}
+                          :for={entry <- @uploads.audio.entries}
                           class="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700"
                         >
                           <span class="truncate pr-3 font-medium">{entry.client_name}</span>
@@ -259,33 +259,33 @@ defmodule RapidToolsWeb.VideoConverterLive do
                     <.input
                       field={@form[:target_format]}
                       type="select"
-                      id="video-target-format"
+                      id="audio-target-format"
                       label="Formato de destino"
                       options={Enum.map(@formats, &{String.upcase(&1), &1})}
-                      class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-sky-400"
+                      class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-emerald-400"
                     />
 
                     <button
                       type="submit"
-                      id="video-convert-button"
-                      phx-disable-with="Convertendo video..."
-                      class="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-sky-700 disabled:cursor-wait disabled:opacity-90"
+                      id="audio-convert-button"
+                      phx-disable-with="Convertendo audio..."
+                      class="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-emerald-700 disabled:cursor-wait disabled:opacity-90"
                     >
                       <span class="inline-block size-4 animate-spin rounded-full border-2 border-white/30 border-t-white opacity-0 phx-submit-loading:opacity-100" />
-                      <span>Converter video</span>
+                      <span>Converter audio</span>
                     </button>
                   </.form>
                 </div>
 
                 <aside class="rounded-[2rem] border border-white/70 bg-slate-950 p-6 text-white shadow-[0_24px_60px_rgba(15,23,42,0.16)]">
                   <div :if={@results != []} class="space-y-4">
-                    <p class="text-sm font-semibold uppercase tracking-[0.25em] text-sky-300">
-                      {length(@results)} videos convertidos
+                    <p class="text-sm font-semibold uppercase tracking-[0.25em] text-emerald-300">
+                      {length(@results)} audios convertidos
                     </p>
                     <a
                       :if={@batch_download_path}
                       href={@batch_download_path}
-                      class="inline-flex w-full items-center justify-center rounded-2xl bg-sky-400 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-sky-300"
+                      class="inline-flex w-full items-center justify-center rounded-2xl bg-emerald-400 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-emerald-300"
                     >
                       Baixar pacote ZIP
                     </a>
@@ -309,11 +309,11 @@ defmodule RapidToolsWeb.VideoConverterLive do
                   </div>
                   <div :if={@results == []} class="space-y-4">
                     <div class="rounded-[1.5rem] border border-white/10 bg-white/5 p-4">
-                      <p class="text-sm font-semibold uppercase tracking-[0.25em] text-sky-300">
+                      <p class="text-sm font-semibold uppercase tracking-[0.25em] text-emerald-300">
                         Formatos populares
                       </p>
                       <p class="mt-3 text-sm text-slate-300">
-                        MP4 para compatibilidade ampla, MOV para ecossistema Apple, WEBM para web, MKV para alta flexibilidade e AVI para legados.
+                        MP3 para distribuicao ampla, WAV para edicao, OGG para web, AAC para compatibilidade mobile e FLAC para masters sem perdas.
                       </p>
                     </div>
                     <div class="rounded-[1.5rem] border border-white/10 bg-white/5 p-4">

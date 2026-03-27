@@ -10,6 +10,7 @@ defmodule RapidToolsWeb.ImageConverterLiveTest do
     assert has_element?(view, "#image-convert-button")
     assert has_element?(view, "#converter-form .phx-submit-loading\\:flex")
     assert has_element?(view, "a[href=\"/video-converter\"]", "Video Converter")
+    assert has_element?(view, "a[href=\"/audio-converter\"]", "Audio Converter")
     assert html =~ "Tools"
     assert html =~ "Image Converter"
     assert html =~ "Batch image conversion"

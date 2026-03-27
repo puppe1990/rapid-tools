@@ -69,4 +69,66 @@ defmodule RapidTools.TestSupport.ImageFixtures do
 
     path
   end
+
+  def tiny_wav_path!(name \\ "tiny.wav") do
+    dir = Path.join(System.tmp_dir!(), "rapid_tools_test_fixtures")
+    File.mkdir_p!(dir)
+
+    path = Path.join(dir, name)
+
+    case System.find_executable("ffmpeg") do
+      nil ->
+        raise "ffmpeg is required to build audio test fixtures"
+
+      command ->
+        {_, 0} =
+          System.cmd(
+            command,
+            [
+              "-y",
+              "-f",
+              "lavfi",
+              "-i",
+              "sine=frequency=880:duration=1",
+              "-c:a",
+              "pcm_s16le",
+              path
+            ],
+            stderr_to_stdout: true
+          )
+    end
+
+    path
+  end
+
+  def tiny_ogg_path!(name \\ "tiny.ogg") do
+    dir = Path.join(System.tmp_dir!(), "rapid_tools_test_fixtures")
+    File.mkdir_p!(dir)
+
+    path = Path.join(dir, name)
+
+    case System.find_executable("ffmpeg") do
+      nil ->
+        raise "ffmpeg is required to build audio test fixtures"
+
+      command ->
+        {_, 0} =
+          System.cmd(
+            command,
+            [
+              "-y",
+              "-f",
+              "lavfi",
+              "-i",
+              "sine=frequency=660:duration=1",
+              "-c:a",
+              "libvorbis",
+              path
+            ],
+            stderr_to_stdout: true
+          )
+    end
+
+    path
+  end
 end
