@@ -29,4 +29,44 @@ defmodule RapidTools.TestSupport.ImageFixtures do
     File.mkdir_p!(dir)
     dir
   end
+
+  def tiny_mp4_path!(name \\ "tiny.mp4") do
+    dir = Path.join(System.tmp_dir!(), "rapid_tools_test_fixtures")
+    File.mkdir_p!(dir)
+
+    path = Path.join(dir, name)
+
+    case System.find_executable("ffmpeg") do
+      nil ->
+        raise "ffmpeg is required to build video test fixtures"
+
+      command ->
+        {_, 0} =
+          System.cmd(
+            command,
+            [
+              "-y",
+              "-f",
+              "lavfi",
+              "-i",
+              "color=c=#0ea5e9:s=32x32:d=1",
+              "-f",
+              "lavfi",
+              "-i",
+              "anullsrc=channel_layout=stereo:sample_rate=44100",
+              "-shortest",
+              "-c:v",
+              "libx264",
+              "-pix_fmt",
+              "yuv420p",
+              "-c:a",
+              "aac",
+              path
+            ],
+            stderr_to_stdout: true
+          )
+    end
+
+    path
+  end
 end

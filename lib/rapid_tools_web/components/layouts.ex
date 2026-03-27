@@ -31,11 +31,23 @@ defmodule RapidToolsWeb.Layouts do
     default: nil,
     doc: "the current [scope](https://hexdocs.pm/phoenix/scopes.html)"
 
+  attr :main_class, :string,
+    default: "px-4 py-20 sm:px-6 lg:px-8",
+    doc: "the classes applied to the main wrapper"
+
+  attr :content_class, :string,
+    default: "mx-auto max-w-2xl space-y-4",
+    doc: "the classes applied to the main content container"
+
+  attr :show_header, :boolean,
+    default: true,
+    doc: "controls whether the default application header is rendered"
+
   slot :inner_block, required: true
 
   def app(assigns) do
     ~H"""
-    <header class="navbar px-4 sm:px-6 lg:px-8">
+    <header :if={@show_header} class="navbar px-4 sm:px-6 lg:px-8">
       <div class="flex-1">
         <a href="/" class="flex-1 flex w-fit items-center gap-2">
           <img src={~p"/images/logo.svg"} width="36" />
@@ -62,8 +74,8 @@ defmodule RapidToolsWeb.Layouts do
       </div>
     </header>
 
-    <main class="px-4 py-20 sm:px-6 lg:px-8">
-      <div class="mx-auto max-w-2xl space-y-4">
+    <main class={@main_class}>
+      <div class={@content_class}>
         {render_slot(@inner_block)}
       </div>
     </main>
