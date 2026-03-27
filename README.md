@@ -1,6 +1,6 @@
 # RapidTools
 
-RapidTools is a Phoenix LiveView app for batch image, video, and audio conversion with individual downloads and ZIP bundles.
+RapidTools is a Phoenix LiveView app for batch media workflows including conversion, resizing, compression, PDF exports, individual downloads, and ZIP bundles.
 
 ## Preview
 
@@ -9,8 +9,11 @@ RapidTools is a Phoenix LiveView app for batch image, video, and audio conversio
 ## Available tools
 
 - Image converter at `/`
+- Image resizer at `/image-resizer`
 - Video converter at `/video-converter`
+- Video compressor at `/video-compressor`
 - Audio converter at `/audio-converter`
+- PDF converter at `/pdf-converter`
 - Together audios at `/together-audios`
 
 ## Supported formats
@@ -23,6 +26,13 @@ RapidTools is a Phoenix LiveView app for batch image, video, and audio conversio
 - `HEIC`
 - `AVIF`
 
+### Image resizing output
+
+- `Original format`
+- `JPG`
+- `PNG`
+- `WEBP`
+
 ### Video output
 
 - `MP4`
@@ -30,6 +40,10 @@ RapidTools is a Phoenix LiveView app for batch image, video, and audio conversio
 - `WEBM`
 - `MKV`
 - `AVI`
+
+### Video compression output
+
+- `MP4`
 
 ### Audio output
 
@@ -39,13 +53,22 @@ RapidTools is a Phoenix LiveView app for batch image, video, and audio conversio
 - `AAC`
 - `FLAC`
 
+### PDF workflows
+
+- `PDF -> PNG`
+- `PDF -> JPG`
+- `JPG/PNG/WEBP -> PDF`
+
 ## Features
 
 - Batch upload and conversion per tool
+- Batch image resizing with presets for social, thumbnails, and stores
+- Batch video compression with quality and resolution presets
+- PDF page extraction and image-to-PDF generation
 - Audio joining into a single downloadable file
 - Individual file download after conversion
 - ZIP package download for converted batches
-- Phoenix LiveView interface with dedicated screens for image, video, audio, and audio assembly workflows
+- Phoenix LiveView interface with dedicated screens for image, video, audio, PDF, and assembly workflows
 
 ## Requirements
 
@@ -75,6 +98,12 @@ For focused iteration:
 ```bash
 mix test test/rapid_tools/audio_converter_test.exs
 mix test test/rapid_tools_web/live/audio_converter_live_test.exs
+mix test test/rapid_tools/image_resizer_test.exs
+mix test test/rapid_tools_web/live/image_resizer_live_test.exs
+mix test test/rapid_tools/video_compressor_test.exs
+mix test test/rapid_tools_web/live/video_compressor_live_test.exs
+mix test test/rapid_tools/pdf_converter_test.exs
+mix test test/rapid_tools_web/live/pdf_converter_live_test.exs
 mix test test/rapid_tools/audio_joiner_test.exs
 mix test test/rapid_tools_web/live/together_audios_live_test.exs
 ```

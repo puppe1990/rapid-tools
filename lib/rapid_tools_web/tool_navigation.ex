@@ -33,6 +33,30 @@ defmodule RapidToolsWeb.ToolNavigation do
         blurb_class: "text-indigo-700/80"
       },
       %{
+        key: "image-resizer",
+        name: "Image Resizer",
+        blurb: "Resize for social, stores and thumbnails",
+        current: current == "image-resizer",
+        path: ~p"/image-resizer",
+        current_class: "border-cyan-300 bg-cyan-50 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]",
+        idle_class: "border-slate-200 bg-white hover:border-cyan-200 hover:bg-cyan-50/40",
+        dot_class: "bg-cyan-500",
+        name_class: "text-cyan-800",
+        blurb_class: "text-cyan-700/80"
+      },
+      %{
+        key: "video-compressor",
+        name: "Video Compressor",
+        blurb: "Reduce file size for sharing and upload",
+        current: current == "video-compressor",
+        path: ~p"/video-compressor",
+        current_class: "border-rose-300 bg-rose-50 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]",
+        idle_class: "border-slate-200 bg-white hover:border-rose-200 hover:bg-rose-50/40",
+        dot_class: "bg-rose-500",
+        name_class: "text-rose-800",
+        blurb_class: "text-rose-700/80"
+      },
+      %{
         key: "audio",
         name: "Audio Converter",
         blurb: "Convert MP3, WAV, OGG, AAC and FLAC",
@@ -44,6 +68,18 @@ defmodule RapidToolsWeb.ToolNavigation do
         dot_class: "bg-emerald-500",
         name_class: "text-emerald-800",
         blurb_class: "text-emerald-700/80"
+      },
+      %{
+        key: "pdf-converter",
+        name: "PDF Converter",
+        blurb: "Turn PDF pages into images or back to PDF",
+        current: current == "pdf-converter",
+        path: ~p"/pdf-converter",
+        current_class: "border-lime-300 bg-lime-50 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]",
+        idle_class: "border-slate-200 bg-white hover:border-lime-200 hover:bg-lime-50/40",
+        dot_class: "bg-lime-500",
+        name_class: "text-lime-800",
+        blurb_class: "text-lime-700/80"
       },
       %{
         key: "together-audios",

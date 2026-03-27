@@ -11,8 +11,11 @@ defmodule RapidToolsWeb.VideoConverterLiveTest do
     assert has_element?(view, "#video-upload-list")
     assert has_element?(view, "#video-converter-form .phx-submit-loading\\:flex")
     assert has_element?(view, "a[href=\"/\"]", "Image Converter")
+    assert has_element?(view, "a[href=\"/image-resizer\"]", "Image Resizer")
     assert has_element?(view, "a[href=\"/video-converter\"]", "Video Converter")
+    assert has_element?(view, "a[href=\"/video-compressor\"]", "Video Compressor")
     assert has_element?(view, "a[href=\"/audio-converter\"]", "Audio Converter")
+    assert has_element?(view, "a[href=\"/pdf-converter\"]", "PDF Converter")
     assert has_element?(view, "a[href=\"/together-audios\"]", "Together Audios")
     assert render(view) =~ "Converta videos para MP4, MOV, WEBM, MKV e AVI"
     assert render(view) =~ "Convertendo video"

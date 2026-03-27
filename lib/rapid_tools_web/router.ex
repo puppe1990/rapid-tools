@@ -18,8 +18,11 @@ defmodule RapidToolsWeb.Router do
     pipe_through :browser
 
     live "/", ImageConverterLive
+    live "/image-resizer", ImageResizerLive
     live "/video-converter", VideoConverterLive
+    live "/video-compressor", VideoCompressorLive
     live "/audio-converter", AudioConverterLive
+    live "/pdf-converter", PdfConverterLive
     live "/together-audios", TogetherAudiosLive
     get "/downloads/batches/:id", DownloadController, :batch
     get "/downloads/:id", DownloadController, :show

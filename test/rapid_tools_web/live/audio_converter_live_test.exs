@@ -11,8 +11,11 @@ defmodule RapidToolsWeb.AudioConverterLiveTest do
     assert has_element?(view, "#audio-upload-list")
     assert has_element?(view, "#audio-converter-form .phx-submit-loading\\:flex")
     assert has_element?(view, "a[href=\"/\"]", "Image Converter")
+    assert has_element?(view, "a[href=\"/image-resizer\"]", "Image Resizer")
     assert has_element?(view, "a[href=\"/video-converter\"]", "Video Converter")
+    assert has_element?(view, "a[href=\"/video-compressor\"]", "Video Compressor")
     assert has_element?(view, "a[href=\"/audio-converter\"]", "Audio Converter")
+    assert has_element?(view, "a[href=\"/pdf-converter\"]", "PDF Converter")
     assert has_element?(view, "a[href=\"/together-audios\"]", "Together Audios")
     assert render(view) =~ "Converta arquivos de audio para MP3, WAV, OGG, AAC e FLAC"
     assert render(view) =~ "Convertendo audio"

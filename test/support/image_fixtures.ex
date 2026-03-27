@@ -101,6 +101,25 @@ defmodule RapidTools.TestSupport.ImageFixtures do
     path
   end
 
+  def tiny_pdf_path!(name \\ "tiny.pdf") do
+    png_path = tiny_png_path!("#{Path.rootname(name)}.png")
+    dir = Path.join(System.tmp_dir!(), "rapid_tools_test_fixtures")
+    File.mkdir_p!(dir)
+
+    path = Path.join(dir, name)
+    command = System.find_executable("magick") || System.find_executable("convert")
+
+    case command do
+      nil ->
+        raise "ImageMagick is required to build PDF test fixtures"
+
+      _ ->
+        {_, 0} = System.cmd(command, [png_path, path], stderr_to_stdout: true)
+    end
+
+    path
+  end
+
   def tiny_ogg_path!(name \\ "tiny.ogg") do
     dir = Path.join(System.tmp_dir!(), "rapid_tools_test_fixtures")
     File.mkdir_p!(dir)
