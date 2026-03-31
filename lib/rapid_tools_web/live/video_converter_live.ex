@@ -6,7 +6,8 @@ defmodule RapidToolsWeb.VideoConverterLive do
   alias RapidTools.ZipArchive
   alias RapidToolsWeb.ToolNavigation
 
-  @video_accept ~w(video/mp4 video/quicktime video/webm video/x-msvideo)
+  @video_accept ~w(.mp4 .mov .webm .mkv .avi video/mp4 video/quicktime video/webm video/x-msvideo video/x-matroska application/octet-stream audio/webm)
+  @max_video_upload_size 150_000_000
 
   @impl true
   def mount(_params, _session, socket) do
@@ -23,7 +24,12 @@ defmodule RapidToolsWeb.VideoConverterLive do
      |> assign(:form, form)
      |> assign(:results, [])
      |> assign(:batch_download_path, nil)
-     |> allow_upload(:video, accept: @video_accept, max_entries: 10, auto_upload: true)}
+     |> allow_upload(:video,
+       accept: @video_accept,
+       max_entries: 10,
+       max_file_size: @max_video_upload_size,
+       auto_upload: true
+     )}
   end
 
   @impl true
@@ -168,6 +174,19 @@ defmodule RapidToolsWeb.VideoConverterLive do
     end
   end
 
+  defp upload_error_message(:not_accepted),
+    do: "Formato nao aceito. Envie MP4, MOV, WEBM, MKV ou AVI."
+
+  defp upload_error_message(:too_large), do: "O arquivo excede o limite permitido para upload."
+
+  defp upload_error_message(:too_many_files),
+    do: "Voce selecionou mais arquivos do que o permitido."
+
+  defp upload_error_message(:external_client_failure),
+    do: "O navegador nao conseguiu enviar este arquivo. Tente novamente."
+
+  defp upload_error_message(_error), do: "Nao foi possivel enviar este arquivo."
+
   @impl true
   def render(assigns) do
     ~H"""
@@ -260,7 +279,7 @@ defmodule RapidToolsWeb.VideoConverterLive do
                           class="block w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 shadow-sm transition file:mr-4 file:rounded-xl file:border-0 file:bg-slate-950 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:border-sky-300"
                         />
                         <p class="text-sm text-slate-500">
-                          Entradas aceitas: MP4, MOV, WEBM, MKV e AVI.
+                          Entradas aceitas: MP4, MOV, WEBM, MKV e AVI. Ate 150 MB por video.
                         </p>
                       </div>
 
@@ -283,6 +302,12 @@ defmodule RapidToolsWeb.VideoConverterLive do
                                 style={"width: #{entry.progress}%"}
                               />
                             </div>
+                            <p
+                              :for={error <- upload_errors(@uploads.video, entry)}
+                              class="mt-2 text-xs font-medium text-rose-600"
+                            >
+                              {upload_error_message(error)}
+                            </p>
                           </div>
                           <span class="text-xs uppercase tracking-[0.2em] text-slate-400">
                             <%= if entry.progress == 100 do %>

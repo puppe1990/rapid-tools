@@ -53,6 +53,28 @@ defmodule RapidToolsWeb.VideoConverterLiveTest do
     assert rendered_upload =~ "phx-click=\"cancel-upload\""
   end
 
+  test "accepts webm uploads even when the browser falls back to application/octet-stream", %{
+    conn: conn
+  } do
+    source_path = ImageFixtures.tiny_mp4_path!("live-upload-video-webm.mp4")
+    {:ok, view, _html} = live(conn, ~p"/video-converter")
+
+    upload =
+      file_input(view, "#video-converter-form", :video, [
+        %{
+          last_modified: 1_711_000_000_002,
+          name: "recording.webm",
+          content: File.read!(source_path),
+          type: "application/octet-stream"
+        }
+      ])
+
+    rendered_upload = render_upload(upload, "recording.webm")
+    assert rendered_upload =~ "recording.webm"
+    assert rendered_upload =~ "pronto"
+    refute rendered_upload =~ "Formato nao aceito"
+  end
+
   test "shows an explicit initial status message", %{conn: conn} do
     {:ok, view, _html} = live(conn, ~p"/video-converter")
 
