@@ -21,17 +21,43 @@ defmodule RapidToolsWeb.TogetherAudiosLive do
      |> assign(:tools, ToolNavigation.tools("together-audios"))
      |> assign(:form, form)
      |> assign(:result, nil)
+     |> assign(:audio_order, [])
      |> allow_upload(:audio, accept: @audio_accept, max_entries: 100, auto_upload: true)}
   end
 
   @impl true
   def handle_event("validate", %{"conversion" => conversion_params}, socket) do
-    {:noreply, assign(socket, :form, to_form(conversion_params, as: :conversion))}
+    {:noreply,
+     socket
+     |> assign(:form, to_form(conversion_params, as: :conversion))
+     |> sync_audio_order(socket.assigns.uploads.audio.entries)}
   end
 
   @impl true
   def handle_event("cancel-upload", %{"ref" => ref}, socket) do
-    {:noreply, cancel_upload(socket, :audio, ref)}
+    entries = Enum.reject(socket.assigns.uploads.audio.entries, &(&1.ref == ref))
+
+    {:noreply,
+     socket
+     |> cancel_upload(:audio, ref)
+     |> assign(:audio_order, remove_ref(socket.assigns.audio_order, ref))
+     |> sync_audio_order(entries)}
+  end
+
+  @impl true
+  def handle_event("move-up", %{"ref" => ref}, socket) do
+    synced_order =
+      synced_audio_order(socket.assigns.audio_order, socket.assigns.uploads.audio.entries)
+
+    {:noreply, assign(socket, :audio_order, move_ref(synced_order, ref, -1))}
+  end
+
+  @impl true
+  def handle_event("move-down", %{"ref" => ref}, socket) do
+    synced_order =
+      synced_audio_order(socket.assigns.audio_order, socket.assigns.uploads.audio.entries)
+
+    {:noreply, assign(socket, :audio_order, move_ref(synced_order, ref, 1))}
   end
 
   @impl true
@@ -60,12 +86,16 @@ defmodule RapidToolsWeb.TogetherAudiosLive do
 
     File.mkdir_p!(output_dir)
 
+    ordered_refs =
+      synced_audio_order(socket.assigns.audio_order, socket.assigns.uploads.audio.entries)
+
     source_paths =
       consume_uploaded_entries(socket, :audio, fn %{path: path}, entry ->
         source_path = Path.join(output_dir, entry.client_name)
         File.cp!(path, source_path)
-        {:ok, source_path}
+        {:ok, {entry.ref, source_path}}
       end)
+      |> order_source_paths(ordered_refs)
 
     case AudioJoiner.join(source_paths, target_format, output_dir: output_dir) do
       {:ok, result} ->
@@ -139,6 +169,53 @@ defmodule RapidToolsWeb.TogetherAudiosLive do
       true ->
         "#{total} audios selecionados. Todos aparecem nesta caixa com scroll."
     end
+  end
+
+  defp sync_audio_order(socket, entries) do
+    assign(socket, :audio_order, synced_audio_order(socket.assigns.audio_order, entries))
+  end
+
+  defp synced_audio_order(current_order, entries) do
+    entry_refs = Enum.map(entries, & &1.ref)
+    kept_refs = Enum.filter(current_order, &(&1 in entry_refs))
+    new_refs = Enum.reject(entry_refs, &(&1 in kept_refs))
+    kept_refs ++ new_refs
+  end
+
+  defp ordered_entries(entries, audio_order) do
+    order = synced_audio_order(audio_order, entries)
+    order_index = Map.new(Enum.with_index(order))
+    Enum.sort_by(entries, &Map.get(order_index, &1.ref, length(order)))
+  end
+
+  defp move_ref(order, ref, direction) do
+    case Enum.find_index(order, &(&1 == ref)) do
+      nil ->
+        order
+
+      index ->
+        target_index = index + direction
+
+        if target_index < 0 or target_index >= length(order) do
+          order
+        else
+          value = Enum.at(order, index)
+
+          order
+          |> List.replace_at(index, Enum.at(order, target_index))
+          |> List.replace_at(target_index, value)
+        end
+    end
+  end
+
+  defp remove_ref(order, ref), do: Enum.reject(order, &(&1 == ref))
+
+  defp order_source_paths(source_paths, ordered_refs) do
+    order_index = Map.new(Enum.with_index(ordered_refs))
+
+    source_paths
+    |> Enum.sort_by(fn {ref, _path} -> Map.get(order_index, ref, length(ordered_refs)) end)
+    |> Enum.map(fn {_ref, path} -> path end)
   end
 
   @impl true
@@ -247,8 +324,14 @@ defmodule RapidToolsWeb.TogetherAudiosLive do
                         <div class="sticky top-0 z-10 rounded-2xl border border-amber-100 bg-amber-50/95 px-4 py-3 text-sm font-medium text-amber-900 backdrop-blur">
                           {upload_summary(@uploads.audio.entries)}
                         </div>
+                        <p class="px-4 text-xs font-medium uppercase tracking-[0.24em] text-amber-700">
+                          Reordene a fila com as setas para definir a sequencia final da faixa.
+                        </p>
                         <div
-                          :for={entry <- @uploads.audio.entries}
+                          :for={
+                            {entry, index} <-
+                              Enum.with_index(ordered_entries(@uploads.audio.entries, @audio_order))
+                          }
                           class="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700"
                         >
                           <div class="min-w-0 flex-1 pr-4">
@@ -267,6 +350,28 @@ defmodule RapidToolsWeb.TogetherAudiosLive do
                               {entry.progress}%
                             <% end %>
                           </span>
+                          <div class="flex items-center gap-2">
+                            <button
+                              :if={index > 0}
+                              type="button"
+                              phx-click="move-up"
+                              phx-value-ref={entry.ref}
+                              aria-label={"Mover #{entry.client_name} para cima"}
+                              class="inline-flex size-8 shrink-0 items-center justify-center rounded-full border border-slate-200 text-sm font-bold text-slate-500 transition hover:border-amber-300 hover:bg-amber-50 hover:text-amber-700"
+                            >
+                              ↑
+                            </button>
+                            <button
+                              :if={index < length(@uploads.audio.entries) - 1}
+                              type="button"
+                              phx-click="move-down"
+                              phx-value-ref={entry.ref}
+                              aria-label={"Mover #{entry.client_name} para baixo"}
+                              class="inline-flex size-8 shrink-0 items-center justify-center rounded-full border border-slate-200 text-sm font-bold text-slate-500 transition hover:border-amber-300 hover:bg-amber-50 hover:text-amber-700"
+                            >
+                              ↓
+                            </button>
+                          </div>
                           <button
                             type="button"
                             phx-click="cancel-upload"
