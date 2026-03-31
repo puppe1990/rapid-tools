@@ -91,43 +91,58 @@ defmodule RapidToolsWeb.ImageResizerLive do
         end
       end)
 
-    case results do
-      converted when is_list(converted) ->
-        successful_results = Enum.map(converted, fn {:ok, result} -> result end)
+    case successful_batch_results(results) do
+      {:ok, successful_results} ->
+        build_batch_response(
+          socket,
+          successful_results,
+          "#{length(successful_results)} imagens redimensionadas.",
+          "As imagens foram geradas, mas o ZIP nao pode ser criado."
+        )
 
-        if successful_results != [] and length(successful_results) == length(converted) do
-          batch_entries =
-            Enum.map(successful_results, fn result ->
-              %{
-                path: result.output_path,
-                filename: result.filename,
-                media_type: result.media_type
-              }
-            end)
-
-          {:ok, batch_id} = ConversionStore.put_batch(batch_entries)
-
-          case ZipArchive.build(batch_id, batch_entries) do
-            {:ok, zip_entry} ->
-              {:ok, zip_id} = ConversionStore.put(zip_entry)
-
-              socket
-              |> assign(:results, successful_results)
-              |> assign(:batch_download_path, ~p"/downloads/#{zip_id}")
-              |> put_flash(:info, "#{length(successful_results)} imagens redimensionadas.")
-
-            {:error, _reason} ->
-              socket
-              |> assign(:results, successful_results)
-              |> assign(:batch_download_path, nil)
-              |> put_flash(:error, "As imagens foram geradas, mas o ZIP nao pode ser criado.")
-          end
-        else
-          put_flash(socket, :error, "As imagens nao puderam ser redimensionadas.")
-        end
-
-      _ ->
+      :error ->
         put_flash(socket, :error, "As imagens nao puderam ser redimensionadas.")
+    end
+  end
+
+  defp successful_batch_results(converted) when is_list(converted) do
+    successful_results = Enum.map(converted, fn {:ok, result} -> result end)
+
+    if successful_results != [] and length(successful_results) == length(converted) do
+      {:ok, successful_results}
+    else
+      :error
+    end
+  end
+
+  defp successful_batch_results(_), do: :error
+
+  defp build_batch_response(socket, successful_results, success_message, zip_error_message) do
+    batch_entries =
+      Enum.map(successful_results, fn result ->
+        %{
+          path: result.output_path,
+          filename: result.filename,
+          media_type: result.media_type
+        }
+      end)
+
+    {:ok, batch_id} = ConversionStore.put_batch(batch_entries)
+
+    case ZipArchive.build(batch_id, batch_entries) do
+      {:ok, zip_entry} ->
+        {:ok, zip_id} = ConversionStore.put(zip_entry)
+
+        socket
+        |> assign(:results, successful_results)
+        |> assign(:batch_download_path, ~p"/downloads/#{zip_id}")
+        |> put_flash(:info, success_message)
+
+      {:error, _reason} ->
+        socket
+        |> assign(:results, successful_results)
+        |> assign(:batch_download_path, nil)
+        |> put_flash(:error, zip_error_message)
     end
   end
 

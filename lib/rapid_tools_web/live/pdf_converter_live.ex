@@ -91,66 +91,84 @@ defmodule RapidToolsWeb.PdfConverterLive do
         source_path = Path.join(output_dir, entry.client_name)
         File.cp!(path, source_path)
 
-        case PdfConverter.pdf_to_images(source_path, target_format, output_dir: output_dir) do
-          {:ok, converted_results} ->
-            stored_results =
-              Enum.map(converted_results, fn result ->
-                store_entry = %{
-                  path: result.output_path,
-                  filename: result.filename,
-                  media_type: result.media_type
-                }
-
-                {:ok, id} = ConversionStore.put(store_entry)
-                Map.put(result, :download_path, ~p"/downloads/#{id}")
-              end)
-
-            {:ok, {:ok, stored_results}}
-
-          {:error, reason} ->
-            {:ok, {:error, reason}}
-        end
+        store_pdf_image_results(source_path, target_format, output_dir)
       end)
 
-    case results do
-      converted when is_list(converted) ->
-        successful_results =
-          converted
-          |> Enum.flat_map(fn {:ok, result_list} -> result_list end)
+    case successful_pdf_results(results) do
+      {:ok, successful_results} ->
+        build_batch_response(
+          socket,
+          successful_results,
+          "#{length(successful_results)} paginas convertidas.",
+          "As paginas foram convertidas, mas o ZIP nao pode ser criado."
+        )
 
-        if successful_results != [] do
-          batch_entries =
-            Enum.map(successful_results, fn result ->
-              %{
-                path: result.output_path,
-                filename: result.filename,
-                media_type: result.media_type
-              }
-            end)
-
-          {:ok, batch_id} = ConversionStore.put_batch(batch_entries)
-
-          case ZipArchive.build(batch_id, batch_entries) do
-            {:ok, zip_entry} ->
-              {:ok, zip_id} = ConversionStore.put(zip_entry)
-
-              socket
-              |> assign(:results, successful_results)
-              |> assign(:batch_download_path, ~p"/downloads/#{zip_id}")
-              |> put_flash(:info, "#{length(successful_results)} paginas convertidas.")
-
-            {:error, _reason} ->
-              socket
-              |> assign(:results, successful_results)
-              |> assign(:batch_download_path, nil)
-              |> put_flash(:error, "As paginas foram convertidas, mas o ZIP nao pode ser criado.")
-          end
-        else
-          put_flash(socket, :error, "O PDF nao pode ser convertido.")
-        end
-
-      _ ->
+      :error ->
         put_flash(socket, :error, "O PDF nao pode ser convertido.")
+    end
+  end
+
+  defp successful_pdf_results(converted) when is_list(converted) do
+    successful_results =
+      converted
+      |> Enum.flat_map(fn {:ok, result_list} -> result_list end)
+
+    if successful_results != [] do
+      {:ok, successful_results}
+    else
+      :error
+    end
+  end
+
+  defp successful_pdf_results(_), do: :error
+
+  defp store_pdf_image_results(source_path, target_format, output_dir) do
+    case PdfConverter.pdf_to_images(source_path, target_format, output_dir: output_dir) do
+      {:ok, converted_results} ->
+        {:ok, {:ok, Enum.map(converted_results, &store_pdf_image_result/1)}}
+
+      {:error, reason} ->
+        {:ok, {:error, reason}}
+    end
+  end
+
+  defp store_pdf_image_result(result) do
+    store_entry = %{
+      path: result.output_path,
+      filename: result.filename,
+      media_type: result.media_type
+    }
+
+    {:ok, id} = ConversionStore.put(store_entry)
+    Map.put(result, :download_path, ~p"/downloads/#{id}")
+  end
+
+  defp build_batch_response(socket, successful_results, success_message, zip_error_message) do
+    batch_entries =
+      Enum.map(successful_results, fn result ->
+        %{
+          path: result.output_path,
+          filename: result.filename,
+          media_type: result.media_type
+        }
+      end)
+
+    {:ok, batch_id} = ConversionStore.put_batch(batch_entries)
+
+    case ZipArchive.build(batch_id, batch_entries) do
+      {:ok, zip_entry} ->
+        {:ok, zip_id} = ConversionStore.put(zip_entry)
+
+        socket
+        |> assign(:results, successful_results)
+        |> assign(:batch_download_path, ~p"/downloads/#{zip_id}")
+        |> put_flash(:info, success_message)
+
+      {:error, _reason} ->
+        socket
+        |> assign(:results, successful_results)
+        |> assign(:batch_download_path, nil)
+        |> put_flash(:error, zip_error_message)
     end
   end
 

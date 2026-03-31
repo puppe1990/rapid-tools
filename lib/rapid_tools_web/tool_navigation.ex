@@ -1,4 +1,7 @@
 defmodule RapidToolsWeb.ToolNavigation do
+  @moduledoc """
+  Shared navigation metadata for the converter tool sidebar.
+  """
   use Phoenix.VerifiedRoutes,
     endpoint: RapidToolsWeb.Endpoint,
     router: RapidToolsWeb.Router,
