@@ -26,4 +26,12 @@ defmodule RapidTools.VideoConverterTest do
     assert {:error, {:unsupported_target_format, "flv"}} =
              VideoConverter.convert(source_path, "flv", output_dir: output_dir)
   end
+
+  test "convert/2 rejects mp4 files without a video stream" do
+    source_path = ImageFixtures.audio_only_mp4_path!("audio-only-source.mp4")
+    output_dir = ImageFixtures.temp_dir!("audio-only-conversion")
+
+    assert {:error, :no_video_stream} =
+             VideoConverter.convert(source_path, "webm", output_dir: output_dir)
+  end
 end

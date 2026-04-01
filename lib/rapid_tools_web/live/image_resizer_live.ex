@@ -106,12 +106,11 @@ defmodule RapidToolsWeb.ImageResizerLive do
   end
 
   defp successful_batch_results(converted) when is_list(converted) do
-    successful_results = Enum.map(converted, fn {:ok, result} -> result end)
-
-    if successful_results != [] and length(successful_results) == length(converted) do
-      {:ok, successful_results}
+    with [_ | _] <- converted,
+         true <- Enum.all?(converted, &match?({:ok, _}, &1)) do
+      {:ok, Enum.map(converted, fn {:ok, result} -> result end)}
     else
-      :error
+      _ -> :error
     end
   end
 

@@ -26,8 +26,13 @@ import {hooks as colocatedHooks} from "phoenix-colocated/rapid_tools"
 import topbar from "../vendor/topbar"
 
 const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
+const localHostsWithoutLongPollFallback = new Set(["localhost", "127.0.0.1"])
+const longPollFallbackMs = localHostsWithoutLongPollFallback.has(window.location.hostname)
+  ? undefined
+  : 2500
+
 const liveSocket = new LiveSocket("/live", Socket, {
-  longPollFallbackMs: 2500,
+  longPollFallbackMs,
   params: {_csrf_token: csrfToken},
   hooks: {...colocatedHooks},
 })
@@ -80,4 +85,3 @@ if (process.env.NODE_ENV === "development") {
     window.liveReloader = reloader
   })
 }
-

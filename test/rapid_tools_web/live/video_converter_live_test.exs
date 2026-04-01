@@ -80,4 +80,51 @@ defmodule RapidToolsWeb.VideoConverterLiveTest do
 
     assert render(view) =~ "Selecione um ou mais videos para habilitar a conversao."
   end
+
+  test "shows a specific error flash instead of crashing when media is invalid", %{conn: conn} do
+    {:ok, view, _html} = live(conn, ~p"/video-converter")
+
+    upload =
+      file_input(view, "#video-converter-form", :video, [
+        %{
+          last_modified: 1_711_000_000_003,
+          name: "broken.mp4",
+          content: "not-a-real-video",
+          type: "video/mp4"
+        }
+      ])
+
+    assert render_upload(upload, "broken.mp4") =~ "broken.mp4"
+
+    html =
+      view
+      |> form("#video-converter-form", conversion: %{target_format: "mp4"})
+      |> render_submit()
+
+    assert html =~ "Este arquivo parece corrompido ou incompleto."
+  end
+
+  test "shows a specific error for mp4 files without a video track", %{conn: conn} do
+    source_path = ImageFixtures.audio_only_mp4_path!("audio-only-upload.mp4")
+    {:ok, view, _html} = live(conn, ~p"/video-converter")
+
+    upload =
+      file_input(view, "#video-converter-form", :video, [
+        %{
+          last_modified: 1_711_000_000_004,
+          name: "audio-only.mp4",
+          content: File.read!(source_path),
+          type: "video/mp4"
+        }
+      ])
+
+    assert render_upload(upload, "audio-only.mp4") =~ "audio-only.mp4"
+
+    html =
+      view
+      |> form("#video-converter-form", conversion: %{target_format: "webm"})
+      |> render_submit()
+
+    assert html =~ "Este arquivo nao possui uma trilha de video."
+  end
 end

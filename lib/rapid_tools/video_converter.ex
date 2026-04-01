@@ -17,6 +17,7 @@ defmodule RapidTools.VideoConverter do
 
     with :ok <- validate_target_format(target_format),
          :ok <- ensure_source_exists(source_path),
+         :ok <- ensure_source_has_video_stream(source_path),
          {:ok, output_dir} <- ensure_output_dir(opts),
          {:ok, command, args, output_path} <- command_for(source_path, output_dir, target_format),
          {_, 0} <- System.cmd(command, args, stderr_to_stdout: true) do
@@ -51,6 +52,39 @@ defmodule RapidTools.VideoConverter do
   defp ensure_source_exists(source_path) do
     if File.exists?(source_path), do: :ok, else: {:error, :source_file_not_found}
   end
+
+  defp ensure_source_has_video_stream(source_path) do
+    case System.find_executable("ffprobe") do
+      nil ->
+        :ok
+
+      command ->
+        source_path
+        |> ffprobe_video_stream_args()
+        |> then(&System.cmd(command, &1, stderr_to_stdout: true))
+        |> validate_ffprobe_output()
+    end
+  end
+
+  defp ffprobe_video_stream_args(source_path) do
+    [
+      "-v",
+      "error",
+      "-select_streams",
+      "v:0",
+      "-show_entries",
+      "stream=codec_type",
+      "-of",
+      "default=noprint_wrappers=1:nokey=1",
+      source_path
+    ]
+  end
+
+  defp validate_ffprobe_output({output, 0}) do
+    if String.contains?(output, "video"), do: :ok, else: {:error, :no_video_stream}
+  end
+
+  defp validate_ffprobe_output({_output, _exit_code}), do: {:error, :invalid_media_file}
 
   defp ensure_output_dir(opts) do
     output_dir = Keyword.get(opts, :output_dir, default_output_dir())

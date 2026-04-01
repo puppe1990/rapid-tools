@@ -105,21 +105,30 @@ defmodule RapidToolsWeb.VideoConverterLive do
         )
 
       :error ->
-        put_flash(socket, :error, "O video nao pode ser convertido.")
+        put_flash(socket, :error, conversion_error_message(results))
     end
   end
 
   defp successful_batch_results(converted) when is_list(converted) do
-    successful_results = Enum.map(converted, fn {:ok, result} -> result end)
-
-    if successful_results != [] and length(successful_results) == length(converted) do
-      {:ok, successful_results}
+    with [_ | _] <- converted,
+         true <- Enum.all?(converted, &match?({:ok, _}, &1)) do
+      {:ok, Enum.map(converted, fn {:ok, result} -> result end)}
     else
-      :error
+      _ -> :error
     end
   end
 
   defp successful_batch_results(_), do: :error
+
+  defp conversion_error_message([{:error, :no_video_stream}]),
+    do:
+      "Este arquivo nao possui uma trilha de video. Envie um video valido em MP4, MOV, WEBM, MKV ou AVI."
+
+  defp conversion_error_message([{:error, :invalid_media_file}]),
+    do:
+      "Este arquivo parece corrompido ou incompleto. Gere o video novamente e tente outro upload."
+
+  defp conversion_error_message(_results), do: "O video nao pode ser convertido."
 
   defp build_batch_response(socket, successful_results, success_message, zip_error_message) do
     batch_entries =
