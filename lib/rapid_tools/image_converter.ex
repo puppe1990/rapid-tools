@@ -79,12 +79,7 @@ defmodule RapidTools.ImageConverter do
         {:error, :imagemagick_not_found}
 
       command ->
-        args =
-          if Path.basename(command) == "magick" do
-            [source_path, output_path]
-          else
-            [source_path, output_path]
-          end
+        args = [source_path, "-auto-orient", output_path]
 
         {:ok, command, args}
     end

@@ -37,6 +37,26 @@ defmodule RapidToolsWeb.ImageConverterLive do
   end
 
   @impl true
+  def handle_event("clear-uploads", _params, socket) do
+    socket =
+      Enum.reduce(socket.assigns.uploads.image.entries, socket, fn entry, acc ->
+        cancel_upload(acc, :image, entry.ref)
+      end)
+
+    {:noreply, socket}
+  end
+
+  @impl true
+  def handle_event("clear-converted-results", _params, socket) do
+    {:noreply,
+     socket
+     |> assign(:results, [])
+     |> assign(:batch_download_path, nil)
+     |> clear_flash(:info)
+     |> clear_flash(:error)}
+  end
+
+  @impl true
   def handle_event("convert", %{"conversion" => %{"target_format" => target_format}}, socket) do
     case uploaded_entries(socket, :image) do
       {[], []} ->
@@ -282,8 +302,17 @@ defmodule RapidToolsWeb.ImageConverterLive do
                         id="image-upload-list"
                         class="mt-4 max-h-[22rem] space-y-2 overflow-y-auto pr-1"
                       >
-                        <div class="sticky top-0 z-10 rounded-2xl border border-orange-100 bg-orange-50/95 px-4 py-3 text-sm font-medium text-orange-900 backdrop-blur">
-                          {upload_summary(@uploads.image.entries)}
+                        <div class="sticky top-0 z-10 flex items-center justify-between gap-3 rounded-2xl border border-orange-100 bg-orange-50/95 px-4 py-3 text-sm font-medium text-orange-900 backdrop-blur">
+                          <span>{upload_summary(@uploads.image.entries)}</span>
+                          <button
+                            :if={@uploads.image.entries != []}
+                            type="button"
+                            id="clear-upload-list"
+                            phx-click="clear-uploads"
+                            class="inline-flex shrink-0 items-center justify-center rounded-full border border-orange-200 bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-orange-700 transition hover:border-orange-300 hover:bg-orange-100"
+                          >
+                            Limpar uploads
+                          </button>
                         </div>
                         <div
                           :for={entry <- @uploads.image.entries}
@@ -347,10 +376,20 @@ defmodule RapidToolsWeb.ImageConverterLive do
                 </div>
 
                 <aside class="rounded-[2rem] border border-white/70 bg-slate-950 p-6 text-white shadow-[0_24px_60px_rgba(15,23,42,0.16)]">
-                  <div :if={@results != []} class="space-y-4">
-                    <p class="text-sm font-semibold uppercase tracking-[0.25em] text-orange-300">
-                      {length(@results)} imagens convertidas
-                    </p>
+                  <div :if={@results != []} id="converted-results" class="space-y-4">
+                    <div class="flex items-center justify-between gap-3">
+                      <p class="text-sm font-semibold uppercase tracking-[0.25em] text-orange-300">
+                        {length(@results)} imagens convertidas
+                      </p>
+                      <button
+                        type="button"
+                        id="clear-converted-results"
+                        phx-click="clear-converted-results"
+                        class="inline-flex shrink-0 items-center justify-center rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-white transition hover:bg-white/20"
+                      >
+                        Limpar convertidas
+                      </button>
+                    </div>
                     <a
                       :if={@batch_download_path}
                       href={@batch_download_path}

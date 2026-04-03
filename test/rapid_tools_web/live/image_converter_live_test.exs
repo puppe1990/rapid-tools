@@ -56,4 +56,94 @@ defmodule RapidToolsWeb.ImageConverterLiveTest do
     assert rendered_upload =~ "sample-2.png"
     assert rendered_upload =~ "2 imagens na fila. 1/2 concluidas ate agora"
   end
+
+  test "clearing uploads keeps converted results intact", %{conn: conn} do
+    source_path = ImageFixtures.tiny_png_path!("live-clear-uploads-source.png")
+    {:ok, view, _html} = live(conn, ~p"/")
+
+    upload =
+      file_input(view, "#converter-form", :image, [
+        %{
+          last_modified: 1_711_000_000_000,
+          name: "converted-source.png",
+          content: File.read!(source_path),
+          type: "image/png"
+        }
+      ])
+
+    render_upload(upload, "converted-source.png")
+
+    view
+    |> form("#converter-form", conversion: %{target_format: "jpg"})
+    |> render_submit()
+
+    assert has_element?(view, "#converted-results")
+    assert has_element?(view, "#clear-converted-results")
+
+    pending_upload =
+      file_input(view, "#converter-form", :image, [
+        %{
+          last_modified: 1_711_000_000_001,
+          name: "pending-source.png",
+          content: File.read!(source_path),
+          type: "image/png"
+        }
+      ])
+
+    render_upload(pending_upload, "pending-source.png")
+
+    assert has_element?(view, "#image-upload-list", "pending-source.png")
+
+    view
+    |> element("#clear-upload-list")
+    |> render_click()
+
+    refute has_element?(view, "#image-upload-list", "pending-source.png")
+    assert has_element?(view, "#converted-results")
+  end
+
+  test "clearing converted results keeps uploaded images intact", %{conn: conn} do
+    source_path = ImageFixtures.tiny_png_path!("live-clear-results-source.png")
+    {:ok, view, _html} = live(conn, ~p"/")
+
+    upload =
+      file_input(view, "#converter-form", :image, [
+        %{
+          last_modified: 1_711_000_000_000,
+          name: "converted-source.png",
+          content: File.read!(source_path),
+          type: "image/png"
+        }
+      ])
+
+    render_upload(upload, "converted-source.png")
+
+    view
+    |> form("#converter-form", conversion: %{target_format: "jpg"})
+    |> render_submit()
+
+    assert has_element?(view, "#converted-results")
+    assert has_element?(view, "#clear-converted-results")
+
+    queued_upload =
+      file_input(view, "#converter-form", :image, [
+        %{
+          last_modified: 1_711_000_000_001,
+          name: "queued-source.png",
+          content: File.read!(source_path),
+          type: "image/png"
+        }
+      ])
+
+    render_upload(queued_upload, "queued-source.png")
+
+    assert has_element?(view, "#image-upload-list", "queued-source.png")
+
+    view
+    |> element("#clear-converted-results")
+    |> render_click()
+
+    refute has_element?(view, "#converted-results")
+    assert has_element?(view, "#image-upload-list", "queued-source.png")
+  end
 end

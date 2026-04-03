@@ -1,6 +1,10 @@
 defmodule RapidTools.TestSupport.ImageFixtures do
   @moduledoc false
 
+  @oriented_jpeg_base64 """
+  /9j/4AAQSkZJRgABAQEASABIAAD/4QBiRXhpZgAATU0AKgAAAAgABQESAAMAAAABAAYAAAEaAAUAAAABAAAASgEbAAUAAAABAAAAUgEoAAMAAAABAAIAAAITAAMAAAABAAEAAAAAAAAAAABIAAAAAQAAAEgAAAAB/9sAQwAJBgYIBgUJCAcICgkJCg0WDg0MDA0aExQQFh8cISAfHB4eIycyKiMlLyUeHis7LC8zNTg4OCEqPUE8NkEyNzg1/9sAQwEJCgoNCw0ZDg4ZNSQeJDU1NTU1NTU1NTU1NTU1NTU1NTU1NTU1NTU1NTU1NTU1NTU1NTU1NTU1NTU1NTU1NTU1/8AAEQgAHgAUAwEiAAIRAQMRAf/EABkAAAMBAQEAAAAAAAAAAAAAAAAGBwUDBP/EACoQAAICAQMDAgUFAAAAAAAAAAECAwQRAAUhBhIxE2EHFEGBsRUiUZGi/8QAFgEBAQEAAAAAAAAAAAAAAAAAAwQA/8QAGREAAgMBAAAAAAAAAAAAAAAAAQMAAhEh/9oADAMBAAIRAxEAPwBcufDq9Y3Q/p3y8jRc+mX/AHMuThu0jwfbIyNcN36L6gkoJHLU5AUHsYZ4++m/rujNY6Xr3qbTRWqAGXjYjKEnPI/g86wa/U3U2z3IEuWVnp+krsZgGJB9/Ofvqhqq1tkFbLGuxOm6R3NJO0VSgHgFlz+dGqHvG47fvsle4oEDGAK6FfDAtnHto04SvIBczeCO70BLstqrKvqn5cBlH14bP51Ma9SWzVrQJGrmQrGgGe4ZGB9vp/WqdBMy0pnzljBIP851O3cR7ZXKEqXWPBXgg86zwTyZZA7MRq0kMjokx7Qx4B8aNeG/uEgtEoBhgGOTjzzo1J2UAz//2Q==
+  """
+
   def tiny_png_path!(name \\ "tiny.png") do
     dir = Path.join(System.tmp_dir!(), "rapid_tools_test_fixtures")
     File.mkdir_p!(dir)
@@ -28,6 +32,21 @@ defmodule RapidTools.TestSupport.ImageFixtures do
 
     File.mkdir_p!(dir)
     dir
+  end
+
+  def oriented_jpeg_path!(name \\ "oriented.jpg") do
+    dir = Path.join(System.tmp_dir!(), "rapid_tools_test_fixtures")
+    File.mkdir_p!(dir)
+
+    path = Path.join(dir, name)
+
+    binary =
+      @oriented_jpeg_base64
+      |> String.replace(~r/\s+/, "")
+      |> Base.decode64!()
+
+    File.write!(path, binary)
+    path
   end
 
   def tiny_mp4_path!(name \\ "tiny.mp4") do
