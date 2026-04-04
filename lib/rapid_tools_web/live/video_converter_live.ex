@@ -1,12 +1,13 @@
 defmodule RapidToolsWeb.VideoConverterLive do
   use RapidToolsWeb, :live_view
 
+  alias Phoenix.LiveView.UploadConfig
   alias RapidTools.ConversionStore
   alias RapidTools.VideoConverter
   alias RapidTools.ZipArchive
   alias RapidToolsWeb.ToolNavigation
 
-  @video_accept ~w(.mp4 .mov .webm .mkv .avi video/mp4 video/quicktime video/webm video/x-msvideo video/x-matroska application/octet-stream audio/webm)
+  @video_accept ~w(.mp4 .mov .webm .mkv .avi .ts video/mp4 video/quicktime video/webm video/x-msvideo video/x-matroska video/mp2t video/mpeg application/octet-stream audio/webm)
   @max_video_upload_size 150_000_000
 
   @impl true
@@ -24,6 +25,10 @@ defmodule RapidToolsWeb.VideoConverterLive do
      |> assign(:form, form)
      |> assign(:results, [])
      |> assign(:batch_download_path, nil)
+     |> assign(:upload_issue, nil)
+     |> assign(:currently_converting, nil)
+     |> assign(:processing_queue, [])
+     |> assign(:processing_total, 0)
      |> allow_upload(:video,
        accept: @video_accept,
        max_entries: 10,
@@ -34,30 +39,81 @@ defmodule RapidToolsWeb.VideoConverterLive do
 
   @impl true
   def handle_event("validate", %{"conversion" => conversion_params}, socket) do
-    {:noreply, assign(socket, :form, to_form(conversion_params, as: :conversion))}
+    {:noreply,
+     socket
+     |> assign(:form, to_form(conversion_params, as: :conversion))
+     |> maybe_clear_upload_issue()}
   end
 
   @impl true
   def handle_event("cancel-upload", %{"ref" => ref}, socket) do
-    {:noreply, cancel_upload(socket, :video, ref)}
+    {:noreply, socket |> cancel_upload(:video, ref) |> maybe_clear_upload_issue()}
   end
 
   @impl true
   def handle_event("convert", %{"conversion" => %{"target_format" => target_format}}, socket) do
-    case uploaded_entries(socket, :video) do
-      {[], []} ->
-        {:noreply, put_flash(socket, :error, "Selecione um video antes de converter.")}
+    case reconcile_video_uploads(socket) do
+      {:error, socket} ->
+        {:noreply, socket}
 
-      {_completed, [_ | _]} ->
-        {:noreply, put_flash(socket, :error, "Aguarde o upload terminar antes de converter.")}
+      {:ok, socket} ->
+        case uploaded_entries(socket, :video) do
+          {[], []} ->
+            {:noreply, put_flash(socket, :error, "Selecione um video antes de converter.")}
 
-      _ ->
-        {:noreply, convert_upload(socket, target_format)}
+          {_completed, [_ | _]} ->
+            {:noreply, put_flash(socket, :error, "Aguarde o upload terminar antes de converter.")}
+
+          _ ->
+            {:noreply, start_conversion(socket, target_format)}
+        end
     end
   end
 
-  defp convert_upload(socket, target_format) do
-    results =
+  @impl true
+  def handle_info({:begin_video_conversion, staged_entries, target_format, results}, socket) do
+    case staged_entries do
+      [] ->
+        {:noreply, finish_conversion(socket, Enum.reverse(results))}
+
+      [entry | rest] ->
+        send(self(), {:run_video_conversion, entry, rest, target_format, results})
+
+        {:noreply,
+         socket
+         |> assign(:currently_converting, entry.client_name)
+         |> assign(:processing_queue, Enum.map([entry | rest], & &1.client_name))}
+    end
+  end
+
+  @impl true
+  def handle_info({:run_video_conversion, entry, rest, target_format, results}, socket) do
+    result = convert_staged_entry(entry, target_format)
+    send(self(), {:begin_video_conversion, rest, target_format, [result | results]})
+    {:noreply, socket}
+  end
+
+  defp start_conversion(socket, target_format) do
+    case stage_uploaded_entries(socket) do
+      {:ok, []} ->
+        put_flash(socket, :error, "Selecione um video antes de converter.")
+
+      {:ok, staged_entries} ->
+        send(self(), {:begin_video_conversion, staged_entries, target_format, []})
+
+        socket
+        |> assign(:results, [])
+        |> assign(:batch_download_path, nil)
+        |> assign(:upload_issue, nil)
+        |> assign(:processing_total, length(staged_entries))
+
+      {:error, socket} ->
+        socket
+    end
+  end
+
+  defp stage_uploaded_entries(socket) do
+    staged_entries =
       consume_uploaded_entries(socket, :video, fn %{path: path}, entry ->
         output_dir =
           Path.join(
@@ -70,30 +126,54 @@ defmodule RapidToolsWeb.VideoConverterLive do
         source_path = Path.join(output_dir, entry.client_name)
         File.cp!(path, source_path)
 
-        case VideoConverter.convert(source_path, target_format, output_dir: output_dir) do
-          {:ok, result} ->
-            store_entry = %{
-              path: result.output_path,
-              filename: result.filename,
-              media_type: result.media_type
-            }
-
-            {:ok, id} = ConversionStore.put(store_entry)
-
-            {:ok,
-             {:ok,
-              %{
-                download_path: ~p"/downloads/#{id}",
-                output_path: result.output_path,
-                media_type: result.media_type,
-                filename: result.filename,
-                target_format: result.target_format
-              }}}
-
-          {:error, reason} ->
-            {:ok, {:error, reason}}
-        end
+        {:ok,
+         %{
+           source_path: source_path,
+           client_name: entry.client_name,
+           output_dir: output_dir
+         }}
       end)
+
+    {:ok, staged_entries}
+  catch
+    :exit, _reason ->
+      {:error,
+       socket
+       |> assign(:upload_issue, lost_upload_message())
+       |> put_flash(:error, lost_upload_message())}
+  end
+
+  defp convert_staged_entry(entry, target_format) do
+    case VideoConverter.convert(entry.source_path, target_format, output_dir: entry.output_dir) do
+      {:ok, result} ->
+        store_entry = %{
+          path: result.output_path,
+          filename: result.filename,
+          media_type: result.media_type
+        }
+
+        {:ok, id} = ConversionStore.put(store_entry)
+
+        {:ok,
+         %{
+           download_path: ~p"/downloads/#{id}",
+           output_path: result.output_path,
+           media_type: result.media_type,
+           filename: result.filename,
+           target_format: result.target_format
+         }}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  defp finish_conversion(socket, results) do
+    socket =
+      socket
+      |> assign(:currently_converting, nil)
+      |> assign(:processing_queue, [])
+      |> assign(:processing_total, 0)
 
     case successful_batch_results(results) do
       {:ok, successful_results} ->
@@ -109,6 +189,41 @@ defmodule RapidToolsWeb.VideoConverterLive do
     end
   end
 
+  defp reconcile_video_uploads(socket) do
+    stale_refs = stale_video_upload_refs(socket)
+
+    if stale_refs == [] do
+      {:ok, socket}
+    else
+      {:error,
+       socket
+       |> assign(:upload_issue, lost_upload_message())
+       |> put_flash(:error, lost_upload_message())}
+    end
+  end
+
+  defp stale_video_upload_refs(socket) do
+    conf = socket.assigns.uploads.video
+
+    for entry <- conf.entries,
+        pid = UploadConfig.entry_pid(conf, entry),
+        is_pid(pid),
+        not Process.alive?(pid),
+        do: entry.ref
+  end
+
+  defp maybe_clear_upload_issue(socket) do
+    if socket.assigns.uploads.video.entries == [] do
+      assign(socket, :upload_issue, nil)
+    else
+      socket
+    end
+  end
+
+  defp lost_upload_message do
+    "O upload deste video foi perdido antes da conversao. Envie o arquivo novamente."
+  end
+
   defp successful_batch_results(converted) when is_list(converted) do
     with [_ | _] <- converted,
          true <- Enum.all?(converted, &match?({:ok, _}, &1)) do
@@ -122,7 +237,7 @@ defmodule RapidToolsWeb.VideoConverterLive do
 
   defp conversion_error_message([{:error, :no_video_stream}]),
     do:
-      "Este arquivo nao possui uma trilha de video. Envie um video valido em MP4, MOV, WEBM, MKV ou AVI."
+      "Este arquivo nao possui uma trilha de video. Envie um video valido em MP4, MOV, WEBM, MKV, AVI ou TS."
 
   defp conversion_error_message([{:error, :invalid_media_file}]),
     do:
@@ -169,8 +284,11 @@ defmodule RapidToolsWeb.VideoConverterLive do
     Enum.any?(entries, &(&1.progress < 100))
   end
 
-  defp upload_status_message(entries) do
+  defp upload_status_message(entries, currently_converting) do
     cond do
+      processing?(currently_converting) ->
+        "Conversao em andamento. Acompanhe qual arquivo esta sendo processado agora."
+
       entries == [] ->
         "Selecione um ou mais videos para habilitar a conversao."
 
@@ -182,11 +300,14 @@ defmodule RapidToolsWeb.VideoConverterLive do
     end
   end
 
-  defp upload_summary(entries) do
+  defp upload_summary(entries, currently_converting) do
     total = length(entries)
     completed = completed_upload_count(entries)
 
     cond do
+      processing?(currently_converting) ->
+        "Fila enviada para conversao. O video atual aparece com loader e o restante fica na sequencia."
+
       total == 0 ->
         "Nenhum video selecionado ainda."
 
@@ -198,8 +319,20 @@ defmodule RapidToolsWeb.VideoConverterLive do
     end
   end
 
+  defp processing?(currently_converting), do: currently_converting != nil
+
+  defp processing_position(assigns) do
+    queue_count = length(assigns.processing_queue)
+
+    if assigns.processing_total > 0 and queue_count > 0 do
+      assigns.processing_total - queue_count + 1
+    else
+      0
+    end
+  end
+
   defp upload_error_message(:not_accepted),
-    do: "Formato nao aceito. Envie MP4, MOV, WEBM, MKV ou AVI."
+    do: "Formato nao aceito. Envie MP4, MOV, WEBM, MKV, AVI ou TS."
 
   defp upload_error_message(:too_large), do: "O arquivo excede o limite permitido para upload."
 
@@ -266,7 +399,7 @@ defmodule RapidToolsWeb.VideoConverterLive do
                   Video Converter
                 </h1>
                 <p class="max-w-3xl text-base text-slate-600 sm:text-lg">
-                  Converta videos para MP4, MOV, WEBM, MKV e AVI com um fluxo simples e downloads individuais ou em lote.
+                  Converta videos para MP4, MOV, WEBM, MKV, AVI e TS com um fluxo simples e downloads individuais ou em lote.
                 </p>
                 <p class="text-sm text-slate-500">
                   Ideal para exportar assets para web, social, compatibilidade com players e arquivos mestre.
@@ -286,8 +419,20 @@ defmodule RapidToolsWeb.VideoConverterLive do
                       <div class="flex items-center gap-3 rounded-full border border-sky-200 bg-white px-5 py-3 shadow-lg">
                         <span class="inline-block size-5 animate-spin rounded-full border-2 border-sky-200 border-t-sky-600" />
                         <div>
-                          <p class="text-sm font-semibold text-slate-950">Convertendo video</p>
-                          <p class="text-xs text-slate-500">Isso pode levar alguns segundos.</p>
+                          <p class="text-sm font-semibold text-slate-950">
+                            <%= if @currently_converting do %>
+                              Convertendo: {@currently_converting}
+                            <% else %>
+                              Convertendo video
+                            <% end %>
+                          </p>
+                          <p class="text-xs text-slate-500">
+                            <%= if @currently_converting do %>
+                              Aguarde a fila avancar para o proximo arquivo.
+                            <% else %>
+                              Isso pode levar alguns segundos.
+                            <% end %>
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -303,8 +448,35 @@ defmodule RapidToolsWeb.VideoConverterLive do
                           class="block w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 shadow-sm transition file:mr-4 file:rounded-xl file:border-0 file:bg-slate-950 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:border-sky-300"
                         />
                         <p class="text-sm text-slate-500">
-                          Entradas aceitas: MP4, MOV, WEBM, MKV e AVI. Ate 150 MB por video.
+                          Entradas aceitas: MP4, MOV, WEBM, MKV, AVI e TS. Ate 150 MB por video.
                         </p>
+                        <p
+                          :if={@upload_issue}
+                          class="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900"
+                        >
+                          {@upload_issue}
+                        </p>
+                      </div>
+
+                      <div
+                        :if={@currently_converting}
+                        id="video-currently-converting"
+                        class="mt-4 rounded-[1.5rem] border border-sky-200 bg-sky-100/80 p-4 text-sky-950 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]"
+                      >
+                        <div class="flex items-start gap-3">
+                          <span class="mt-1 inline-block size-4 animate-spin rounded-full border-2 border-sky-300 border-t-sky-700" />
+                          <div class="min-w-0 flex-1">
+                            <p class="text-xs font-semibold uppercase tracking-[0.28em] text-sky-700">
+                              Convertendo agora
+                            </p>
+                            <p class="mt-2 truncate text-base font-semibold text-slate-950">
+                              {@currently_converting}
+                            </p>
+                            <p class="mt-2 text-sm text-sky-800">
+                              {processing_position(assigns)} de {@processing_total} videos
+                            </p>
+                          </div>
+                        </div>
                       </div>
 
                       <div
@@ -312,7 +484,7 @@ defmodule RapidToolsWeb.VideoConverterLive do
                         class="mt-4 max-h-[22rem] space-y-2 overflow-y-auto pr-1"
                       >
                         <div class="sticky top-0 z-10 rounded-2xl border border-sky-100 bg-sky-50/95 px-4 py-3 text-sm font-medium text-sky-900 backdrop-blur">
-                          {upload_summary(@uploads.video.entries)}
+                          {upload_summary(@uploads.video.entries, @currently_converting)}
                         </div>
                         <div
                           :for={entry <- @uploads.video.entries}
@@ -367,7 +539,8 @@ defmodule RapidToolsWeb.VideoConverterLive do
                       id="video-convert-button"
                       phx-disable-with="Convertendo video..."
                       disabled={
-                        @uploads.video.entries == [] || upload_in_progress?(@uploads.video.entries)
+                        @uploads.video.entries == [] || upload_in_progress?(@uploads.video.entries) ||
+                          processing?(@currently_converting)
                       }
                       class="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-sky-700 disabled:cursor-wait disabled:opacity-90"
                     >
@@ -376,7 +549,7 @@ defmodule RapidToolsWeb.VideoConverterLive do
                     </button>
 
                     <p id="video-converter-status" class="text-sm text-slate-500">
-                      {upload_status_message(@uploads.video.entries)}
+                      {upload_status_message(@uploads.video.entries, @currently_converting)}
                     </p>
                   </.form>
                 </div>
