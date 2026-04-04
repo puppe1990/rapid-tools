@@ -60,6 +60,19 @@ defmodule RapidToolsWeb.ToolNavigation do
         blurb_class: "text-rose-700/80"
       },
       %{
+        key: "extract-audio",
+        name: "Extract Audio",
+        blurb: "Pull MP3, WAV, OGG, AAC and FLAC from video",
+        current: current == "extract-audio",
+        path: ~p"/extract-audio",
+        current_class:
+          "border-fuchsia-300 bg-fuchsia-50 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]",
+        idle_class: "border-slate-200 bg-white hover:border-fuchsia-200 hover:bg-fuchsia-50/40",
+        dot_class: "bg-fuchsia-500",
+        name_class: "text-fuchsia-800",
+        blurb_class: "text-fuchsia-700/80"
+      },
+      %{
         key: "audio",
         name: "Audio Converter",
         blurb: "Convert MP3, WAV, OGG, AAC and FLAC",

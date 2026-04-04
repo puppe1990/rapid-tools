@@ -151,6 +151,40 @@ defmodule RapidTools.TestSupport.ImageFixtures do
     path
   end
 
+  def video_only_mp4_path!(name \\ "video-only.mp4") do
+    dir = Path.join(System.tmp_dir!(), "rapid_tools_test_fixtures")
+    File.mkdir_p!(dir)
+
+    path = Path.join(dir, name)
+
+    case System.find_executable("ffmpeg") do
+      nil ->
+        raise "ffmpeg is required to build video-only mp4 test fixtures"
+
+      command ->
+        {_, 0} =
+          System.cmd(
+            command,
+            [
+              "-y",
+              "-f",
+              "lavfi",
+              "-i",
+              "testsrc=size=32x32:rate=1:duration=1",
+              "-c:v",
+              "libx264",
+              "-pix_fmt",
+              "yuv420p",
+              "-an",
+              path
+            ],
+            stderr_to_stdout: true
+          )
+    end
+
+    path
+  end
+
   def tiny_pdf_path!(name \\ "tiny.pdf") do
     png_path = tiny_png_path!("#{Path.rootname(name)}.png")
     dir = Path.join(System.tmp_dir!(), "rapid_tools_test_fixtures")

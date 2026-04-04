@@ -14,6 +14,7 @@ defmodule RapidToolsWeb.AudioConverterLiveTest do
     assert has_element?(view, "a[href=\"/image-resizer\"]", "Image Resizer")
     assert has_element?(view, "a[href=\"/video-converter\"]", "Video Converter")
     assert has_element?(view, "a[href=\"/video-compressor\"]", "Video Compressor")
+    assert has_element?(view, "a[href=\"/extract-audio\"]", "Extract Audio")
     assert has_element?(view, "a[href=\"/audio-converter\"]", "Audio Converter")
     assert has_element?(view, "a[href=\"/pdf-converter\"]", "PDF Converter")
     assert has_element?(view, "a[href=\"/together-audios\"]", "Together Audios")

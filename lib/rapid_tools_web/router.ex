@@ -20,6 +20,7 @@ defmodule RapidToolsWeb.Router do
     live "/", ImageConverterLive
     live "/image-resizer", ImageResizerLive
     live "/video-converter", VideoConverterLive
+    live "/extract-audio", ExtractAudioLive
     live "/video-compressor", VideoCompressorLive
     live "/audio-converter", AudioConverterLive
     live "/pdf-converter", PdfConverterLive
