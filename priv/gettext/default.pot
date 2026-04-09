@@ -72,12 +72,12 @@ msgstr ""
 msgid "Pull MP3, WAV, OGG, AAC and FLAC from video"
 msgstr ""
 
-#: lib/rapid_tools_web/components/core_components.ex:499
+#: lib/rapid_tools_web/components/core_components.ex:502
 #, elixir-autogen, elixir-format
 msgid "Quick conversion for image, video and audio."
 msgstr ""
 
-#: lib/rapid_tools_web/components/core_components.ex:494
+#: lib/rapid_tools_web/components/core_components.ex:497
 #, elixir-autogen, elixir-format
 msgid "Rapid Tools"
 msgstr ""
@@ -102,8 +102,8 @@ msgstr ""
 msgid "Together Audios"
 msgstr ""
 
-#: lib/rapid_tools_web/components/core_components.ex:497
-#: lib/rapid_tools_web/components/core_components.ex:504
+#: lib/rapid_tools_web/components/core_components.ex:500
+#: lib/rapid_tools_web/components/core_components.ex:507
 #, elixir-autogen, elixir-format
 msgid "Tools"
 msgstr ""
@@ -133,918 +133,897 @@ msgstr ""
 msgid "close"
 msgstr ""
 
-#: lib/rapid_tools_web/live/image_converter_live.ex:122
+#: lib/rapid_tools_web/live/image_converter_live.ex:126
 #, elixir-autogen, elixir-format
 msgid "A imagem nao pode ser convertida."
 msgstr ""
 
-#: lib/rapid_tools_web/live/video_converter_live.ex:431
+#: lib/rapid_tools_web/live/video_converter_live.ex:419
 #, elixir-autogen, elixir-format
 msgid "Aguarde a fila avancar para o proximo arquivo."
 msgstr ""
 
-#: lib/rapid_tools_web/live/video_compressor_live.ex:48
+#: lib/rapid_tools_web/live/video_compressor_live.ex:52
 #, elixir-autogen, elixir-format
 msgid "Aguarde o upload terminar antes de comprimir."
 msgstr ""
 
-#: lib/rapid_tools_web/live/audio_converter_live.ex:46
-#: lib/rapid_tools_web/live/image_converter_live.ex:66
-#: lib/rapid_tools_web/live/pdf_converter_live.ex:42
-#: lib/rapid_tools_web/live/video_converter_live.ex:65
+#: lib/rapid_tools_web/live/audio_converter_live.ex:49
+#: lib/rapid_tools_web/live/image_converter_live.ex:70
+#: lib/rapid_tools_web/live/pdf_converter_live.ex:45
+#: lib/rapid_tools_web/live/video_converter_live.ex:69
 #, elixir-autogen, elixir-format
 msgid "Aguarde o upload terminar antes de converter."
 msgstr ""
 
-#: lib/rapid_tools_web/live/extract_audio_live.ex:66
+#: lib/rapid_tools_web/live/extract_audio_live.ex:72
 #, elixir-autogen, elixir-format
 msgid "Aguarde o upload terminar antes de extrair o audio."
 msgstr ""
 
-#: lib/rapid_tools_web/live/image_resizer_live.ex:51
+#: lib/rapid_tools_web/live/image_resizer_live.ex:58
 #, elixir-autogen, elixir-format
 msgid "Aguarde o upload terminar antes de redimensionar."
 msgstr ""
 
-#: lib/rapid_tools_web/live/together_audios_live.ex:70
+#: lib/rapid_tools_web/live/together_audios_live.ex:73
 #, elixir-autogen, elixir-format
 msgid "Aguarde o upload terminar antes de unir."
 msgstr ""
 
-#: lib/rapid_tools_web/live/image_resizer_live.ex:347
+#: lib/rapid_tools_web/live/image_resizer_live.ex:331
 #, elixir-autogen, elixir-format
 msgid "Ajuste"
 msgstr ""
 
-#: lib/rapid_tools_web/live/image_resizer_live.ex:343
+#: lib/rapid_tools_web/live/image_resizer_live.ex:327
 #, elixir-autogen, elixir-format
 msgid "Altura"
 msgstr ""
 
-#: lib/rapid_tools_web/live/together_audios_live.ex:423
+#: lib/rapid_tools_web/live/together_audios_live.ex:410
 #, elixir-autogen, elixir-format
 msgid "Arquivo final gerado"
 msgstr ""
 
-#: lib/rapid_tools_web/live/pdf_converter_live.ex:285
+#: lib/rapid_tools_web/live/pdf_converter_live.ex:263
 #, elixir-autogen, elixir-format
 msgid "Arquivos de origem"
 msgstr ""
 
-#: lib/rapid_tools_web/live/image_converter_live.ex:118
+#: lib/rapid_tools_web/live/image_converter_live.ex:122
 #, elixir-autogen, elixir-format
 msgid "As imagens foram convertidas, mas o pacote ZIP nao pode ser gerado."
 msgstr ""
 
-#: lib/rapid_tools_web/live/image_resizer_live.ex:100
+#: lib/rapid_tools_web/live/image_resizer_live.ex:107
 #, elixir-autogen, elixir-format
 msgid "As imagens foram geradas, mas o ZIP nao pode ser criado."
 msgstr ""
 
-#: lib/rapid_tools_web/live/image_resizer_live.ex:104
+#: lib/rapid_tools_web/live/image_resizer_live.ex:111
 #, elixir-autogen, elixir-format
 msgid "As imagens nao puderam ser redimensionadas."
 msgstr ""
 
-#: lib/rapid_tools_web/live/pdf_converter_live.ex:103
+#: lib/rapid_tools_web/live/pdf_converter_live.ex:106
 #, elixir-autogen, elixir-format
 msgid "As paginas foram convertidas, mas o ZIP nao pode ser criado."
 msgstr ""
 
-#: lib/rapid_tools_web/live/audio_converter_live.ex:269
+#: lib/rapid_tools_web/live/audio_converter_live.ex:253
 #, elixir-autogen, elixir-format
 msgid "Audio de origem"
 msgstr ""
 
-#: lib/rapid_tools_web/live/together_audios_live.ex:308
+#: lib/rapid_tools_web/live/together_audios_live.ex:291
 #, elixir-autogen, elixir-format
 msgid "Audios de origem"
 msgstr ""
 
-#: lib/rapid_tools_web/live/extract_audio_live.ex:578
+#: lib/rapid_tools_web/live/extract_audio_live.ex:580
 #, elixir-autogen, elixir-format
 msgid "Audios prontos para download"
 msgstr ""
 
-#: lib/rapid_tools_web/live/extract_audio_live.ex:627
+#: lib/rapid_tools_web/live/extract_audio_live.ex:637
 #, elixir-autogen, elixir-format
 msgid "Baixar ZIP"
 msgstr ""
 
-#: lib/rapid_tools_web/live/extract_audio_live.ex:603
-#: lib/rapid_tools_web/live/pdf_converter_live.ex:385
+#: lib/rapid_tools_web/live/extract_audio_live.ex:607
+#: lib/rapid_tools_web/live/pdf_converter_live.ex:365
 #, elixir-autogen, elixir-format
 msgid "Baixar arquivo"
 msgstr ""
 
-#: lib/rapid_tools_web/live/audio_converter_live.ex:374
-#: lib/rapid_tools_web/live/video_converter_live.ex:582
+#: lib/rapid_tools_web/live/audio_converter_live.ex:358
+#: lib/rapid_tools_web/live/video_converter_live.ex:572
 #, elixir-autogen, elixir-format
 msgid "Baixar arquivo convertido"
 msgstr ""
 
-#: lib/rapid_tools_web/live/together_audios_live.ex:434
+#: lib/rapid_tools_web/live/together_audios_live.ex:421
 #, elixir-autogen, elixir-format
 msgid "Baixar audio final"
 msgstr ""
 
-#: lib/rapid_tools_web/live/image_resizer_live.ex:395
+#: lib/rapid_tools_web/live/image_resizer_live.ex:379
 #, elixir-autogen, elixir-format
 msgid "Baixar imagem"
 msgstr ""
 
-#: lib/rapid_tools_web/live/image_converter_live.ex:413
+#: lib/rapid_tools_web/live/image_converter_live.ex:398
 #, elixir-autogen, elixir-format
 msgid "Baixar imagem convertida"
 msgstr ""
 
-#: lib/rapid_tools_web/live/audio_converter_live.ex:359
-#: lib/rapid_tools_web/live/image_converter_live.ex:398
-#: lib/rapid_tools_web/live/image_resizer_live.ex:380
-#: lib/rapid_tools_web/live/pdf_converter_live.ex:373
-#: lib/rapid_tools_web/live/video_compressor_live.ex:389
-#: lib/rapid_tools_web/live/video_converter_live.ex:567
+#: lib/rapid_tools_web/live/audio_converter_live.ex:343
+#: lib/rapid_tools_web/live/image_converter_live.ex:383
+#: lib/rapid_tools_web/live/image_resizer_live.ex:364
+#: lib/rapid_tools_web/live/pdf_converter_live.ex:353
+#: lib/rapid_tools_web/live/video_compressor_live.ex:371
+#: lib/rapid_tools_web/live/video_converter_live.ex:557
 #, elixir-autogen, elixir-format
 msgid "Baixar pacote ZIP"
 msgstr ""
 
-#: lib/rapid_tools_web/live/video_compressor_live.ex:404
+#: lib/rapid_tools_web/live/video_compressor_live.ex:386
 #, elixir-autogen, elixir-format
 msgid "Baixar video"
 msgstr ""
 
-#: lib/rapid_tools_web/live/extract_audio_live.ex:581
+#: lib/rapid_tools_web/live/extract_audio_live.ex:583
 #, elixir-autogen, elixir-format
 msgid "Cada arquivo extraido aparece aqui com link individual. Quando houver mais de um resultado, o lote tambem fica disponivel."
 msgstr ""
 
-#: lib/rapid_tools_web/live/together_audios_live.ex:441
+#: lib/rapid_tools_web/live/together_audios_live.ex:428
 #, elixir-autogen, elixir-format
 msgid "Como funciona"
 msgstr ""
 
-#: lib/rapid_tools_web/live/video_compressor_live.ex:370
+#: lib/rapid_tools_web/live/video_compressor_live.ex:352
 #, elixir-autogen, elixir-format
 msgid "Comprimir videos"
 msgstr ""
 
-#: lib/rapid_tools_web/live/video_converter_live.ex:290
+#: lib/rapid_tools_web/live/video_converter_live.ex:298
 #, elixir-autogen, elixir-format
 msgid "Conversao em andamento. Acompanhe qual arquivo esta sendo processado agora."
 msgstr ""
 
-#: lib/rapid_tools_web/live/audio_converter_live.ex:206
-#: lib/rapid_tools_web/live/image_converter_live.ex:226
-#, elixir-autogen, elixir-format
-msgid "Conversao rapida para imagem, video e audio."
-msgstr ""
-
-#: lib/rapid_tools_web/live/video_converter_live.ex:368
-#, elixir-autogen, elixir-format
-msgid "Conversores rapidos para formatos usados no mercado."
-msgstr ""
-
-#: lib/rapid_tools_web/live/audio_converter_live.ex:240
+#: lib/rapid_tools_web/live/audio_converter_live.ex:216
 #, elixir-autogen, elixir-format
 msgid "Converta arquivos de audio para MP3, WAV, OGG, AAC e FLAC com downloads individuais ou em lote."
 msgstr ""
 
-#: lib/rapid_tools_web/live/image_converter_live.ex:260
+#: lib/rapid_tools_web/live/image_converter_live.ex:237
 #, elixir-autogen, elixir-format
 msgid "Converta imagens para PNG, JPG, WEBP, HEIC e AVIF com downloads individuais ou em lote."
 msgstr ""
 
-#: lib/rapid_tools_web/live/video_converter_live.ex:402
+#: lib/rapid_tools_web/live/video_converter_live.ex:386
 #, elixir-autogen, elixir-format
 msgid "Converta videos para MP4, MOV, WEBM, MKV, AVI e TS com um fluxo simples e downloads individuais ou em lote."
 msgstr ""
 
-#: lib/rapid_tools_web/live/video_converter_live.ex:424
+#: lib/rapid_tools_web/live/video_converter_live.ex:412
 #, elixir-autogen, elixir-format
 msgid "Convertendo"
 msgstr ""
 
-#: lib/rapid_tools_web/live/video_converter_live.ex:470
+#: lib/rapid_tools_web/live/video_converter_live.ex:460
 #, elixir-autogen, elixir-format
 msgid "Convertendo agora"
 msgstr ""
 
-#: lib/rapid_tools_web/live/audio_converter_live.ex:260
+#: lib/rapid_tools_web/live/audio_converter_live.ex:241
 #, elixir-autogen, elixir-format
 msgid "Convertendo audio"
 msgstr ""
 
-#: lib/rapid_tools_web/live/image_converter_live.ex:280
+#: lib/rapid_tools_web/live/image_converter_live.ex:262
 #, elixir-autogen, elixir-format
 msgid "Convertendo imagens"
 msgstr ""
 
-#: lib/rapid_tools_web/live/video_converter_live.ex:426
+#: lib/rapid_tools_web/live/video_converter_live.ex:414
 #, elixir-autogen, elixir-format
 msgid "Convertendo video"
 msgstr ""
 
-#: lib/rapid_tools_web/live/pdf_converter_live.ex:354
+#: lib/rapid_tools_web/live/pdf_converter_live.ex:334
 #, elixir-autogen, elixir-format
 msgid "Converter arquivos"
 msgstr ""
 
-#: lib/rapid_tools_web/live/audio_converter_live.ex:340
+#: lib/rapid_tools_web/live/audio_converter_live.ex:324
 #, elixir-autogen, elixir-format
 msgid "Converter audio"
 msgstr ""
 
-#: lib/rapid_tools_web/live/image_converter_live.ex:369
+#: lib/rapid_tools_web/live/image_converter_live.ex:354
 #, elixir-autogen, elixir-format
 msgid "Converter imagens"
 msgstr ""
 
-#: lib/rapid_tools_web/live/video_converter_live.ex:548
+#: lib/rapid_tools_web/live/video_converter_live.ex:538
 #, elixir-autogen, elixir-format
 msgid "Converter video"
 msgstr ""
 
-#: lib/rapid_tools_web/live/extract_audio_live.ex:617
+#: lib/rapid_tools_web/live/extract_audio_live.ex:624
 #, elixir-autogen, elixir-format
 msgid "Download em lote"
 msgstr ""
 
-#: lib/rapid_tools_web/live/image_converter_live.ex:297
-#: lib/rapid_tools_web/live/image_resizer_live.ex:286
+#: lib/rapid_tools_web/live/image_converter_live.ex:282
+#: lib/rapid_tools_web/live/image_resizer_live.ex:268
 #, elixir-autogen, elixir-format
 msgid "Entradas aceitas: JPG, JPEG, PNG, WEBP, HEIC e AVIF."
 msgstr ""
 
-#: lib/rapid_tools_web/live/audio_converter_live.ex:277
+#: lib/rapid_tools_web/live/audio_converter_live.ex:261
 #, elixir-autogen, elixir-format
 msgid "Entradas aceitas: MP3, WAV, OGG e AAC."
 msgstr ""
 
-#: lib/rapid_tools_web/live/together_audios_live.ex:316
+#: lib/rapid_tools_web/live/together_audios_live.ex:299
 #, elixir-autogen, elixir-format
 msgid "Entradas aceitas: MP3, WAV, OGG e AAC. Selecione ao menos dois arquivos."
 msgstr ""
 
-#: lib/rapid_tools_web/live/video_compressor_live.ex:280
+#: lib/rapid_tools_web/live/video_compressor_live.ex:260
 #, elixir-autogen, elixir-format
 msgid "Entradas aceitas: MP4, MOV, WEBM e AVI. Ate 150 MB por video."
 msgstr ""
 
-#: lib/rapid_tools_web/live/extract_audio_live.ex:452
+#: lib/rapid_tools_web/live/extract_audio_live.ex:448
 #, elixir-autogen, elixir-format
 msgid "Entradas aceitas: MP4, MOV, WEBM, MKV, AVI e TS. Ate 1 GB por video."
 msgstr ""
 
-#: lib/rapid_tools_web/live/video_converter_live.ex:451
+#: lib/rapid_tools_web/live/video_converter_live.ex:439
 #, elixir-autogen, elixir-format
 msgid "Entradas aceitas: MP4, MOV, WEBM, MKV, AVI e TS. Ate 150 MB por video."
 msgstr ""
 
-#: lib/rapid_tools_web/live/pdf_converter_live.ex:293
+#: lib/rapid_tools_web/live/pdf_converter_live.ex:271
 #, elixir-autogen, elixir-format
 msgid "Entradas aceitas: PDF, JPG, JPEG, PNG e WEBP."
 msgstr ""
 
-#: lib/rapid_tools_web/live/pdf_converter_live.ex:204
-#: lib/rapid_tools_web/live/together_audios_live.ex:148
+#: lib/rapid_tools_web/live/pdf_converter_live.ex:207
+#: lib/rapid_tools_web/live/together_audios_live.ex:152
 #, elixir-autogen, elixir-format
 msgid "Enviando arquivos para o servidor. Aguarde todos chegarem a 100%."
 msgstr ""
 
-#: lib/rapid_tools_web/live/audio_converter_live.ex:162
+#: lib/rapid_tools_web/live/audio_converter_live.ex:165
 #, elixir-autogen, elixir-format
 msgid "Enviando audios para o servidor. Aguarde todos chegarem a 100%."
 msgstr ""
 
-#: lib/rapid_tools_web/live/image_converter_live.ex:182
-#: lib/rapid_tools_web/live/image_resizer_live.ex:181
+#: lib/rapid_tools_web/live/image_converter_live.ex:186
+#: lib/rapid_tools_web/live/image_resizer_live.ex:188
 #, elixir-autogen, elixir-format
 msgid "Enviando imagens para o servidor. Aguarde todas chegarem a 100%."
 msgstr ""
 
-#: lib/rapid_tools_web/live/extract_audio_live.ex:296
-#: lib/rapid_tools_web/live/video_compressor_live.ex:175
-#: lib/rapid_tools_web/live/video_converter_live.ex:296
+#: lib/rapid_tools_web/live/extract_audio_live.ex:306
+#: lib/rapid_tools_web/live/video_compressor_live.ex:179
+#: lib/rapid_tools_web/live/video_converter_live.ex:304
 #, elixir-autogen, elixir-format
 msgid "Enviando videos para o servidor. Aguarde todos chegarem a 100%."
 msgstr ""
 
-#: lib/rapid_tools_web/live/together_audios_live.ex:279
+#: lib/rapid_tools_web/live/together_audios_live.ex:256
 #, elixir-autogen, elixir-format
 msgid "Envie ao menos duas faixas, defina o formato final e baixe um unico arquivo pronto para publicar."
 msgstr ""
 
-#: lib/rapid_tools_web/live/image_converter_live.ex:424
+#: lib/rapid_tools_web/live/image_converter_live.ex:409
 #, elixir-autogen, elixir-format
 msgid "Envie varias imagens, escolha o formato final e baixe cada arquivo convertido ou um ZIP com tudo junto."
 msgstr ""
 
-#: lib/rapid_tools_web/live/extract_audio_live.ex:442
+#: lib/rapid_tools_web/live/extract_audio_live.ex:438
 #, elixir-autogen, elixir-format
 msgid "Escolha os videos"
 msgstr ""
 
-#: lib/rapid_tools_web/live/video_compressor_live.ex:253
+#: lib/rapid_tools_web/live/video_compressor_live.ex:231
 #, elixir-autogen, elixir-format
 msgid "Escolha um preset de compressao, limite de resolucao e, se quiser, remova o audio."
 msgstr ""
 
-#: lib/rapid_tools_web/live/image_resizer_live.ex:262
+#: lib/rapid_tools_web/live/image_resizer_live.ex:242
 #, elixir-autogen, elixir-format
 msgid "Escolha um preset pronto ou defina largura e altura customizadas para todo o lote."
 msgstr ""
 
-#: lib/rapid_tools_web/live/video_converter_live.ex:240
+#: lib/rapid_tools_web/live/video_converter_live.ex:244
 #, elixir-autogen, elixir-format
 msgid "Este arquivo nao possui uma trilha de video. Envie um video valido em MP4, MOV, WEBM, MKV, AVI ou TS."
 msgstr ""
 
-#: lib/rapid_tools_web/live/extract_audio_live.ex:244
-#: lib/rapid_tools_web/live/video_converter_live.ex:244
+#: lib/rapid_tools_web/live/extract_audio_live.ex:252
+#: lib/rapid_tools_web/live/video_converter_live.ex:250
 #, elixir-autogen, elixir-format
 msgid "Este arquivo parece corrompido ou incompleto. Gere o video novamente e tente outro upload."
 msgstr ""
 
-#: lib/rapid_tools_web/live/extract_audio_live.ex:240
+#: lib/rapid_tools_web/live/extract_audio_live.ex:248
 #, elixir-autogen, elixir-format
 msgid "Este video nao possui uma trilha de audio. Envie um arquivo com som para extrair."
 msgstr ""
 
-#: lib/rapid_tools_web/live/extract_audio_live.ex:290
+#: lib/rapid_tools_web/live/extract_audio_live.ex:300
 #, elixir-autogen, elixir-format
 msgid "Extracao em andamento. Acompanhe qual video esta sendo processado agora."
 msgstr ""
 
-#: lib/rapid_tools_web/live/extract_audio_live.ex:402
+#: lib/rapid_tools_web/live/extract_audio_live.ex:388
 #, elixir-autogen, elixir-format
 msgid "Extraia o audio de videos em MP3, WAV, OGG, AAC e FLAC com downloads individuais ou em lote."
 msgstr ""
 
-#: lib/rapid_tools_web/live/pdf_converter_live.ex:397
+#: lib/rapid_tools_web/live/pdf_converter_live.ex:377
 #, elixir-autogen, elixir-format
 msgid "Extraia paginas para thumbnails, galerias, anexos de suporte ou revisao visual."
 msgstr ""
 
-#: lib/rapid_tools_web/live/extract_audio_live.ex:464
+#: lib/rapid_tools_web/live/extract_audio_live.ex:463
 #, elixir-autogen, elixir-format
 msgid "Extraindo agora"
 msgstr ""
 
-#: lib/rapid_tools_web/live/extract_audio_live.ex:422
+#: lib/rapid_tools_web/live/extract_audio_live.ex:413
 #, elixir-autogen, elixir-format
 msgid "Extraindo audio"
 msgstr ""
 
-#: lib/rapid_tools_web/live/extract_audio_live.ex:558
+#: lib/rapid_tools_web/live/extract_audio_live.ex:560
 #, elixir-autogen, elixir-format
 msgid "Extrair audio"
 msgstr ""
 
-#: lib/rapid_tools_web/live/together_audios_live.ex:151
+#: lib/rapid_tools_web/live/together_audios_live.ex:155
 #, elixir-autogen, elixir-format
 msgid "Falta pelo menos mais um audio para iniciar a uniao."
 msgstr ""
 
-#: lib/rapid_tools_web/live/extract_audio_live.ex:478
+#: lib/rapid_tools_web/live/extract_audio_live.ex:479
 #, elixir-autogen, elixir-format
 msgid "Fila de upload"
 msgstr ""
 
-#: lib/rapid_tools_web/live/video_converter_live.ex:309
+#: lib/rapid_tools_web/live/video_converter_live.ex:317
 #, elixir-autogen, elixir-format
 msgid "Fila enviada para conversao. O video atual aparece com loader e o restante fica na sequencia."
 msgstr ""
 
-#: lib/rapid_tools_web/live/extract_audio_live.ex:309
+#: lib/rapid_tools_web/live/extract_audio_live.ex:319
 #, elixir-autogen, elixir-format
 msgid "Fila enviada para extracao. O video atual aparece com loader e o restante fica na sequencia."
 msgstr ""
 
-#: lib/rapid_tools_web/live/video_compressor_live.ex:216
-#, elixir-autogen, elixir-format
-msgid "Fluxo rapido para reduzir peso e manter compartilhamento facil."
-msgstr ""
-
-#: lib/rapid_tools_web/live/pdf_converter_live.ex:232
-#, elixir-autogen, elixir-format
-msgid "Fluxo simples para alternar entre PDF e imagem sem sair do lote."
-msgstr ""
-
-#: lib/rapid_tools_web/live/together_audios_live.ex:242
-#, elixir-autogen, elixir-format
-msgid "Fluxos para conversao e montagem de midia."
-msgstr ""
-
-#: lib/rapid_tools_web/live/extract_audio_live.ex:368
-#, elixir-autogen, elixir-format
-msgid "Fluxos rapidos para imagem, video, audio e exportacao."
-msgstr ""
-
-#: lib/rapid_tools_web/live/audio_converter_live.ex:325
-#: lib/rapid_tools_web/live/image_converter_live.ex:354
-#: lib/rapid_tools_web/live/video_converter_live.ex:532
+#: lib/rapid_tools_web/live/audio_converter_live.ex:309
+#: lib/rapid_tools_web/live/image_converter_live.ex:339
+#: lib/rapid_tools_web/live/video_converter_live.ex:522
 #, elixir-autogen, elixir-format
 msgid "Formato de destino"
 msgstr ""
 
-#: lib/rapid_tools_web/live/extract_audio_live.ex:542
-#: lib/rapid_tools_web/live/image_resizer_live.ex:336
+#: lib/rapid_tools_web/live/extract_audio_live.ex:544
+#: lib/rapid_tools_web/live/image_resizer_live.ex:320
 #, elixir-autogen, elixir-format
 msgid "Formato de saida"
 msgstr ""
 
-#: lib/rapid_tools_web/live/together_audios_live.ex:392
-#: lib/rapid_tools_web/live/video_compressor_live.ex:420
+#: lib/rapid_tools_web/live/together_audios_live.ex:379
+#: lib/rapid_tools_web/live/video_compressor_live.ex:404
 #, elixir-autogen, elixir-format
 msgid "Formato final"
 msgstr ""
 
-#: lib/rapid_tools_web/live/video_compressor_live.ex:183
+#: lib/rapid_tools_web/live/video_compressor_live.ex:187
 #, elixir-autogen, elixir-format
 msgid "Formato nao aceito. Envie MP4, MOV, WEBM, MKV ou AVI."
 msgstr ""
 
-#: lib/rapid_tools_web/live/extract_audio_live.ex:335
-#: lib/rapid_tools_web/live/video_converter_live.ex:335
+#: lib/rapid_tools_web/live/extract_audio_live.ex:347
+#: lib/rapid_tools_web/live/video_converter_live.ex:345
 #, elixir-autogen, elixir-format
 msgid "Formato nao aceito. Envie MP4, MOV, WEBM, MKV, AVI ou TS."
 msgstr ""
 
-#: lib/rapid_tools_web/live/audio_converter_live.ex:382
-#: lib/rapid_tools_web/live/video_converter_live.ex:590
+#: lib/rapid_tools_web/live/audio_converter_live.ex:366
+#: lib/rapid_tools_web/live/video_converter_live.ex:580
 #, elixir-autogen, elixir-format
 msgid "Formatos populares"
 msgstr ""
 
-#: lib/rapid_tools_web/live/image_resizer_live.ex:361
+#: lib/rapid_tools_web/live/image_resizer_live.ex:345
 #, elixir-autogen, elixir-format
 msgid "Gerar imagens redimensionadas"
 msgstr ""
 
-#: lib/rapid_tools_web/live/extract_audio_live.ex:619
+#: lib/rapid_tools_web/live/extract_audio_live.ex:627
 #, elixir-autogen, elixir-format
 msgid "Gere um ZIP com todos os audios extraidos para baixar o pacote inteiro de uma vez."
 msgstr ""
 
-#: lib/rapid_tools_web/live/image_converter_live.ex:263
+#: lib/rapid_tools_web/live/image_converter_live.ex:242
 #, elixir-autogen, elixir-format
 msgid "Ideal para exportar assets para web, social, aplicativos e bibliotecas de design."
 msgstr ""
 
-#: lib/rapid_tools_web/live/video_converter_live.ex:405
+#: lib/rapid_tools_web/live/video_converter_live.ex:391
 #, elixir-autogen, elixir-format
 msgid "Ideal para exportar assets para web, social, compatibilidade com players e arquivos mestre."
 msgstr ""
 
-#: lib/rapid_tools_web/live/audio_converter_live.ex:243
+#: lib/rapid_tools_web/live/audio_converter_live.ex:221
 #, elixir-autogen, elixir-format
 msgid "Ideal para podcasts, trilhas, cortes para social e distribuicao multiplataforma."
 msgstr ""
 
-#: lib/rapid_tools_web/live/extract_audio_live.ex:405
+#: lib/rapid_tools_web/live/extract_audio_live.ex:393
 #, elixir-autogen, elixir-format
 msgid "Ideal para reaproveitar entrevistas, podcasts em video, aulas, lives e trilhas capturadas em camera."
 msgstr ""
 
-#: lib/rapid_tools_web/live/image_converter_live.ex:289
-#: lib/rapid_tools_web/live/image_resizer_live.ex:278
+#: lib/rapid_tools_web/live/image_converter_live.ex:274
+#: lib/rapid_tools_web/live/image_resizer_live.ex:260
 #, elixir-autogen, elixir-format
 msgid "Imagens de origem"
 msgstr ""
 
-#: lib/rapid_tools_web/live/pdf_converter_live.ex:401
+#: lib/rapid_tools_web/live/pdf_converter_live.ex:383
 #, elixir-autogen, elixir-format
 msgid "Images to PDF"
 msgstr ""
 
-#: lib/rapid_tools_web/live/image_resizer_live.ex:407
+#: lib/rapid_tools_web/live/image_resizer_live.ex:391
 #, elixir-autogen, elixir-format
 msgid "Instagram Post, Instagram Story, YouTube Thumb e Shopify Product ja entram com dimensoes prontas."
 msgstr ""
 
-#: lib/rapid_tools_web/live/audio_converter_live.ex:261
-#: lib/rapid_tools_web/live/extract_audio_live.ex:423
-#: lib/rapid_tools_web/live/image_converter_live.ex:281
-#: lib/rapid_tools_web/live/together_audios_live.ex:297
-#: lib/rapid_tools_web/live/video_converter_live.ex:433
+#: lib/rapid_tools_web/live/audio_converter_live.ex:244
+#: lib/rapid_tools_web/live/extract_audio_live.ex:416
+#: lib/rapid_tools_web/live/image_converter_live.ex:265
+#: lib/rapid_tools_web/live/together_audios_live.ex:279
+#: lib/rapid_tools_web/live/video_converter_live.ex:421
 #, elixir-autogen, elixir-format
 msgid "Isso pode levar alguns segundos."
 msgstr ""
 
-#: lib/rapid_tools_web/live/together_audios_live.ex:408
+#: lib/rapid_tools_web/live/together_audios_live.ex:395
 #, elixir-autogen, elixir-format
 msgid "Juntar audios"
 msgstr ""
 
-#: lib/rapid_tools_web/live/pdf_converter_live.ex:403
+#: lib/rapid_tools_web/live/pdf_converter_live.ex:385
 #, elixir-autogen, elixir-format
 msgid "Junte capturas, documentos escaneados e artes soltas em um unico PDF."
 msgstr ""
 
-#: lib/rapid_tools_web/live/together_audios_live.ex:276
+#: lib/rapid_tools_web/live/together_audios_live.ex:253
 #, elixir-autogen, elixir-format
 msgid "Junte varios arquivos de audio em uma unica faixa final."
 msgstr ""
 
-#: lib/rapid_tools_web/live/image_resizer_live.ex:342
+#: lib/rapid_tools_web/live/image_resizer_live.ex:326
 #, elixir-autogen, elixir-format
 msgid "Largura"
 msgstr ""
 
-#: lib/rapid_tools_web/live/image_converter_live.ex:390
+#: lib/rapid_tools_web/live/image_converter_live.ex:375
 #, elixir-autogen, elixir-format
 msgid "Limpar convertidas"
 msgstr ""
 
-#: lib/rapid_tools_web/live/image_converter_live.ex:314
+#: lib/rapid_tools_web/live/image_converter_live.ex:299
 #, elixir-autogen, elixir-format
 msgid "Limpar uploads"
 msgstr ""
 
-#: lib/rapid_tools_web/live/image_converter_live.ex:421
+#: lib/rapid_tools_web/live/image_converter_live.ex:406
 #, elixir-autogen, elixir-format
 msgid "Lote pronto para exportar"
 msgstr ""
 
-#: lib/rapid_tools_web/live/audio_converter_live.ex:385
+#: lib/rapid_tools_web/live/audio_converter_live.ex:369
 #, elixir-autogen, elixir-format
 msgid "MP3 para distribuicao ampla, WAV para edicao, OGG para web, AAC para compatibilidade mobile e FLAC para masters sem perdas."
 msgstr ""
 
-#: lib/rapid_tools_web/live/video_compressor_live.ex:422
+#: lib/rapid_tools_web/live/video_compressor_live.ex:406
 #, elixir-autogen, elixir-format
 msgid "MP4 otimizado com H.264 e AAC para ampla compatibilidade."
 msgstr ""
 
-#: lib/rapid_tools_web/live/video_converter_live.ex:593
+#: lib/rapid_tools_web/live/video_converter_live.ex:583
 #, elixir-autogen, elixir-format
 msgid "MP4 para compatibilidade ampla, MOV para ecossistema Apple, WEBM para web, MKV para alta flexibilidade e AVI para legados."
 msgstr ""
 
-#: lib/rapid_tools_web/live/pdf_converter_live.ex:336
+#: lib/rapid_tools_web/live/pdf_converter_live.ex:316
 #, elixir-autogen, elixir-format
 msgid "Modo"
 msgstr ""
 
-#: lib/rapid_tools_web/live/extract_audio_live.ex:345
-#: lib/rapid_tools_web/live/video_compressor_live.ex:193
-#: lib/rapid_tools_web/live/video_converter_live.ex:345
+#: lib/rapid_tools_web/live/extract_audio_live.ex:358
+#: lib/rapid_tools_web/live/video_compressor_live.ex:198
+#: lib/rapid_tools_web/live/video_converter_live.ex:356
 #, elixir-autogen, elixir-format
 msgid "Nao foi possivel enviar este arquivo."
 msgstr ""
 
-#: lib/rapid_tools_web/live/pdf_converter_live.ex:188
+#: lib/rapid_tools_web/live/pdf_converter_live.ex:191
 #, elixir-autogen, elixir-format
 msgid "Nenhum arquivo selecionado ainda."
 msgstr ""
 
-#: lib/rapid_tools_web/live/audio_converter_live.ex:175
-#: lib/rapid_tools_web/live/together_audios_live.ex:164
+#: lib/rapid_tools_web/live/audio_converter_live.ex:178
+#: lib/rapid_tools_web/live/together_audios_live.ex:168
 #, elixir-autogen, elixir-format
 msgid "Nenhum audio selecionado ainda."
 msgstr ""
 
-#: lib/rapid_tools_web/live/extract_audio_live.ex:312
-#: lib/rapid_tools_web/live/extract_audio_live.ex:531
-#: lib/rapid_tools_web/live/video_compressor_live.ex:159
-#: lib/rapid_tools_web/live/video_converter_live.ex:312
+#: lib/rapid_tools_web/live/extract_audio_live.ex:324
+#: lib/rapid_tools_web/live/extract_audio_live.ex:533
+#: lib/rapid_tools_web/live/video_compressor_live.ex:163
+#: lib/rapid_tools_web/live/video_converter_live.ex:322
 #, elixir-autogen, elixir-format
 msgid "Nenhum video selecionado ainda."
 msgstr ""
 
-#: lib/rapid_tools_web/live/image_converter_live.ex:195
-#: lib/rapid_tools_web/live/image_resizer_live.ex:194
+#: lib/rapid_tools_web/live/image_converter_live.ex:199
+#: lib/rapid_tools_web/live/image_resizer_live.ex:201
 #, elixir-autogen, elixir-format
 msgid "Nenhuma imagem selecionada ainda."
 msgstr ""
 
-#: lib/rapid_tools_web/live/pdf_converter_live.ex:107
+#: lib/rapid_tools_web/live/pdf_converter_live.ex:110
 #, elixir-autogen, elixir-format
 msgid "O PDF nao pode ser convertido."
 msgstr ""
 
-#: lib/rapid_tools_web/live/together_audios_live.ex:444
+#: lib/rapid_tools_web/live/together_audios_live.ex:431
 #, elixir-autogen, elixir-format
 msgid "O Rapid Tools combina as faixas na ordem em que foram enviadas e exporta um unico arquivo final."
 msgstr ""
 
-#: lib/rapid_tools_web/live/extract_audio_live.ex:437
+#: lib/rapid_tools_web/live/extract_audio_live.ex:431
 #, elixir-autogen, elixir-format
 msgid "O Rapid Tools mantem os uploads em fila, extrai o audio no formato escolhido e prepara downloads individuais e um ZIP final."
 msgstr ""
 
-#: lib/rapid_tools_web/live/extract_audio_live.ex:337
-#: lib/rapid_tools_web/live/video_compressor_live.ex:185
-#: lib/rapid_tools_web/live/video_converter_live.ex:337
+#: lib/rapid_tools_web/live/extract_audio_live.ex:350
+#: lib/rapid_tools_web/live/video_compressor_live.ex:190
+#: lib/rapid_tools_web/live/video_converter_live.ex:348
 #, elixir-autogen, elixir-format
 msgid "O arquivo excede o limite permitido para upload."
 msgstr ""
 
-#: lib/rapid_tools_web/live/audio_converter_live.ex:102
+#: lib/rapid_tools_web/live/audio_converter_live.ex:105
 #, elixir-autogen, elixir-format
 msgid "O audio nao pode ser convertido."
 msgstr ""
 
-#: lib/rapid_tools_web/live/extract_audio_live.ex:246
+#: lib/rapid_tools_web/live/extract_audio_live.ex:256
 #, elixir-autogen, elixir-format
 msgid "O audio nao pode ser extraido."
 msgstr ""
 
-#: lib/rapid_tools_web/live/extract_audio_live.ex:343
-#: lib/rapid_tools_web/live/video_compressor_live.ex:191
-#: lib/rapid_tools_web/live/video_converter_live.ex:343
+#: lib/rapid_tools_web/live/extract_audio_live.ex:356
+#: lib/rapid_tools_web/live/video_compressor_live.ex:196
+#: lib/rapid_tools_web/live/video_converter_live.ex:354
 #, elixir-autogen, elixir-format
 msgid "O navegador nao conseguiu enviar este arquivo. Tente novamente."
 msgstr ""
 
-#: lib/rapid_tools_web/live/video_converter_live.ex:224
+#: lib/rapid_tools_web/live/video_converter_live.ex:228
 #, elixir-autogen, elixir-format
 msgid "O upload deste video foi perdido antes da conversao. Envie o arquivo novamente."
 msgstr ""
 
-#: lib/rapid_tools_web/live/extract_audio_live.ex:225
+#: lib/rapid_tools_web/live/extract_audio_live.ex:232
 #, elixir-autogen, elixir-format
 msgid "O upload deste video foi perdido antes da extracao. Envie o arquivo novamente."
 msgstr ""
 
-#: lib/rapid_tools_web/live/video_converter_live.ex:246
+#: lib/rapid_tools_web/live/video_converter_live.ex:254
 #, elixir-autogen, elixir-format
 msgid "O video nao pode ser convertido."
 msgstr ""
 
-#: lib/rapid_tools_web/live/pdf_converter_live.ex:78
+#: lib/rapid_tools_web/live/pdf_converter_live.ex:81
 #, elixir-autogen, elixir-format
 msgid "Os arquivos nao puderam ser convertidos em PDF."
 msgstr ""
 
-#: lib/rapid_tools_web/live/extract_audio_live.ex:611
+#: lib/rapid_tools_web/live/extract_audio_live.ex:615
 #, elixir-autogen, elixir-format
 msgid "Os audios extraidos vao aparecer aqui assim que o processamento terminar."
 msgstr ""
 
-#: lib/rapid_tools_web/live/audio_converter_live.ex:98
+#: lib/rapid_tools_web/live/audio_converter_live.ex:101
 #, elixir-autogen, elixir-format
 msgid "Os audios foram convertidos, mas o ZIP nao pode ser gerado."
 msgstr ""
 
-#: lib/rapid_tools_web/live/extract_audio_live.ex:185
+#: lib/rapid_tools_web/live/extract_audio_live.ex:192
 #, elixir-autogen, elixir-format
 msgid "Os audios foram extraidos, mas o ZIP nao pode ser gerado."
 msgstr ""
 
-#: lib/rapid_tools_web/live/together_audios_live.ex:124
+#: lib/rapid_tools_web/live/together_audios_live.ex:128
 #, elixir-autogen, elixir-format
 msgid "Os audios nao puderam ser unidos."
 msgstr ""
 
-#: lib/rapid_tools_web/live/video_converter_live.ex:184
+#: lib/rapid_tools_web/live/video_converter_live.ex:188
 #, elixir-autogen, elixir-format
 msgid "Os videos foram convertidos, mas o ZIP nao pode ser gerado."
 msgstr ""
 
-#: lib/rapid_tools_web/live/video_compressor_live.ex:98
+#: lib/rapid_tools_web/live/video_compressor_live.ex:102
 #, elixir-autogen, elixir-format
 msgid "Os videos foram gerados, mas o ZIP nao pode ser criado."
 msgstr ""
 
-#: lib/rapid_tools_web/live/video_compressor_live.ex:102
+#: lib/rapid_tools_web/live/video_compressor_live.ex:106
 #, elixir-autogen, elixir-format
 msgid "Os videos nao puderam ser comprimidos."
 msgstr ""
 
-#: lib/rapid_tools_web/live/pdf_converter_live.ex:75
+#: lib/rapid_tools_web/live/pdf_converter_live.ex:78
 #, elixir-autogen, elixir-format
 msgid "PDF gerado com sucesso."
 msgstr ""
 
-#: lib/rapid_tools_web/live/image_resizer_live.ex:330
-#: lib/rapid_tools_web/live/video_compressor_live.ex:330
+#: lib/rapid_tools_web/live/image_resizer_live.ex:314
+#: lib/rapid_tools_web/live/video_compressor_live.ex:312
 #, elixir-autogen, elixir-format
 msgid "Preset"
 msgstr ""
 
-#: lib/rapid_tools_web/live/video_compressor_live.ex:416
+#: lib/rapid_tools_web/live/video_compressor_live.ex:398
 #, elixir-autogen, elixir-format
 msgid "Preset focado em arquivos leves para upload, review e compartilhamento rapido."
 msgstr ""
 
-#: lib/rapid_tools_web/live/image_resizer_live.ex:404
+#: lib/rapid_tools_web/live/image_resizer_live.ex:388
 #, elixir-autogen, elixir-format
 msgid "Presets prontos"
 msgstr ""
 
-#: lib/rapid_tools_web/live/image_resizer_live.ex:225
-#, elixir-autogen, elixir-format
-msgid "Presets visuais para social, e-commerce e criacao."
-msgstr ""
-
-#: lib/rapid_tools_web/live/video_compressor_live.ex:358
+#: lib/rapid_tools_web/live/video_compressor_live.ex:340
 #, elixir-autogen, elixir-format
 msgid "Remove audio track"
 msgstr ""
 
-#: lib/rapid_tools_web/live/extract_audio_live.ex:508
+#: lib/rapid_tools_web/live/extract_audio_live.ex:510
 #, elixir-autogen, elixir-format
 msgid "Remover"
 msgstr ""
 
-#: lib/rapid_tools_web/live/together_audios_live.ex:328
+#: lib/rapid_tools_web/live/together_audios_live.ex:313
 #, elixir-autogen, elixir-format
 msgid "Reordene a fila com as setas para definir a sequencia final da faixa."
 msgstr ""
 
-#: lib/rapid_tools_web/live/video_compressor_live.ex:340
+#: lib/rapid_tools_web/live/video_compressor_live.ex:322
 #, elixir-autogen, elixir-format
 msgid "Resolucao maxima"
 msgstr ""
 
-#: lib/rapid_tools_web/live/extract_audio_live.ex:575
+#: lib/rapid_tools_web/live/extract_audio_live.ex:577
 #, elixir-autogen, elixir-format
 msgid "Resultados"
 msgstr ""
 
-#: lib/rapid_tools_web/live/audio_converter_live.ex:368
-#: lib/rapid_tools_web/live/image_converter_live.ex:407
-#: lib/rapid_tools_web/live/video_converter_live.ex:576
+#: lib/rapid_tools_web/live/audio_converter_live.ex:352
+#: lib/rapid_tools_web/live/image_converter_live.ex:392
+#: lib/rapid_tools_web/live/video_converter_live.ex:566
 #, elixir-autogen, elixir-format
 msgid "Saida em"
 msgstr ""
 
-#: lib/rapid_tools_web/live/audio_converter_live.ex:389
-#: lib/rapid_tools_web/live/image_converter_live.ex:428
-#: lib/rapid_tools_web/live/image_resizer_live.ex:411
-#: lib/rapid_tools_web/live/together_audios_live.ex:448
-#: lib/rapid_tools_web/live/video_converter_live.ex:597
+#: lib/rapid_tools_web/live/audio_converter_live.ex:375
+#: lib/rapid_tools_web/live/image_converter_live.ex:415
+#: lib/rapid_tools_web/live/image_resizer_live.ex:397
+#: lib/rapid_tools_web/live/together_audios_live.ex:437
+#: lib/rapid_tools_web/live/video_converter_live.ex:589
 #, elixir-autogen, elixir-format
 msgid "Saidas suportadas"
 msgstr ""
 
-#: lib/rapid_tools_web/live/video_compressor_live.ex:45
+#: lib/rapid_tools_web/live/video_compressor_live.ex:48
 #, elixir-autogen, elixir-format
 msgid "Selecione ao menos um video antes de comprimir."
 msgstr ""
 
-#: lib/rapid_tools_web/live/image_converter_live.ex:63
+#: lib/rapid_tools_web/live/image_converter_live.ex:66
 #, elixir-autogen, elixir-format
 msgid "Selecione ao menos uma imagem antes de converter."
 msgstr ""
 
-#: lib/rapid_tools_web/live/image_resizer_live.ex:48
+#: lib/rapid_tools_web/live/image_resizer_live.ex:53
 #, elixir-autogen, elixir-format
 msgid "Selecione ao menos uma imagem antes de redimensionar."
 msgstr ""
 
-#: lib/rapid_tools_web/live/pdf_converter_live.ex:39
+#: lib/rapid_tools_web/live/pdf_converter_live.ex:41
 #, elixir-autogen, elixir-format
 msgid "Selecione arquivos antes de converter."
 msgstr ""
 
-#: lib/rapid_tools_web/live/image_resizer_live.ex:178
+#: lib/rapid_tools_web/live/image_resizer_live.ex:185
 #, elixir-autogen, elixir-format
 msgid "Selecione imagens para preparar tamanhos prontos para web e social."
 msgstr ""
 
-#: lib/rapid_tools_web/live/together_audios_live.ex:145
+#: lib/rapid_tools_web/live/together_audios_live.ex:149
 #, elixir-autogen, elixir-format
 msgid "Selecione pelo menos dois audios para habilitar a uniao."
 msgstr ""
 
-#: lib/rapid_tools_web/live/together_audios_live.ex:67
-#: lib/rapid_tools_web/live/together_audios_live.ex:73
-#: lib/rapid_tools_web/live/together_audios_live.ex:121
+#: lib/rapid_tools_web/live/together_audios_live.ex:70
+#: lib/rapid_tools_web/live/together_audios_live.ex:77
+#: lib/rapid_tools_web/live/together_audios_live.ex:125
 #, elixir-autogen, elixir-format
 msgid "Selecione pelo menos dois audios para unir."
 msgstr ""
 
-#: lib/rapid_tools_web/live/pdf_converter_live.ex:201
+#: lib/rapid_tools_web/live/pdf_converter_live.ex:204
 #, elixir-autogen, elixir-format
 msgid "Selecione um PDF para extrair paginas ou imagens para montar um novo documento."
 msgstr ""
 
-#: lib/rapid_tools_web/live/audio_converter_live.ex:43
+#: lib/rapid_tools_web/live/audio_converter_live.ex:45
 #, elixir-autogen, elixir-format
 msgid "Selecione um audio antes de converter."
 msgstr ""
 
-#: lib/rapid_tools_web/live/audio_converter_live.ex:159
+#: lib/rapid_tools_web/live/audio_converter_live.ex:162
 #, elixir-autogen, elixir-format
 msgid "Selecione um ou mais audios para habilitar a conversao."
 msgstr ""
 
-#: lib/rapid_tools_web/live/video_converter_live.ex:293
+#: lib/rapid_tools_web/live/video_converter_live.ex:301
 #, elixir-autogen, elixir-format
 msgid "Selecione um ou mais videos para habilitar a conversao."
 msgstr ""
 
-#: lib/rapid_tools_web/live/extract_audio_live.ex:293
+#: lib/rapid_tools_web/live/extract_audio_live.ex:303
 #, elixir-autogen, elixir-format
 msgid "Selecione um ou mais videos para habilitar a extracao."
 msgstr ""
 
-#: lib/rapid_tools_web/live/extract_audio_live.ex:434
+#: lib/rapid_tools_web/live/extract_audio_live.ex:428
 #, elixir-autogen, elixir-format
 msgid "Selecione um ou mais videos para separar o som"
 msgstr ""
 
-#: lib/rapid_tools_web/live/video_converter_live.ex:62
-#: lib/rapid_tools_web/live/video_converter_live.ex:99
+#: lib/rapid_tools_web/live/video_converter_live.ex:65
+#: lib/rapid_tools_web/live/video_converter_live.ex:103
 #, elixir-autogen, elixir-format
 msgid "Selecione um video antes de converter."
 msgstr ""
 
-#: lib/rapid_tools_web/live/extract_audio_live.ex:62
-#: lib/rapid_tools_web/live/extract_audio_live.ex:100
+#: lib/rapid_tools_web/live/extract_audio_live.ex:65
+#: lib/rapid_tools_web/live/extract_audio_live.ex:107
 #, elixir-autogen, elixir-format
 msgid "Selecione um video antes de extrair o audio."
 msgstr ""
 
-#: lib/rapid_tools_web/live/image_converter_live.ex:179
+#: lib/rapid_tools_web/live/image_converter_live.ex:183
 #, elixir-autogen, elixir-format
 msgid "Selecione uma ou mais imagens para habilitar a conversao."
 msgstr ""
 
-#: lib/rapid_tools_web/live/video_compressor_live.ex:172
+#: lib/rapid_tools_web/live/video_compressor_live.ex:176
 #, elixir-autogen, elixir-format
 msgid "Selecione videos para reduzir tamanho sem sair do navegador."
 msgstr ""
 
-#: lib/rapid_tools_web/live/video_compressor_live.ex:413
+#: lib/rapid_tools_web/live/video_compressor_live.ex:395
 #, elixir-autogen, elixir-format
 msgid "Small size"
 msgstr ""
 
-#: lib/rapid_tools_web/live/together_audios_live.ex:296
+#: lib/rapid_tools_web/live/together_audios_live.ex:276
 #, elixir-autogen, elixir-format
 msgid "Unindo audios"
 msgstr ""
 
-#: lib/rapid_tools_web/live/extract_audio_live.ex:431
+#: lib/rapid_tools_web/live/extract_audio_live.ex:425
 #, elixir-autogen, elixir-format
 msgid "Upload de videos"
 msgstr ""
 
-#: lib/rapid_tools_web/live/audio_converter_live.ex:165
-#: lib/rapid_tools_web/live/image_converter_live.ex:185
-#: lib/rapid_tools_web/live/video_converter_live.ex:299
+#: lib/rapid_tools_web/live/audio_converter_live.ex:168
+#: lib/rapid_tools_web/live/image_converter_live.ex:189
+#: lib/rapid_tools_web/live/video_converter_live.ex:307
 #, elixir-autogen, elixir-format
 msgid "Uploads concluidos. Agora voce pode converter em lote."
 msgstr ""
 
-#: lib/rapid_tools_web/live/pdf_converter_live.ex:207
+#: lib/rapid_tools_web/live/pdf_converter_live.ex:210
 #, elixir-autogen, elixir-format
 msgid "Uploads concluidos. Agora voce pode converter ou combinar os arquivos."
 msgstr ""
 
-#: lib/rapid_tools_web/live/extract_audio_live.ex:299
+#: lib/rapid_tools_web/live/extract_audio_live.ex:309
 #, elixir-autogen, elixir-format
 msgid "Uploads concluidos. Agora voce pode extrair o audio em lote."
 msgstr ""
 
-#: lib/rapid_tools_web/live/video_compressor_live.ex:178
+#: lib/rapid_tools_web/live/video_compressor_live.ex:182
 #, elixir-autogen, elixir-format
 msgid "Uploads concluidos. Agora voce pode gerar as versoes comprimidas."
 msgstr ""
 
-#: lib/rapid_tools_web/live/image_resizer_live.ex:184
+#: lib/rapid_tools_web/live/image_resizer_live.ex:191
 #, elixir-autogen, elixir-format
 msgid "Uploads concluidos. Agora voce pode gerar as versoes redimensionadas."
 msgstr ""
 
-#: lib/rapid_tools_web/live/together_audios_live.ex:154
+#: lib/rapid_tools_web/live/together_audios_live.ex:158
 #, elixir-autogen, elixir-format
 msgid "Uploads concluidos. Agora voce pode juntar os audios."
 msgstr ""
 
-#: lib/rapid_tools_web/live/pdf_converter_live.ex:269
+#: lib/rapid_tools_web/live/pdf_converter_live.ex:245
 #, elixir-autogen, elixir-format
 msgid "Use PDF to PNG para extrair paginas rapidamente ou Images to PDF para montar um documento final."
 msgstr ""
 
-#: lib/rapid_tools_web/live/video_converter_live.ex:443
+#: lib/rapid_tools_web/live/video_converter_live.ex:431
 #, elixir-autogen, elixir-format
 msgid "Video de origem"
 msgstr ""
 
-#: lib/rapid_tools_web/live/video_compressor_live.ex:272
+#: lib/rapid_tools_web/live/video_compressor_live.ex:252
 #, elixir-autogen, elixir-format
 msgid "Videos de origem"
 msgstr ""
 
-#: lib/rapid_tools_web/live/extract_audio_live.ex:340
-#: lib/rapid_tools_web/live/video_compressor_live.ex:188
-#: lib/rapid_tools_web/live/video_converter_live.ex:340
+#: lib/rapid_tools_web/live/extract_audio_live.ex:353
+#: lib/rapid_tools_web/live/video_compressor_live.ex:193
+#: lib/rapid_tools_web/live/video_converter_live.ex:351
 #, elixir-autogen, elixir-format
 msgid "Voce selecionou mais arquivos do que o permitido."
 msgstr ""
 
-#: lib/rapid_tools_web/live/audio_converter_live.ex:303
-#: lib/rapid_tools_web/live/extract_audio_live.ex:496
-#: lib/rapid_tools_web/live/image_converter_live.ex:332
-#: lib/rapid_tools_web/live/image_resizer_live.ex:311
-#: lib/rapid_tools_web/live/pdf_converter_live.ex:318
-#: lib/rapid_tools_web/live/together_audios_live.ex:348
-#: lib/rapid_tools_web/live/video_compressor_live.ex:311
-#: lib/rapid_tools_web/live/video_converter_live.ex:510
+#: lib/rapid_tools_web/live/audio_converter_live.ex:287
+#: lib/rapid_tools_web/live/extract_audio_live.ex:498
+#: lib/rapid_tools_web/live/image_converter_live.ex:317
+#: lib/rapid_tools_web/live/image_resizer_live.ex:294
+#: lib/rapid_tools_web/live/pdf_converter_live.ex:297
+#: lib/rapid_tools_web/live/together_audios_live.ex:335
+#: lib/rapid_tools_web/live/video_compressor_live.ex:292
+#: lib/rapid_tools_web/live/video_converter_live.ex:500
 #, elixir-autogen, elixir-format
 msgid "pronto"
+msgstr ""
+
+#: lib/rapid_tools_web/locale.ex:29
+#, elixir-autogen, elixir-format
+msgid "English"
+msgstr ""
+
+#: lib/rapid_tools_web/locale.ex:30
+#, elixir-autogen, elixir-format
+msgid "Portuguese (BR)"
+msgstr ""
+
+#: lib/rapid_tools_web/locale.ex:31
+#, elixir-autogen, elixir-format
+msgid "Unknown"
 msgstr ""

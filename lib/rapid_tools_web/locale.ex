@@ -2,6 +2,7 @@ defmodule RapidToolsWeb.Locale do
   @moduledoc """
   Helpers for managing the current locale and translations.
   """
+  use Gettext, backend: RapidToolsWeb.Gettext
 
   @supported_locales ["en", "pt_BR"]
   @default_locale "en"
@@ -25,9 +26,9 @@ defmodule RapidToolsWeb.Locale do
   @doc """
   Returns the locale display name.
   """
-  def display_name("en"), do: "English"
-  def display_name("pt_BR"), do: "Português (BR)"
-  def display_name(_), do: "Unknown"
+  def display_name("en"), do: gettext("English")
+  def display_name("pt_BR"), do: gettext("Portuguese (BR)")
+  def display_name(_), do: gettext("Unknown")
 
   @doc """
   Returns the language code for HTML lang attribute.
