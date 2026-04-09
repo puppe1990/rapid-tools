@@ -23,6 +23,8 @@ defmodule RapidToolsWeb.ImageConverterLive do
      |> assign(:form, form)
      |> assign(:results, [])
      |> assign(:batch_download_path, nil)
+     |> assign(:current_locale, socket.assigns[:current_locale] || "en")
+     |> assign(:my_path, "/")
      |> allow_upload(:image, accept: @image_accept, max_entries: 10, auto_upload: true)}
   end
 
@@ -60,10 +62,12 @@ defmodule RapidToolsWeb.ImageConverterLive do
   def handle_event("convert", %{"conversion" => %{"target_format" => target_format}}, socket) do
     case uploaded_entries(socket, :image) do
       {[], []} ->
-        {:noreply, put_flash(socket, :error, "Selecione ao menos uma imagem antes de converter.")}
+        {:noreply,
+         put_flash(socket, :error, gettext("Selecione ao menos uma imagem antes de converter."))}
 
       {_completed, [_ | _]} ->
-        {:noreply, put_flash(socket, :error, "Aguarde o upload terminar antes de converter.")}
+        {:noreply,
+         put_flash(socket, :error, gettext("Aguarde o upload terminar antes de converter."))}
 
       _ ->
         {:noreply, convert_upload(socket, target_format)}
@@ -115,11 +119,11 @@ defmodule RapidToolsWeb.ImageConverterLive do
           socket,
           successful_results,
           "#{length(successful_results)} imagens convertidas.",
-          "As imagens foram convertidas, mas o pacote ZIP nao pode ser gerado."
+          gettext("As imagens foram convertidas, mas o pacote ZIP nao pode ser gerado.")
         )
 
       :error ->
-        put_flash(socket, :error, "A imagem nao pode ser convertida.")
+        put_flash(socket, :error, gettext("A imagem nao pode ser convertida."))
     end
   end
 
@@ -176,13 +180,13 @@ defmodule RapidToolsWeb.ImageConverterLive do
   defp upload_status_message(entries) do
     cond do
       entries == [] ->
-        "Selecione uma ou mais imagens para habilitar a conversao."
+        gettext("Selecione uma ou mais imagens para habilitar a conversao.")
 
       upload_in_progress?(entries) ->
-        "Enviando imagens para o servidor. Aguarde todas chegarem a 100%."
+        gettext("Enviando imagens para o servidor. Aguarde todas chegarem a 100%.")
 
       true ->
-        "Uploads concluidos. Agora voce pode converter em lote."
+        gettext("Uploads concluidos. Agora voce pode converter em lote.")
     end
   end
 
@@ -192,7 +196,7 @@ defmodule RapidToolsWeb.ImageConverterLive do
 
     cond do
       total == 0 ->
-        "Nenhuma imagem selecionada ainda."
+        gettext("Nenhuma imagem selecionada ainda.")
 
       upload_in_progress?(entries) ->
         "#{total} imagens na fila. #{completed}/#{total} concluidas ate agora, o restante ainda esta enviando."
@@ -214,39 +218,12 @@ defmodule RapidToolsWeb.ImageConverterLive do
       <section class="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(255,118,35,0.16),_transparent_28%),radial-gradient(circle_at_bottom_right,_rgba(251,191,36,0.14),_transparent_26%),linear-gradient(180deg,_rgba(250,245,239,1)_0%,_rgba(255,255,255,1)_50%,_rgba(248,244,238,1)_100%)]">
         <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
           <div class="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
-            <aside class="rounded-[2rem] border border-orange-100 bg-white/85 p-5 shadow-[0_18px_50px_rgba(15,23,42,0.08)] backdrop-blur">
-              <div class="space-y-6">
-                <div class="space-y-2">
-                  <p class="text-sm font-semibold uppercase tracking-[0.3em] text-orange-600">
-                    Rapid Tools
-                  </p>
-                  <div>
-                    <h2 class="text-2xl font-black tracking-tight text-slate-950">Tools</h2>
-                    <p class="mt-1 text-sm text-slate-600">
-                      Conversao rapida para imagem, video e audio.
-                    </p>
-                  </div>
-                </div>
-
-                <nav class="space-y-3" aria-label="Tools">
-                  <.link
-                    :for={tool <- @tools}
-                    navigate={tool.path}
-                    class={[
-                      "block rounded-[1.5rem] border px-4 py-4 transition duration-200",
-                      tool.current && tool.current_class,
-                      !tool.current && tool.idle_class
-                    ]}
-                  >
-                    <div class="flex items-center gap-3">
-                      <span class={["inline-block size-2.5 rounded-full", tool.dot_class]} />
-                      <p class={["text-sm font-semibold", tool.name_class]}>{tool.name}</p>
-                    </div>
-                    <p class={["mt-1 text-sm", tool.blurb_class]}>{tool.blurb}</p>
-                  </.link>
-                </nav>
-              </div>
-            </aside>
+            <.tool_sidebar
+              tools={@tools}
+              current_locale={@current_locale}
+              redirect_to={@my_path}
+              theme={%{sidebar_border_class: "border-orange-100", accent_class: "text-orange-600"}}
+            />
 
             <div class="space-y-6">
               <div class="space-y-4 px-2 py-2">
@@ -257,10 +234,14 @@ defmodule RapidToolsWeb.ImageConverterLive do
                   Image Converter
                 </h1>
                 <p class="max-w-3xl text-base text-slate-600 sm:text-lg">
-                  Converta imagens para PNG, JPG, WEBP, HEIC e AVIF com downloads individuais ou em lote.
+                  {gettext(
+                    "Converta imagens para PNG, JPG, WEBP, HEIC e AVIF com downloads individuais ou em lote."
+                  )}
                 </p>
                 <p class="text-sm text-slate-500">
-                  Ideal para exportar assets para web, social, aplicativos e bibliotecas de design.
+                  {gettext(
+                    "Ideal para exportar assets para web, social, aplicativos e bibliotecas de design."
+                  )}
                 </p>
               </div>
 
@@ -277,8 +258,12 @@ defmodule RapidToolsWeb.ImageConverterLive do
                       <div class="flex items-center gap-3 rounded-full border border-orange-200 bg-white px-5 py-3 shadow-lg">
                         <span class="inline-block size-5 animate-spin rounded-full border-2 border-orange-200 border-t-orange-600" />
                         <div>
-                          <p class="text-sm font-semibold text-slate-950">Convertendo imagens</p>
-                          <p class="text-xs text-slate-500">Isso pode levar alguns segundos.</p>
+                          <p class="text-sm font-semibold text-slate-950">
+                            {gettext("Convertendo imagens")}
+                          </p>
+                          <p class="text-xs text-slate-500">
+                            {gettext("Isso pode levar alguns segundos.")}
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -286,7 +271,7 @@ defmodule RapidToolsWeb.ImageConverterLive do
                     <div class="rounded-[1.75rem] border border-dashed border-orange-200 bg-orange-50/60 p-5">
                       <div class="space-y-2">
                         <label for="image-upload" class="text-sm font-semibold text-slate-900">
-                          Imagens de origem
+                          {gettext("Imagens de origem")}
                         </label>
                         <.live_file_input
                           upload={@uploads.image}
@@ -294,7 +279,7 @@ defmodule RapidToolsWeb.ImageConverterLive do
                           class="block w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 shadow-sm transition file:mr-4 file:rounded-xl file:border-0 file:bg-slate-950 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:border-orange-300"
                         />
                         <p class="text-sm text-slate-500">
-                          Entradas aceitas: JPG, JPEG, PNG, WEBP, HEIC e AVIF.
+                          {gettext("Entradas aceitas: JPG, JPEG, PNG, WEBP, HEIC e AVIF.")}
                         </p>
                       </div>
 
@@ -311,7 +296,7 @@ defmodule RapidToolsWeb.ImageConverterLive do
                             phx-click="clear-uploads"
                             class="inline-flex shrink-0 items-center justify-center rounded-full border border-orange-200 bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-orange-700 transition hover:border-orange-300 hover:bg-orange-100"
                           >
-                            Limpar uploads
+                            {gettext("Limpar uploads")}
                           </button>
                         </div>
                         <div
@@ -329,7 +314,7 @@ defmodule RapidToolsWeb.ImageConverterLive do
                           </div>
                           <span class="text-xs uppercase tracking-[0.2em] text-slate-400">
                             <%= if entry.progress == 100 do %>
-                              pronto
+                              {gettext("pronto")}
                             <% else %>
                               {entry.progress}%
                             <% end %>
@@ -351,7 +336,7 @@ defmodule RapidToolsWeb.ImageConverterLive do
                       field={@form[:target_format]}
                       type="select"
                       id="image-target-format"
-                      label="Formato de destino"
+                      label={gettext("Formato de destino")}
                       options={Enum.map(@formats, &{String.upcase(&1), &1})}
                       class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-orange-400"
                     />
@@ -366,7 +351,7 @@ defmodule RapidToolsWeb.ImageConverterLive do
                       class="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-orange-600 disabled:cursor-wait disabled:opacity-90"
                     >
                       <span class="inline-block size-4 animate-spin rounded-full border-2 border-white/30 border-t-white opacity-0 phx-submit-loading:opacity-100" />
-                      <span>Converter imagens</span>
+                      <span>{gettext("Converter imagens")}</span>
                     </button>
 
                     <p id="image-converter-status" class="text-sm text-slate-500">
@@ -387,7 +372,7 @@ defmodule RapidToolsWeb.ImageConverterLive do
                         phx-click="clear-converted-results"
                         class="inline-flex shrink-0 items-center justify-center rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-white transition hover:bg-white/20"
                       >
-                        Limpar convertidas
+                        {gettext("Limpar convertidas")}
                       </button>
                     </div>
                     <a
@@ -395,7 +380,7 @@ defmodule RapidToolsWeb.ImageConverterLive do
                       href={@batch_download_path}
                       class="inline-flex w-full items-center justify-center rounded-2xl bg-orange-400 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-orange-300"
                     >
-                      Baixar pacote ZIP
+                      {gettext("Baixar pacote ZIP")}
                     </a>
                     <div class="space-y-3">
                       <div
@@ -404,13 +389,13 @@ defmodule RapidToolsWeb.ImageConverterLive do
                       >
                         <p class="font-semibold">{result.filename}</p>
                         <p class="mt-1 text-sm text-slate-300">
-                          Saida em {String.upcase(result.target_format)}
+                          {gettext("Saida em")} {String.upcase(result.target_format)}
                         </p>
                         <a
                           href={result.download_path}
                           class="mt-3 inline-flex w-full items-center justify-center rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/20"
                         >
-                          Baixar imagem convertida
+                          {gettext("Baixar imagem convertida")}
                         </a>
                       </div>
                     </div>
@@ -418,14 +403,16 @@ defmodule RapidToolsWeb.ImageConverterLive do
                   <div :if={@results == []} class="space-y-4">
                     <div class="rounded-[1.5rem] border border-white/10 bg-white/5 p-4">
                       <p class="text-sm font-semibold uppercase tracking-[0.25em] text-orange-300">
-                        Lote pronto para exportar
+                        {gettext("Lote pronto para exportar")}
                       </p>
                       <p class="mt-3 text-sm text-slate-300">
-                        Envie varias imagens, escolha o formato final e baixe cada arquivo convertido ou um ZIP com tudo junto.
+                        {gettext(
+                          "Envie varias imagens, escolha o formato final e baixe cada arquivo convertido ou um ZIP com tudo junto."
+                        )}
                       </p>
                     </div>
                     <div class="rounded-[1.5rem] border border-white/10 bg-white/5 p-4">
-                      <p class="text-sm font-semibold text-white">Saidas suportadas</p>
+                      <p class="text-sm font-semibold text-white">{gettext("Saidas suportadas")}</p>
                       <p class="mt-2 text-sm text-slate-300">
                         {Enum.map_join(@formats, ", ", &String.upcase/1)}
                       </p>

@@ -7,12 +7,14 @@ defmodule RapidToolsWeb.ToolNavigation do
     router: RapidToolsWeb.Router,
     statics: RapidToolsWeb.static_paths()
 
+  use Gettext, backend: RapidToolsWeb.Gettext
+
   def tools(current) do
     [
       %{
         key: "image",
-        name: "Image Converter",
-        blurb: "Batch image conversion",
+        name: gettext("Image Converter"),
+        blurb: gettext("Batch image conversion"),
         current: current == "image",
         path: ~p"/",
         current_class:
@@ -24,8 +26,8 @@ defmodule RapidToolsWeb.ToolNavigation do
       },
       %{
         key: "video",
-        name: "Video Converter",
-        blurb: "Convert MP4, MOV, WEBM, MKV and AVI",
+        name: gettext("Video Converter"),
+        blurb: gettext("Convert MP4, MOV, WEBM, MKV and AVI"),
         current: current == "video",
         path: ~p"/video-converter",
         current_class:
@@ -37,8 +39,8 @@ defmodule RapidToolsWeb.ToolNavigation do
       },
       %{
         key: "image-resizer",
-        name: "Image Resizer",
-        blurb: "Resize for social, stores and thumbnails",
+        name: gettext("Image Resizer"),
+        blurb: gettext("Resize for social, stores and thumbnails"),
         current: current == "image-resizer",
         path: ~p"/image-resizer",
         current_class: "border-cyan-300 bg-cyan-50 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]",
@@ -49,8 +51,8 @@ defmodule RapidToolsWeb.ToolNavigation do
       },
       %{
         key: "video-compressor",
-        name: "Video Compressor",
-        blurb: "Reduce file size for sharing and upload",
+        name: gettext("Video Compressor"),
+        blurb: gettext("Reduce file size for sharing and upload"),
         current: current == "video-compressor",
         path: ~p"/video-compressor",
         current_class: "border-rose-300 bg-rose-50 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]",
@@ -61,8 +63,8 @@ defmodule RapidToolsWeb.ToolNavigation do
       },
       %{
         key: "extract-audio",
-        name: "Extract Audio",
-        blurb: "Pull MP3, WAV, OGG, AAC and FLAC from video",
+        name: gettext("Extract Audio"),
+        blurb: gettext("Pull MP3, WAV, OGG, AAC and FLAC from video"),
         current: current == "extract-audio",
         path: ~p"/extract-audio",
         current_class:
@@ -74,8 +76,8 @@ defmodule RapidToolsWeb.ToolNavigation do
       },
       %{
         key: "audio",
-        name: "Audio Converter",
-        blurb: "Convert MP3, WAV, OGG, AAC and FLAC",
+        name: gettext("Audio Converter"),
+        blurb: gettext("Convert MP3, WAV, OGG, AAC and FLAC"),
         current: current == "audio",
         path: ~p"/audio-converter",
         current_class:
@@ -87,8 +89,8 @@ defmodule RapidToolsWeb.ToolNavigation do
       },
       %{
         key: "pdf-converter",
-        name: "PDF Converter",
-        blurb: "Turn PDF pages into images or back to PDF",
+        name: gettext("PDF Converter"),
+        blurb: gettext("Turn PDF pages into images or back to PDF"),
         current: current == "pdf-converter",
         path: ~p"/pdf-converter",
         current_class: "border-lime-300 bg-lime-50 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]",
@@ -99,8 +101,8 @@ defmodule RapidToolsWeb.ToolNavigation do
       },
       %{
         key: "together-audios",
-        name: "Together Audios",
-        blurb: "Join multiple audio files into one track",
+        name: gettext("Together Audios"),
+        blurb: gettext("Join multiple audio files into one track"),
         current: current == "together-audios",
         path: ~p"/together-audios",
         current_class:

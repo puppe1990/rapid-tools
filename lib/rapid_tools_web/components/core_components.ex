@@ -32,6 +32,10 @@ defmodule RapidToolsWeb.CoreComponents do
   alias Phoenix.HTML.Form
   alias Phoenix.LiveView.JS
 
+  import Phoenix.Controller, only: [get_csrf_token: 0]
+
+  alias RapidToolsWeb.Locale
+
   @doc """
   Renders flash notices.
 
@@ -467,6 +471,96 @@ defmodule RapidToolsWeb.CoreComponents do
         {"transition-all ease-in duration-200", "opacity-100 translate-y-0 sm:scale-100",
          "opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"}
     )
+  end
+
+  @doc """
+  Renders the tool sidebar with a translation button.
+
+  ## Examples
+
+      <.tool_sidebar tools={@tools} current_locale={@current_locale} theme={@theme} />
+  """
+  attr :tools, :list, required: true, doc: "the list of tool navigation items"
+  attr :current_locale, :string, required: true, doc: "the current locale code"
+  attr :redirect_to, :string, default: nil, doc: "the path to redirect to after locale switch"
+  attr :theme, :map, required: true, doc: "the color theme for the sidebar"
+
+  def tool_sidebar(assigns) do
+    ~H"""
+    <aside class={[
+      "rounded-[2rem] border bg-white/85 p-5 shadow-[0_18px_50px_rgba(15,23,42,0.08)] backdrop-blur",
+      @theme.sidebar_border_class
+    ]}>
+      <div class="space-y-6">
+        <div class="space-y-2">
+          <p class={["text-sm font-semibold uppercase tracking-[0.3em]", @theme.accent_class]}>
+            {gettext("Rapid Tools")}
+          </p>
+          <div>
+            <h2 class="text-2xl font-black tracking-tight text-slate-950">{gettext("Tools")}</h2>
+            <p class="mt-1 text-sm text-slate-600">
+              {gettext("Quick conversion for image, video and audio.")}
+            </p>
+          </div>
+        </div>
+
+        <nav class="space-y-3" aria-label={gettext("Tools")}>
+          <.link
+            :for={tool <- @tools}
+            navigate={tool.path}
+            class={[
+              "block rounded-[1.5rem] border px-4 py-4 transition duration-200",
+              tool.current && tool.current_class,
+              !tool.current && tool.idle_class
+            ]}
+          >
+            <div class="flex items-center gap-3">
+              <span class={["inline-block size-2.5 rounded-full", tool.dot_class]} />
+              <p class={["text-sm font-semibold", tool.name_class]}>{tool.name}</p>
+            </div>
+            <p class={["mt-1 text-sm", tool.blurb_class]}>{tool.blurb}</p>
+          </.link>
+        </nav>
+
+        <div class="pt-4 border-t border-slate-200">
+          <form method="POST" action="/locale/switch">
+            <input type="hidden" name="_csrf_token" value={get_csrf_token()} />
+            <input type="hidden" name="redirect_to" value={@redirect_to || "/"} />
+            <input
+              type="hidden"
+              name="locale"
+              value={Locale.toggle_locale(@current_locale)}
+            />
+            <button
+              type="submit"
+              class="flex w-full items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 transition hover:border-orange-200 hover:bg-orange-50"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="size-5 text-slate-500"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="m5 8 6 6" />
+                <path d="m4 14 6-6 2-3" />
+                <path d="M2 5h12" />
+                <path d="M7 2h1" />
+                <path d="m22 22-5-10-5 10" />
+                <path d="M14 18h6" />
+              </svg>
+              <span>
+                {Locale.display_name(Locale.toggle_locale(@current_locale))}
+              </span>
+            </button>
+          </form>
+        </div>
+      </div>
+    </aside>
+    """
   end
 
   @doc """

@@ -50,7 +50,8 @@ defmodule RapidToolsWeb do
 
   def live_view do
     quote do
-      use Phoenix.LiveView
+      use Phoenix.LiveView,
+        on_mount: {RapidToolsWeb.SessionLocaleHook, :default}
 
       unquote(html_helpers())
     end
@@ -90,6 +91,7 @@ defmodule RapidToolsWeb do
       # Common modules used in templates
       alias Phoenix.LiveView.JS
       alias RapidToolsWeb.Layouts
+      alias RapidToolsWeb.Locale
 
       # Routes generation with the ~p sigil
       unquote(verified_routes())

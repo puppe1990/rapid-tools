@@ -8,6 +8,7 @@ defmodule RapidToolsWeb.Router do
     plug :put_root_layout, html: {RapidToolsWeb.Layouts, :root}
     plug :protect_from_forgery
     plug :put_secure_browser_headers
+    plug RapidToolsWeb.Plugs.SetLocale
   end
 
   pipeline :api do
@@ -27,6 +28,7 @@ defmodule RapidToolsWeb.Router do
     live "/together-audios", TogetherAudiosLive
     get "/downloads/batches/:id", DownloadController, :batch
     get "/downloads/:id", DownloadController, :show
+    post "/locale/switch", LocaleController, :switch
   end
 
   # Other scopes may use custom stacks.

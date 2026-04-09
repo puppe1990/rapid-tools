@@ -17,6 +17,8 @@ defmodule RapidToolsWeb.VideoCompressorLive do
      |> assign(:results, [])
      |> assign(:batch_download_path, nil)
      |> assign(:form, to_form(default_form_params(), as: :compression))
+     |> assign(:current_locale, socket.assigns[:current_locale] || "en")
+     |> assign(:my_path, "/video-compressor")
      |> allow_upload(:video,
        accept: @video_accept,
        max_entries: 10,
@@ -42,10 +44,12 @@ defmodule RapidToolsWeb.VideoCompressorLive do
 
     case uploaded_entries(socket, :video) do
       {[], []} ->
-        {:noreply, put_flash(socket, :error, "Selecione ao menos um video antes de comprimir.")}
+        {:noreply,
+         put_flash(socket, :error, gettext("Selecione ao menos um video antes de comprimir."))}
 
       {_completed, [_ | _]} ->
-        {:noreply, put_flash(socket, :error, "Aguarde o upload terminar antes de comprimir.")}
+        {:noreply,
+         put_flash(socket, :error, gettext("Aguarde o upload terminar antes de comprimir."))}
 
       _ ->
         {:noreply,
@@ -95,11 +99,11 @@ defmodule RapidToolsWeb.VideoCompressorLive do
           socket,
           successful_results,
           "#{length(successful_results)} videos comprimidos.",
-          "Os videos foram gerados, mas o ZIP nao pode ser criado."
+          gettext("Os videos foram gerados, mas o ZIP nao pode ser criado.")
         )
 
       :error ->
-        put_flash(socket, :error, "Os videos nao puderam ser comprimidos.")
+        put_flash(socket, :error, gettext("Os videos nao puderam ser comprimidos."))
     end
   end
 
@@ -156,7 +160,7 @@ defmodule RapidToolsWeb.VideoCompressorLive do
 
     cond do
       total == 0 ->
-        "Nenhum video selecionado ainda."
+        gettext("Nenhum video selecionado ainda.")
 
       upload_in_progress?(entries) ->
         "#{total} videos na fila. #{completed}/#{total} concluidos ate agora, o restante ainda esta enviando."
@@ -169,28 +173,29 @@ defmodule RapidToolsWeb.VideoCompressorLive do
   defp upload_status_message(entries) do
     cond do
       entries == [] ->
-        "Selecione videos para reduzir tamanho sem sair do navegador."
+        gettext("Selecione videos para reduzir tamanho sem sair do navegador.")
 
       upload_in_progress?(entries) ->
-        "Enviando videos para o servidor. Aguarde todos chegarem a 100%."
+        gettext("Enviando videos para o servidor. Aguarde todos chegarem a 100%.")
 
       true ->
-        "Uploads concluidos. Agora voce pode gerar as versoes comprimidas."
+        gettext("Uploads concluidos. Agora voce pode gerar as versoes comprimidas.")
     end
   end
 
   defp upload_error_message(:not_accepted),
-    do: "Formato nao aceito. Envie MP4, MOV, WEBM, MKV ou AVI."
+    do: gettext("Formato nao aceito. Envie MP4, MOV, WEBM, MKV ou AVI.")
 
-  defp upload_error_message(:too_large), do: "O arquivo excede o limite permitido para upload."
+  defp upload_error_message(:too_large),
+    do: gettext("O arquivo excede o limite permitido para upload.")
 
   defp upload_error_message(:too_many_files),
-    do: "Voce selecionou mais arquivos do que o permitido."
+    do: gettext("Voce selecionou mais arquivos do que o permitido.")
 
   defp upload_error_message(:external_client_failure),
-    do: "O navegador nao conseguiu enviar este arquivo. Tente novamente."
+    do: gettext("O navegador nao conseguiu enviar este arquivo. Tente novamente.")
 
-  defp upload_error_message(_error), do: "Nao foi possivel enviar este arquivo."
+  defp upload_error_message(_error), do: gettext("Nao foi possivel enviar este arquivo.")
 
   @impl true
   def render(assigns) do
@@ -204,39 +209,12 @@ defmodule RapidToolsWeb.VideoCompressorLive do
       <section class="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(251,146,60,0.18),_transparent_30%),radial-gradient(circle_at_bottom_right,_rgba(244,63,94,0.14),_transparent_28%),linear-gradient(180deg,_rgba(255,247,237,1)_0%,_rgba(255,255,255,1)_52%,_rgba(255,241,242,1)_100%)]">
         <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
           <div class="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
-            <aside class="rounded-[2rem] border border-rose-100 bg-white/85 p-5 shadow-[0_18px_50px_rgba(15,23,42,0.08)] backdrop-blur">
-              <div class="space-y-6">
-                <div class="space-y-2">
-                  <p class="text-sm font-semibold uppercase tracking-[0.3em] text-rose-700">
-                    Rapid Tools
-                  </p>
-                  <div>
-                    <h2 class="text-2xl font-black tracking-tight text-slate-950">Tools</h2>
-                    <p class="mt-1 text-sm text-slate-600">
-                      Fluxo rapido para reduzir peso e manter compartilhamento facil.
-                    </p>
-                  </div>
-                </div>
-
-                <nav class="space-y-3" aria-label="Tools">
-                  <.link
-                    :for={tool <- @tools}
-                    navigate={tool.path}
-                    class={[
-                      "block rounded-[1.5rem] border px-4 py-4 transition duration-200",
-                      tool.current && tool.current_class,
-                      !tool.current && tool.idle_class
-                    ]}
-                  >
-                    <div class="flex items-center gap-3">
-                      <span class={["inline-block size-2.5 rounded-full", tool.dot_class]} />
-                      <p class={["text-sm font-semibold", tool.name_class]}>{tool.name}</p>
-                    </div>
-                    <p class={["mt-1 text-sm", tool.blurb_class]}>{tool.blurb}</p>
-                  </.link>
-                </nav>
-              </div>
-            </aside>
+            <.tool_sidebar
+              tools={@tools}
+              current_locale={@current_locale}
+              redirect_to={@my_path}
+              theme={%{sidebar_border_class: "border-rose-100", accent_class: "text-rose-700"}}
+            />
 
             <div class="space-y-6">
               <div class="space-y-4 px-2 py-2">
@@ -250,7 +228,9 @@ defmodule RapidToolsWeb.VideoCompressorLive do
                   Shrink heavy uploads for email, WhatsApp, landing pages, and client approvals while keeping playback compatible.
                 </p>
                 <p class="text-sm text-slate-500">
-                  Escolha um preset de compressao, limite de resolucao e, se quiser, remova o audio.
+                  {gettext(
+                    "Escolha um preset de compressao, limite de resolucao e, se quiser, remova o audio."
+                  )}
                 </p>
               </div>
 
@@ -269,7 +249,7 @@ defmodule RapidToolsWeb.VideoCompressorLive do
                           for="video-compressor-upload"
                           class="text-sm font-semibold text-slate-900"
                         >
-                          Videos de origem
+                          {gettext("Videos de origem")}
                         </label>
                         <.live_file_input
                           upload={@uploads.video}
@@ -277,7 +257,7 @@ defmodule RapidToolsWeb.VideoCompressorLive do
                           class="block w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 shadow-sm transition file:mr-4 file:rounded-xl file:border-0 file:bg-slate-950 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:border-rose-300"
                         />
                         <p class="text-sm text-slate-500">
-                          Entradas aceitas: MP4, MOV, WEBM e AVI. Ate 150 MB por video.
+                          {gettext("Entradas aceitas: MP4, MOV, WEBM e AVI. Ate 150 MB por video.")}
                         </p>
                       </div>
 
@@ -308,7 +288,9 @@ defmodule RapidToolsWeb.VideoCompressorLive do
                             </p>
                           </div>
                           <span class="text-xs uppercase tracking-[0.2em] text-slate-400">
-                            {if entry.progress == 100, do: "pronto", else: "#{entry.progress}%"}
+                            {if entry.progress == 100,
+                              do: gettext("pronto"),
+                              else: "#{entry.progress}%"}
                           </span>
                           <button
                             type="button"
@@ -327,7 +309,7 @@ defmodule RapidToolsWeb.VideoCompressorLive do
                       <.input
                         field={@form[:preset]}
                         type="select"
-                        label="Preset"
+                        label={gettext("Preset")}
                         options={[
                           {"Small size", "small"},
                           {"Balanced", "balanced"},
@@ -337,7 +319,7 @@ defmodule RapidToolsWeb.VideoCompressorLive do
                       <.input
                         field={@form[:max_resolution]}
                         type="select"
-                        label="Resolucao maxima"
+                        label={gettext("Resolucao maxima")}
                         options={[
                           {"Keep original", "original"},
                           {"1080p", "1080"},
@@ -355,7 +337,7 @@ defmodule RapidToolsWeb.VideoCompressorLive do
                         checked={@form[:mute].value in ["true", true]}
                         class="checkbox checkbox-sm"
                       />
-                      <span>Remove audio track</span>
+                      <span>{gettext("Remove audio track")}</span>
                     </label>
 
                     <button
@@ -367,7 +349,7 @@ defmodule RapidToolsWeb.VideoCompressorLive do
                       }
                       class="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-rose-700 disabled:cursor-wait disabled:opacity-90"
                     >
-                      <span>Comprimir videos</span>
+                      <span>{gettext("Comprimir videos")}</span>
                     </button>
 
                     <p class="text-sm text-slate-500">
@@ -386,7 +368,7 @@ defmodule RapidToolsWeb.VideoCompressorLive do
                       href={@batch_download_path}
                       class="inline-flex w-full items-center justify-center rounded-2xl bg-rose-400 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-rose-300"
                     >
-                      Baixar pacote ZIP
+                      {gettext("Baixar pacote ZIP")}
                     </a>
                     <div class="space-y-3">
                       <div
@@ -401,7 +383,7 @@ defmodule RapidToolsWeb.VideoCompressorLive do
                           href={result.download_path}
                           class="mt-3 inline-flex w-full items-center justify-center rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/20"
                         >
-                          Baixar video
+                          {gettext("Baixar video")}
                         </a>
                       </div>
                     </div>
@@ -410,16 +392,18 @@ defmodule RapidToolsWeb.VideoCompressorLive do
                   <div :if={@results == []} class="space-y-4">
                     <div class="rounded-[1.5rem] border border-white/10 bg-white/5 p-4">
                       <p class="text-sm font-semibold uppercase tracking-[0.25em] text-rose-300">
-                        Small size
+                        {gettext("Small size")}
                       </p>
                       <p class="mt-3 text-sm text-slate-300">
-                        Preset focado em arquivos leves para upload, review e compartilhamento rapido.
+                        {gettext(
+                          "Preset focado em arquivos leves para upload, review e compartilhamento rapido."
+                        )}
                       </p>
                     </div>
                     <div class="rounded-[1.5rem] border border-white/10 bg-white/5 p-4">
-                      <p class="text-sm font-semibold text-white">Formato final</p>
+                      <p class="text-sm font-semibold text-white">{gettext("Formato final")}</p>
                       <p class="mt-2 text-sm text-slate-300">
-                        MP4 otimizado com H.264 e AAC para ampla compatibilidade.
+                        {gettext("MP4 otimizado com H.264 e AAC para ampla compatibilidade.")}
                       </p>
                     </div>
                   </div>

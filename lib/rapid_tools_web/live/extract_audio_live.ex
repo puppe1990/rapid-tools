@@ -29,6 +29,8 @@ defmodule RapidToolsWeb.ExtractAudioLive do
      |> assign(:currently_extracting, nil)
      |> assign(:processing_queue, [])
      |> assign(:processing_total, 0)
+     |> assign(:current_locale, socket.assigns[:current_locale] || "en")
+     |> assign(:my_path, "/extract-audio")
      |> allow_upload(:video,
        accept: @video_accept,
        max_entries: 10,
@@ -59,11 +61,16 @@ defmodule RapidToolsWeb.ExtractAudioLive do
       {:ok, socket} ->
         case uploaded_entries(socket, :video) do
           {[], []} ->
-            {:noreply, put_flash(socket, :error, "Selecione um video antes de extrair o audio.")}
+            {:noreply,
+             put_flash(socket, :error, gettext("Selecione um video antes de extrair o audio."))}
 
           {_completed, [_ | _]} ->
             {:noreply,
-             put_flash(socket, :error, "Aguarde o upload terminar antes de extrair o audio.")}
+             put_flash(
+               socket,
+               :error,
+               gettext("Aguarde o upload terminar antes de extrair o audio.")
+             )}
 
           _ ->
             {:noreply, start_extraction(socket, target_format)}
@@ -97,7 +104,7 @@ defmodule RapidToolsWeb.ExtractAudioLive do
   defp start_extraction(socket, target_format) do
     case stage_uploaded_entries(socket) do
       {:ok, []} ->
-        put_flash(socket, :error, "Selecione um video antes de extrair o audio.")
+        put_flash(socket, :error, gettext("Selecione um video antes de extrair o audio."))
 
       {:ok, staged_entries} ->
         send(self(), {:begin_audio_extraction, staged_entries, target_format, []})
@@ -182,7 +189,7 @@ defmodule RapidToolsWeb.ExtractAudioLive do
           socket,
           successful_results,
           "#{length(successful_results)} audios extraidos.",
-          "Os audios foram extraidos, mas o ZIP nao pode ser gerado."
+          gettext("Os audios foram extraidos, mas o ZIP nao pode ser gerado.")
         )
 
       :error ->
@@ -222,7 +229,7 @@ defmodule RapidToolsWeb.ExtractAudioLive do
   end
 
   defp lost_upload_message do
-    "O upload deste video foi perdido antes da extracao. Envie o arquivo novamente."
+    gettext("O upload deste video foi perdido antes da extracao. Envie o arquivo novamente.")
   end
 
   defp successful_batch_results(converted) when is_list(converted) do
@@ -237,13 +244,16 @@ defmodule RapidToolsWeb.ExtractAudioLive do
   defp successful_batch_results(_), do: :error
 
   defp conversion_error_message([{:error, :no_audio_stream}]),
-    do: "Este video nao possui uma trilha de audio. Envie um arquivo com som para extrair."
+    do:
+      gettext("Este video nao possui uma trilha de audio. Envie um arquivo com som para extrair.")
 
   defp conversion_error_message([{:error, :invalid_media_file}]),
     do:
-      "Este arquivo parece corrompido ou incompleto. Gere o video novamente e tente outro upload."
+      gettext(
+        "Este arquivo parece corrompido ou incompleto. Gere o video novamente e tente outro upload."
+      )
 
-  defp conversion_error_message(_results), do: "O audio nao pode ser extraido."
+  defp conversion_error_message(_results), do: gettext("O audio nao pode ser extraido.")
 
   defp build_batch_response(socket, successful_results, success_message, zip_error_message) do
     batch_entries =
@@ -287,16 +297,16 @@ defmodule RapidToolsWeb.ExtractAudioLive do
   defp upload_status_message(entries, currently_extracting) do
     cond do
       processing?(currently_extracting) ->
-        "Extracao em andamento. Acompanhe qual video esta sendo processado agora."
+        gettext("Extracao em andamento. Acompanhe qual video esta sendo processado agora.")
 
       entries == [] ->
-        "Selecione um ou mais videos para habilitar a extracao."
+        gettext("Selecione um ou mais videos para habilitar a extracao.")
 
       upload_in_progress?(entries) ->
-        "Enviando videos para o servidor. Aguarde todos chegarem a 100%."
+        gettext("Enviando videos para o servidor. Aguarde todos chegarem a 100%.")
 
       true ->
-        "Uploads concluidos. Agora voce pode extrair o audio em lote."
+        gettext("Uploads concluidos. Agora voce pode extrair o audio em lote.")
     end
   end
 
@@ -306,10 +316,12 @@ defmodule RapidToolsWeb.ExtractAudioLive do
 
     cond do
       processing?(currently_extracting) ->
-        "Fila enviada para extracao. O video atual aparece com loader e o restante fica na sequencia."
+        gettext(
+          "Fila enviada para extracao. O video atual aparece com loader e o restante fica na sequencia."
+        )
 
       total == 0 ->
-        "Nenhum video selecionado ainda."
+        gettext("Nenhum video selecionado ainda.")
 
       upload_in_progress?(entries) ->
         "#{total} videos na fila. #{completed}/#{total} concluidos ate agora, o restante ainda esta enviando."
@@ -332,17 +344,18 @@ defmodule RapidToolsWeb.ExtractAudioLive do
   end
 
   defp upload_error_message(:not_accepted),
-    do: "Formato nao aceito. Envie MP4, MOV, WEBM, MKV, AVI ou TS."
+    do: gettext("Formato nao aceito. Envie MP4, MOV, WEBM, MKV, AVI ou TS.")
 
-  defp upload_error_message(:too_large), do: "O arquivo excede o limite permitido para upload."
+  defp upload_error_message(:too_large),
+    do: gettext("O arquivo excede o limite permitido para upload.")
 
   defp upload_error_message(:too_many_files),
-    do: "Voce selecionou mais arquivos do que o permitido."
+    do: gettext("Voce selecionou mais arquivos do que o permitido.")
 
   defp upload_error_message(:external_client_failure),
-    do: "O navegador nao conseguiu enviar este arquivo. Tente novamente."
+    do: gettext("O navegador nao conseguiu enviar este arquivo. Tente novamente.")
 
-  defp upload_error_message(_error), do: "Nao foi possivel enviar este arquivo."
+  defp upload_error_message(_error), do: gettext("Nao foi possivel enviar este arquivo.")
 
   @impl true
   def render(assigns) do
@@ -356,39 +369,12 @@ defmodule RapidToolsWeb.ExtractAudioLive do
       <section class="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(168,85,247,0.16),_transparent_28%),radial-gradient(circle_at_bottom_right,_rgba(236,72,153,0.14),_transparent_28%),linear-gradient(180deg,_rgba(249,244,252,1)_0%,_rgba(255,255,255,1)_52%,_rgba(250,243,248,1)_100%)]">
         <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
           <div class="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
-            <aside class="rounded-[2rem] border border-white/70 bg-white/80 p-5 shadow-[0_18px_50px_rgba(15,23,42,0.08)] backdrop-blur">
-              <div class="space-y-6">
-                <div class="space-y-2">
-                  <p class="text-sm font-semibold uppercase tracking-[0.3em] text-fuchsia-600">
-                    Rapid Tools
-                  </p>
-                  <div>
-                    <h2 class="text-2xl font-black tracking-tight text-slate-950">Tools</h2>
-                    <p class="mt-1 text-sm text-slate-600">
-                      Fluxos rapidos para imagem, video, audio e exportacao.
-                    </p>
-                  </div>
-                </div>
-
-                <nav class="space-y-3" aria-label="Tools">
-                  <.link
-                    :for={tool <- @tools}
-                    navigate={tool.path}
-                    class={[
-                      "block rounded-[1.5rem] border px-4 py-4 transition duration-200",
-                      tool.current && tool.current_class,
-                      !tool.current && tool.idle_class
-                    ]}
-                  >
-                    <div class="flex items-center gap-3">
-                      <span class={["inline-block size-2.5 rounded-full", tool.dot_class]} />
-                      <p class={["text-sm font-semibold", tool.name_class]}>{tool.name}</p>
-                    </div>
-                    <p class={["mt-1 text-sm", tool.blurb_class]}>{tool.blurb}</p>
-                  </.link>
-                </nav>
-              </div>
-            </aside>
+            <.tool_sidebar
+              tools={@tools}
+              current_locale={@current_locale}
+              redirect_to={@my_path}
+              theme={%{sidebar_border_class: "border-white/70", accent_class: "text-fuchsia-600"}}
+            />
 
             <div class="space-y-6">
               <div class="space-y-4 px-2 py-2">
@@ -399,10 +385,14 @@ defmodule RapidToolsWeb.ExtractAudioLive do
                   Extract Audio
                 </h1>
                 <p class="max-w-3xl text-base text-slate-600 sm:text-lg">
-                  Extraia o audio de videos em MP3, WAV, OGG, AAC e FLAC com downloads individuais ou em lote.
+                  {gettext(
+                    "Extraia o audio de videos em MP3, WAV, OGG, AAC e FLAC com downloads individuais ou em lote."
+                  )}
                 </p>
                 <p class="text-sm text-slate-500">
-                  Ideal para reaproveitar entrevistas, podcasts em video, aulas, lives e trilhas capturadas em camera.
+                  {gettext(
+                    "Ideal para reaproveitar entrevistas, podcasts em video, aulas, lives e trilhas capturadas em camera."
+                  )}
                 </p>
               </div>
 
@@ -419,8 +409,12 @@ defmodule RapidToolsWeb.ExtractAudioLive do
                       <div class="flex items-center gap-3 rounded-full border border-fuchsia-200 bg-white px-5 py-3 shadow-lg">
                         <span class="inline-block size-5 animate-spin rounded-full border-2 border-fuchsia-200 border-t-fuchsia-600" />
                         <div>
-                          <p class="text-sm font-semibold text-slate-950">Extraindo audio</p>
-                          <p class="text-xs text-slate-500">Isso pode levar alguns segundos.</p>
+                          <p class="text-sm font-semibold text-slate-950">
+                            {gettext("Extraindo audio")}
+                          </p>
+                          <p class="text-xs text-slate-500">
+                            {gettext("Isso pode levar alguns segundos.")}
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -428,18 +422,20 @@ defmodule RapidToolsWeb.ExtractAudioLive do
                     <div class="space-y-3">
                       <div>
                         <p class="text-sm font-semibold uppercase tracking-[0.25em] text-fuchsia-500">
-                          Upload de videos
+                          {gettext("Upload de videos")}
                         </p>
                         <h2 class="mt-2 text-2xl font-black tracking-tight text-slate-950">
-                          Selecione um ou mais videos para separar o som
+                          {gettext("Selecione um ou mais videos para separar o som")}
                         </h2>
                         <p class="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-                          O Rapid Tools mantem os uploads em fila, extrai o audio no formato escolhido e prepara downloads individuais e um ZIP final.
+                          {gettext(
+                            "O Rapid Tools mantem os uploads em fila, extrai o audio no formato escolhido e prepara downloads individuais e um ZIP final."
+                          )}
                         </p>
                       </div>
 
                       <label for="extract-audio-upload" class="text-sm font-semibold text-slate-900">
-                        Escolha os videos
+                        {gettext("Escolha os videos")}
                       </label>
 
                       <.live_file_input
@@ -449,7 +445,9 @@ defmodule RapidToolsWeb.ExtractAudioLive do
                       />
 
                       <p class="text-sm text-slate-500">
-                        Entradas aceitas: MP4, MOV, WEBM, MKV, AVI e TS. Ate 1 GB por video.
+                        {gettext(
+                          "Entradas aceitas: MP4, MOV, WEBM, MKV, AVI e TS. Ate 1 GB por video."
+                        )}
                       </p>
                     </div>
 
@@ -461,7 +459,9 @@ defmodule RapidToolsWeb.ExtractAudioLive do
                       <div class="flex items-start gap-3">
                         <span class="mt-1 inline-block size-3 rounded-full bg-fuchsia-500 animate-pulse" />
                         <div class="space-y-1">
-                          <p class="text-sm font-semibold text-fuchsia-900">Extraindo agora</p>
+                          <p class="text-sm font-semibold text-fuchsia-900">
+                            {gettext("Extraindo agora")}
+                          </p>
                           <p class="text-sm text-fuchsia-800">{@currently_extracting}</p>
                           <p class="text-xs uppercase tracking-[0.25em] text-fuchsia-600">
                             {processing_position(assigns)} de {@processing_total} videos
@@ -475,7 +475,9 @@ defmodule RapidToolsWeb.ExtractAudioLive do
                       class="rounded-[1.5rem] border border-slate-200 bg-slate-50/80 p-4"
                     >
                       <div class="flex items-center justify-between gap-3">
-                        <p class="text-sm font-semibold text-slate-900">Fila de upload</p>
+                        <p class="text-sm font-semibold text-slate-900">
+                          {gettext("Fila de upload")}
+                        </p>
                         <p class="text-xs text-slate-500">
                           {upload_summary(@uploads.video.entries, @currently_extracting)}
                         </p>
@@ -493,7 +495,7 @@ defmodule RapidToolsWeb.ExtractAudioLive do
                               </p>
                               <p class="mt-1 text-xs text-slate-500">
                                 {if entry.progress == 100,
-                                  do: "pronto",
+                                  do: gettext("pronto"),
                                   else: "#{entry.progress}% enviado"}
                               </p>
                             </div>
@@ -505,7 +507,7 @@ defmodule RapidToolsWeb.ExtractAudioLive do
                               class="rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600 transition hover:border-fuchsia-200 hover:text-fuchsia-700"
                               aria-label={"Remover #{entry.client_name}"}
                             >
-                              Remover
+                              {gettext("Remover")}
                             </button>
                           </div>
 
@@ -528,7 +530,7 @@ defmodule RapidToolsWeb.ExtractAudioLive do
                           :if={@uploads.video.entries == []}
                           class="rounded-[1.25rem] border border-dashed border-slate-200 bg-white/80 px-4 py-6 text-sm text-slate-500"
                         >
-                          Nenhum video selecionado ainda.
+                          {gettext("Nenhum video selecionado ainda.")}
                         </div>
                       </div>
                     </div>
@@ -539,7 +541,7 @@ defmodule RapidToolsWeb.ExtractAudioLive do
                           field={@form[:target_format]}
                           type="select"
                           id="extract-audio-target-format"
-                          label="Formato de saida"
+                          label={gettext("Formato de saida")}
                           options={Enum.map(@formats, &{String.upcase(&1), &1})}
                           class="rounded-2xl border-slate-200"
                         />
@@ -555,7 +557,7 @@ defmodule RapidToolsWeb.ExtractAudioLive do
                         }
                         class="inline-flex items-center justify-center rounded-full bg-fuchsia-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-fuchsia-600/20 transition hover:bg-fuchsia-500 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none"
                       >
-                        <span>Extrair audio</span>
+                        <span>{gettext("Extrair audio")}</span>
                       </button>
                     </div>
 
@@ -572,13 +574,15 @@ defmodule RapidToolsWeb.ExtractAudioLive do
                 <aside class="space-y-4 rounded-[2rem] border border-white/70 bg-white/90 p-6 shadow-[0_24px_60px_rgba(15,23,42,0.08)]">
                   <div>
                     <p class="text-sm font-semibold uppercase tracking-[0.25em] text-fuchsia-500">
-                      Resultados
+                      {gettext("Resultados")}
                     </p>
                     <h2 class="mt-2 text-2xl font-black tracking-tight text-slate-950">
-                      Audios prontos para download
+                      {gettext("Audios prontos para download")}
                     </h2>
                     <p class="mt-2 text-sm leading-6 text-slate-600">
-                      Cada arquivo extraido aparece aqui com link individual. Quando houver mais de um resultado, o lote tambem fica disponivel.
+                      {gettext(
+                        "Cada arquivo extraido aparece aqui com link individual. Quando houver mais de um resultado, o lote tambem fica disponivel."
+                      )}
                     </p>
                   </div>
 
@@ -600,7 +604,7 @@ defmodule RapidToolsWeb.ExtractAudioLive do
                           navigate={result.download_path}
                           class="mt-3 inline-flex text-sm font-semibold text-fuchsia-700 hover:text-fuchsia-600"
                         >
-                          Baixar arquivo
+                          {gettext("Baixar arquivo")}
                         </.link>
                       </div>
 
@@ -608,15 +612,21 @@ defmodule RapidToolsWeb.ExtractAudioLive do
                         :if={@results == []}
                         class="rounded-[1.25rem] border border-dashed border-slate-200 bg-white/80 px-4 py-6 text-sm text-slate-500"
                       >
-                        Os audios extraidos vao aparecer aqui assim que o processamento terminar.
+                        {gettext(
+                          "Os audios extraidos vao aparecer aqui assim que o processamento terminar."
+                        )}
                       </div>
                     </div>
                   </div>
 
                   <div class="rounded-[1.5rem] border border-fuchsia-100 bg-fuchsia-50/60 p-4">
-                    <p class="text-sm font-semibold text-fuchsia-900">Download em lote</p>
+                    <p class="text-sm font-semibold text-fuchsia-900">
+                      {gettext("Download em lote")}
+                    </p>
                     <p class="mt-2 text-sm leading-6 text-fuchsia-900/80">
-                      Gere um ZIP com todos os audios extraidos para baixar o pacote inteiro de uma vez.
+                      {gettext(
+                        "Gere um ZIP com todos os audios extraidos para baixar o pacote inteiro de uma vez."
+                      )}
                     </p>
 
                     <.link
@@ -624,7 +634,7 @@ defmodule RapidToolsWeb.ExtractAudioLive do
                       navigate={@batch_download_path}
                       class="mt-4 inline-flex rounded-full bg-fuchsia-600 px-5 py-2 text-sm font-semibold text-white transition hover:bg-fuchsia-500"
                     >
-                      Baixar ZIP
+                      {gettext("Baixar ZIP")}
                     </.link>
                   </div>
                 </aside>

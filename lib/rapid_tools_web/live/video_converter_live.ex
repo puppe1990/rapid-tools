@@ -29,6 +29,8 @@ defmodule RapidToolsWeb.VideoConverterLive do
      |> assign(:currently_converting, nil)
      |> assign(:processing_queue, [])
      |> assign(:processing_total, 0)
+     |> assign(:current_locale, socket.assigns[:current_locale] || "en")
+     |> assign(:my_path, "/video-converter")
      |> allow_upload(:video,
        accept: @video_accept,
        max_entries: 10,
@@ -59,10 +61,12 @@ defmodule RapidToolsWeb.VideoConverterLive do
       {:ok, socket} ->
         case uploaded_entries(socket, :video) do
           {[], []} ->
-            {:noreply, put_flash(socket, :error, "Selecione um video antes de converter.")}
+            {:noreply,
+             put_flash(socket, :error, gettext("Selecione um video antes de converter."))}
 
           {_completed, [_ | _]} ->
-            {:noreply, put_flash(socket, :error, "Aguarde o upload terminar antes de converter.")}
+            {:noreply,
+             put_flash(socket, :error, gettext("Aguarde o upload terminar antes de converter."))}
 
           _ ->
             {:noreply, start_conversion(socket, target_format)}
@@ -96,7 +100,7 @@ defmodule RapidToolsWeb.VideoConverterLive do
   defp start_conversion(socket, target_format) do
     case stage_uploaded_entries(socket) do
       {:ok, []} ->
-        put_flash(socket, :error, "Selecione um video antes de converter.")
+        put_flash(socket, :error, gettext("Selecione um video antes de converter."))
 
       {:ok, staged_entries} ->
         send(self(), {:begin_video_conversion, staged_entries, target_format, []})
@@ -181,7 +185,7 @@ defmodule RapidToolsWeb.VideoConverterLive do
           socket,
           successful_results,
           "#{length(successful_results)} videos convertidos.",
-          "Os videos foram convertidos, mas o ZIP nao pode ser gerado."
+          gettext("Os videos foram convertidos, mas o ZIP nao pode ser gerado.")
         )
 
       :error ->
@@ -221,7 +225,7 @@ defmodule RapidToolsWeb.VideoConverterLive do
   end
 
   defp lost_upload_message do
-    "O upload deste video foi perdido antes da conversao. Envie o arquivo novamente."
+    gettext("O upload deste video foi perdido antes da conversao. Envie o arquivo novamente.")
   end
 
   defp successful_batch_results(converted) when is_list(converted) do
@@ -237,13 +241,17 @@ defmodule RapidToolsWeb.VideoConverterLive do
 
   defp conversion_error_message([{:error, :no_video_stream}]),
     do:
-      "Este arquivo nao possui uma trilha de video. Envie um video valido em MP4, MOV, WEBM, MKV, AVI ou TS."
+      gettext(
+        "Este arquivo nao possui uma trilha de video. Envie um video valido em MP4, MOV, WEBM, MKV, AVI ou TS."
+      )
 
   defp conversion_error_message([{:error, :invalid_media_file}]),
     do:
-      "Este arquivo parece corrompido ou incompleto. Gere o video novamente e tente outro upload."
+      gettext(
+        "Este arquivo parece corrompido ou incompleto. Gere o video novamente e tente outro upload."
+      )
 
-  defp conversion_error_message(_results), do: "O video nao pode ser convertido."
+  defp conversion_error_message(_results), do: gettext("O video nao pode ser convertido.")
 
   defp build_batch_response(socket, successful_results, success_message, zip_error_message) do
     batch_entries =
@@ -287,16 +295,16 @@ defmodule RapidToolsWeb.VideoConverterLive do
   defp upload_status_message(entries, currently_converting) do
     cond do
       processing?(currently_converting) ->
-        "Conversao em andamento. Acompanhe qual arquivo esta sendo processado agora."
+        gettext("Conversao em andamento. Acompanhe qual arquivo esta sendo processado agora.")
 
       entries == [] ->
-        "Selecione um ou mais videos para habilitar a conversao."
+        gettext("Selecione um ou mais videos para habilitar a conversao.")
 
       upload_in_progress?(entries) ->
-        "Enviando videos para o servidor. Aguarde todos chegarem a 100%."
+        gettext("Enviando videos para o servidor. Aguarde todos chegarem a 100%.")
 
       true ->
-        "Uploads concluidos. Agora voce pode converter em lote."
+        gettext("Uploads concluidos. Agora voce pode converter em lote.")
     end
   end
 
@@ -306,10 +314,12 @@ defmodule RapidToolsWeb.VideoConverterLive do
 
     cond do
       processing?(currently_converting) ->
-        "Fila enviada para conversao. O video atual aparece com loader e o restante fica na sequencia."
+        gettext(
+          "Fila enviada para conversao. O video atual aparece com loader e o restante fica na sequencia."
+        )
 
       total == 0 ->
-        "Nenhum video selecionado ainda."
+        gettext("Nenhum video selecionado ainda.")
 
       upload_in_progress?(entries) ->
         "#{total} videos na fila. #{completed}/#{total} concluidos ate agora, o restante ainda esta enviando."
@@ -332,17 +342,18 @@ defmodule RapidToolsWeb.VideoConverterLive do
   end
 
   defp upload_error_message(:not_accepted),
-    do: "Formato nao aceito. Envie MP4, MOV, WEBM, MKV, AVI ou TS."
+    do: gettext("Formato nao aceito. Envie MP4, MOV, WEBM, MKV, AVI ou TS.")
 
-  defp upload_error_message(:too_large), do: "O arquivo excede o limite permitido para upload."
+  defp upload_error_message(:too_large),
+    do: gettext("O arquivo excede o limite permitido para upload.")
 
   defp upload_error_message(:too_many_files),
-    do: "Voce selecionou mais arquivos do que o permitido."
+    do: gettext("Voce selecionou mais arquivos do que o permitido.")
 
   defp upload_error_message(:external_client_failure),
-    do: "O navegador nao conseguiu enviar este arquivo. Tente novamente."
+    do: gettext("O navegador nao conseguiu enviar este arquivo. Tente novamente.")
 
-  defp upload_error_message(_error), do: "Nao foi possivel enviar este arquivo."
+  defp upload_error_message(_error), do: gettext("Nao foi possivel enviar este arquivo.")
 
   @impl true
   def render(assigns) do
@@ -356,39 +367,12 @@ defmodule RapidToolsWeb.VideoConverterLive do
       <section class="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(99,102,241,0.18),_transparent_30%),radial-gradient(circle_at_bottom_right,_rgba(56,189,248,0.14),_transparent_28%),linear-gradient(180deg,_rgba(241,244,252,1)_0%,_rgba(255,255,255,1)_52%,_rgba(238,242,252,1)_100%)]">
         <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
           <div class="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
-            <aside class="rounded-[2rem] border border-white/70 bg-white/80 p-5 shadow-[0_18px_50px_rgba(15,23,42,0.08)] backdrop-blur">
-              <div class="space-y-6">
-                <div class="space-y-2">
-                  <p class="text-sm font-semibold uppercase tracking-[0.3em] text-sky-600">
-                    Rapid Tools
-                  </p>
-                  <div>
-                    <h2 class="text-2xl font-black tracking-tight text-slate-950">Tools</h2>
-                    <p class="mt-1 text-sm text-slate-600">
-                      Conversores rapidos para formatos usados no mercado.
-                    </p>
-                  </div>
-                </div>
-
-                <nav class="space-y-3" aria-label="Tools">
-                  <.link
-                    :for={tool <- @tools}
-                    navigate={tool.path}
-                    class={[
-                      "block rounded-[1.5rem] border px-4 py-4 transition duration-200",
-                      tool.current && tool.current_class,
-                      !tool.current && tool.idle_class
-                    ]}
-                  >
-                    <div class="flex items-center gap-3">
-                      <span class={["inline-block size-2.5 rounded-full", tool.dot_class]} />
-                      <p class={["text-sm font-semibold", tool.name_class]}>{tool.name}</p>
-                    </div>
-                    <p class={["mt-1 text-sm", tool.blurb_class]}>{tool.blurb}</p>
-                  </.link>
-                </nav>
-              </div>
-            </aside>
+            <.tool_sidebar
+              tools={@tools}
+              current_locale={@current_locale}
+              redirect_to={@my_path}
+              theme={%{sidebar_border_class: "border-white/70", accent_class: "text-sky-600"}}
+            />
 
             <div class="space-y-6">
               <div class="space-y-4 px-2 py-2">
@@ -399,10 +383,14 @@ defmodule RapidToolsWeb.VideoConverterLive do
                   Video Converter
                 </h1>
                 <p class="max-w-3xl text-base text-slate-600 sm:text-lg">
-                  Converta videos para MP4, MOV, WEBM, MKV, AVI e TS com um fluxo simples e downloads individuais ou em lote.
+                  {gettext(
+                    "Converta videos para MP4, MOV, WEBM, MKV, AVI e TS com um fluxo simples e downloads individuais ou em lote."
+                  )}
                 </p>
                 <p class="text-sm text-slate-500">
-                  Ideal para exportar assets para web, social, compatibilidade com players e arquivos mestre.
+                  {gettext(
+                    "Ideal para exportar assets para web, social, compatibilidade com players e arquivos mestre."
+                  )}
                 </p>
               </div>
 
@@ -421,16 +409,16 @@ defmodule RapidToolsWeb.VideoConverterLive do
                         <div>
                           <p class="text-sm font-semibold text-slate-950">
                             <%= if @currently_converting do %>
-                              Convertendo: {@currently_converting}
+                              {gettext("Convertendo")}: {@currently_converting}
                             <% else %>
-                              Convertendo video
+                              {gettext("Convertendo video")}
                             <% end %>
                           </p>
                           <p class="text-xs text-slate-500">
                             <%= if @currently_converting do %>
-                              Aguarde a fila avancar para o proximo arquivo.
+                              {gettext("Aguarde a fila avancar para o proximo arquivo.")}
                             <% else %>
-                              Isso pode levar alguns segundos.
+                              {gettext("Isso pode levar alguns segundos.")}
                             <% end %>
                           </p>
                         </div>
@@ -440,7 +428,7 @@ defmodule RapidToolsWeb.VideoConverterLive do
                     <div class="rounded-[1.75rem] border border-dashed border-sky-200 bg-sky-50/60 p-5">
                       <div class="space-y-2">
                         <label for="video-upload" class="text-sm font-semibold text-slate-900">
-                          Video de origem
+                          {gettext("Video de origem")}
                         </label>
                         <.live_file_input
                           upload={@uploads.video}
@@ -448,7 +436,9 @@ defmodule RapidToolsWeb.VideoConverterLive do
                           class="block w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 shadow-sm transition file:mr-4 file:rounded-xl file:border-0 file:bg-slate-950 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:border-sky-300"
                         />
                         <p class="text-sm text-slate-500">
-                          Entradas aceitas: MP4, MOV, WEBM, MKV, AVI e TS. Ate 150 MB por video.
+                          {gettext(
+                            "Entradas aceitas: MP4, MOV, WEBM, MKV, AVI e TS. Ate 150 MB por video."
+                          )}
                         </p>
                         <p
                           :if={@upload_issue}
@@ -467,7 +457,7 @@ defmodule RapidToolsWeb.VideoConverterLive do
                           <span class="mt-1 inline-block size-4 animate-spin rounded-full border-2 border-sky-300 border-t-sky-700" />
                           <div class="min-w-0 flex-1">
                             <p class="text-xs font-semibold uppercase tracking-[0.28em] text-sky-700">
-                              Convertendo agora
+                              {gettext("Convertendo agora")}
                             </p>
                             <p class="mt-2 truncate text-base font-semibold text-slate-950">
                               {@currently_converting}
@@ -507,7 +497,7 @@ defmodule RapidToolsWeb.VideoConverterLive do
                           </div>
                           <span class="text-xs uppercase tracking-[0.2em] text-slate-400">
                             <%= if entry.progress == 100 do %>
-                              pronto
+                              {gettext("pronto")}
                             <% else %>
                               {entry.progress}%
                             <% end %>
@@ -529,7 +519,7 @@ defmodule RapidToolsWeb.VideoConverterLive do
                       field={@form[:target_format]}
                       type="select"
                       id="video-target-format"
-                      label="Formato de destino"
+                      label={gettext("Formato de destino")}
                       options={Enum.map(@formats, &{String.upcase(&1), &1})}
                       class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-sky-400"
                     />
@@ -545,7 +535,7 @@ defmodule RapidToolsWeb.VideoConverterLive do
                       class="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-sky-700 disabled:cursor-wait disabled:opacity-90"
                     >
                       <span class="inline-block size-4 animate-spin rounded-full border-2 border-white/30 border-t-white opacity-0 phx-submit-loading:opacity-100" />
-                      <span>Converter video</span>
+                      <span>{gettext("Converter video")}</span>
                     </button>
 
                     <p id="video-converter-status" class="text-sm text-slate-500">
@@ -564,7 +554,7 @@ defmodule RapidToolsWeb.VideoConverterLive do
                       href={@batch_download_path}
                       class="inline-flex w-full items-center justify-center rounded-2xl bg-sky-400 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-sky-300"
                     >
-                      Baixar pacote ZIP
+                      {gettext("Baixar pacote ZIP")}
                     </a>
                     <div class="space-y-3">
                       <div
@@ -573,13 +563,13 @@ defmodule RapidToolsWeb.VideoConverterLive do
                       >
                         <p class="font-semibold">{result.filename}</p>
                         <p class="mt-1 text-sm text-slate-300">
-                          Saida em {String.upcase(result.target_format)}
+                          {gettext("Saida em")} {String.upcase(result.target_format)}
                         </p>
                         <a
                           href={result.download_path}
                           class="mt-3 inline-flex w-full items-center justify-center rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/20"
                         >
-                          Baixar arquivo convertido
+                          {gettext("Baixar arquivo convertido")}
                         </a>
                       </div>
                     </div>
@@ -587,14 +577,16 @@ defmodule RapidToolsWeb.VideoConverterLive do
                   <div :if={@results == []} class="space-y-4">
                     <div class="rounded-[1.5rem] border border-white/10 bg-white/5 p-4">
                       <p class="text-sm font-semibold uppercase tracking-[0.25em] text-sky-300">
-                        Formatos populares
+                        {gettext("Formatos populares")}
                       </p>
                       <p class="mt-3 text-sm text-slate-300">
-                        MP4 para compatibilidade ampla, MOV para ecossistema Apple, WEBM para web, MKV para alta flexibilidade e AVI para legados.
+                        {gettext(
+                          "MP4 para compatibilidade ampla, MOV para ecossistema Apple, WEBM para web, MKV para alta flexibilidade e AVI para legados."
+                        )}
                       </p>
                     </div>
                     <div class="rounded-[1.5rem] border border-white/10 bg-white/5 p-4">
-                      <p class="text-sm font-semibold text-white">Saidas suportadas</p>
+                      <p class="text-sm font-semibold text-white">{gettext("Saidas suportadas")}</p>
                       <p class="mt-2 text-sm text-slate-300">
                         {Enum.map_join(@formats, ", ", &String.upcase/1)}
                       </p>

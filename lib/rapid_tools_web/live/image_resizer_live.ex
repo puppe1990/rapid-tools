@@ -25,6 +25,8 @@ defmodule RapidToolsWeb.ImageResizerLive do
      |> assign(:results, [])
      |> assign(:batch_download_path, nil)
      |> assign(:form, to_form(default_form_params(), as: :resize))
+     |> assign(:current_locale, socket.assigns[:current_locale] || "en")
+     |> assign(:my_path, "/image-resizer")
      |> allow_upload(:image, accept: @image_accept, max_entries: 10, auto_upload: true)}
   end
 
@@ -45,10 +47,15 @@ defmodule RapidToolsWeb.ImageResizerLive do
     case uploaded_entries(socket, :image) do
       {[], []} ->
         {:noreply,
-         put_flash(socket, :error, "Selecione ao menos uma imagem antes de redimensionar.")}
+         put_flash(
+           socket,
+           :error,
+           gettext("Selecione ao menos uma imagem antes de redimensionar.")
+         )}
 
       {_completed, [_ | _]} ->
-        {:noreply, put_flash(socket, :error, "Aguarde o upload terminar antes de redimensionar.")}
+        {:noreply,
+         put_flash(socket, :error, gettext("Aguarde o upload terminar antes de redimensionar."))}
 
       _ ->
         {:noreply, resize_uploads(assign(socket, :form, to_form(params, as: :resize)), params)}
@@ -97,11 +104,11 @@ defmodule RapidToolsWeb.ImageResizerLive do
           socket,
           successful_results,
           "#{length(successful_results)} imagens redimensionadas.",
-          "As imagens foram geradas, mas o ZIP nao pode ser criado."
+          gettext("As imagens foram geradas, mas o ZIP nao pode ser criado.")
         )
 
       :error ->
-        put_flash(socket, :error, "As imagens nao puderam ser redimensionadas.")
+        put_flash(socket, :error, gettext("As imagens nao puderam ser redimensionadas."))
     end
   end
 
@@ -175,13 +182,13 @@ defmodule RapidToolsWeb.ImageResizerLive do
   defp upload_status_message(entries) do
     cond do
       entries == [] ->
-        "Selecione imagens para preparar tamanhos prontos para web e social."
+        gettext("Selecione imagens para preparar tamanhos prontos para web e social.")
 
       upload_in_progress?(entries) ->
-        "Enviando imagens para o servidor. Aguarde todas chegarem a 100%."
+        gettext("Enviando imagens para o servidor. Aguarde todas chegarem a 100%.")
 
       true ->
-        "Uploads concluidos. Agora voce pode gerar as versoes redimensionadas."
+        gettext("Uploads concluidos. Agora voce pode gerar as versoes redimensionadas.")
     end
   end
 
@@ -191,7 +198,7 @@ defmodule RapidToolsWeb.ImageResizerLive do
 
     cond do
       total == 0 ->
-        "Nenhuma imagem selecionada ainda."
+        gettext("Nenhuma imagem selecionada ainda.")
 
       upload_in_progress?(entries) ->
         "#{total} imagens na fila. #{completed}/#{total} concluidas ate agora, o restante ainda esta enviando."
@@ -213,39 +220,12 @@ defmodule RapidToolsWeb.ImageResizerLive do
       <section class="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(14,116,144,0.18),_transparent_30%),radial-gradient(circle_at_bottom_right,_rgba(6,182,212,0.14),_transparent_28%),linear-gradient(180deg,_rgba(240,249,255,1)_0%,_rgba(255,255,255,1)_52%,_rgba(236,254,255,1)_100%)]">
         <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
           <div class="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
-            <aside class="rounded-[2rem] border border-cyan-100 bg-white/85 p-5 shadow-[0_18px_50px_rgba(15,23,42,0.08)] backdrop-blur">
-              <div class="space-y-6">
-                <div class="space-y-2">
-                  <p class="text-sm font-semibold uppercase tracking-[0.3em] text-cyan-700">
-                    Rapid Tools
-                  </p>
-                  <div>
-                    <h2 class="text-2xl font-black tracking-tight text-slate-950">Tools</h2>
-                    <p class="mt-1 text-sm text-slate-600">
-                      Presets visuais para social, e-commerce e criacao.
-                    </p>
-                  </div>
-                </div>
-
-                <nav class="space-y-3" aria-label="Tools">
-                  <.link
-                    :for={tool <- @tools}
-                    navigate={tool.path}
-                    class={[
-                      "block rounded-[1.5rem] border px-4 py-4 transition duration-200",
-                      tool.current && tool.current_class,
-                      !tool.current && tool.idle_class
-                    ]}
-                  >
-                    <div class="flex items-center gap-3">
-                      <span class={["inline-block size-2.5 rounded-full", tool.dot_class]} />
-                      <p class={["text-sm font-semibold", tool.name_class]}>{tool.name}</p>
-                    </div>
-                    <p class={["mt-1 text-sm", tool.blurb_class]}>{tool.blurb}</p>
-                  </.link>
-                </nav>
-              </div>
-            </aside>
+            <.tool_sidebar
+              tools={@tools}
+              current_locale={@current_locale}
+              redirect_to={@my_path}
+              theme={%{sidebar_border_class: "border-cyan-100", accent_class: "text-cyan-700"}}
+            />
 
             <div class="space-y-6">
               <div class="space-y-4 px-2 py-2">
@@ -259,7 +239,9 @@ defmodule RapidToolsWeb.ImageResizerLive do
                   Prepare product images, ad creatives, story assets, and thumbnails without editing one by one.
                 </p>
                 <p class="text-sm text-slate-500">
-                  Escolha um preset pronto ou defina largura e altura customizadas para todo o lote.
+                  {gettext(
+                    "Escolha um preset pronto ou defina largura e altura customizadas para todo o lote."
+                  )}
                 </p>
               </div>
 
@@ -275,7 +257,7 @@ defmodule RapidToolsWeb.ImageResizerLive do
                     <div class="rounded-[1.75rem] border border-dashed border-cyan-200 bg-cyan-50/60 p-5">
                       <div class="space-y-2">
                         <label for="image-resizer-upload" class="text-sm font-semibold text-slate-900">
-                          Imagens de origem
+                          {gettext("Imagens de origem")}
                         </label>
                         <.live_file_input
                           upload={@uploads.image}
@@ -283,7 +265,7 @@ defmodule RapidToolsWeb.ImageResizerLive do
                           class="block w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 shadow-sm transition file:mr-4 file:rounded-xl file:border-0 file:bg-slate-950 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:border-cyan-300"
                         />
                         <p class="text-sm text-slate-500">
-                          Entradas aceitas: JPG, JPEG, PNG, WEBP, HEIC e AVIF.
+                          {gettext("Entradas aceitas: JPG, JPEG, PNG, WEBP, HEIC e AVIF.")}
                         </p>
                       </div>
 
@@ -308,7 +290,9 @@ defmodule RapidToolsWeb.ImageResizerLive do
                             </div>
                           </div>
                           <span class="text-xs uppercase tracking-[0.2em] text-slate-400">
-                            {if entry.progress == 100, do: "pronto", else: "#{entry.progress}%"}
+                            {if entry.progress == 100,
+                              do: gettext("pronto"),
+                              else: "#{entry.progress}%"}
                           </span>
                           <button
                             type="button"
@@ -327,24 +311,24 @@ defmodule RapidToolsWeb.ImageResizerLive do
                       <.input
                         field={@form[:preset]}
                         type="select"
-                        label="Preset"
+                        label={gettext("Preset")}
                         options={Enum.map(@presets, fn {key, preset} -> {preset.label, key} end)}
                       />
                       <.input
                         field={@form[:target_format]}
                         type="select"
-                        label="Formato de saida"
+                        label={gettext("Formato de saida")}
                         options={Enum.map(@formats, fn format -> {String.upcase(format), format} end)}
                       />
                     </div>
 
                     <div class="grid gap-4 md:grid-cols-3">
-                      <.input field={@form[:width]} type="number" label="Largura" min="1" />
-                      <.input field={@form[:height]} type="number" label="Altura" min="1" />
+                      <.input field={@form[:width]} type="number" label={gettext("Largura")} min="1" />
+                      <.input field={@form[:height]} type="number" label={gettext("Altura")} min="1" />
                       <.input
                         field={@form[:fit]}
                         type="select"
-                        label="Ajuste"
+                        label={gettext("Ajuste")}
                         options={[{"Contain", "contain"}, {"Cover", "cover"}, {"Stretch", "stretch"}]}
                       />
                     </div>
@@ -358,7 +342,7 @@ defmodule RapidToolsWeb.ImageResizerLive do
                       }
                       class="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-cyan-700 disabled:cursor-wait disabled:opacity-90"
                     >
-                      <span>Gerar imagens redimensionadas</span>
+                      <span>{gettext("Gerar imagens redimensionadas")}</span>
                     </button>
 
                     <p class="text-sm text-slate-500">
@@ -377,7 +361,7 @@ defmodule RapidToolsWeb.ImageResizerLive do
                       href={@batch_download_path}
                       class="inline-flex w-full items-center justify-center rounded-2xl bg-cyan-400 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300"
                     >
-                      Baixar pacote ZIP
+                      {gettext("Baixar pacote ZIP")}
                     </a>
                     <div class="space-y-3">
                       <div
@@ -392,7 +376,7 @@ defmodule RapidToolsWeb.ImageResizerLive do
                           href={result.download_path}
                           class="mt-3 inline-flex w-full items-center justify-center rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/20"
                         >
-                          Baixar imagem
+                          {gettext("Baixar imagem")}
                         </a>
                       </div>
                     </div>
@@ -401,14 +385,16 @@ defmodule RapidToolsWeb.ImageResizerLive do
                   <div :if={@results == []} class="space-y-4">
                     <div class="rounded-[1.5rem] border border-white/10 bg-white/5 p-4">
                       <p class="text-sm font-semibold uppercase tracking-[0.25em] text-cyan-300">
-                        Presets prontos
+                        {gettext("Presets prontos")}
                       </p>
                       <p class="mt-3 text-sm text-slate-300">
-                        Instagram Post, Instagram Story, YouTube Thumb e Shopify Product ja entram com dimensoes prontas.
+                        {gettext(
+                          "Instagram Post, Instagram Story, YouTube Thumb e Shopify Product ja entram com dimensoes prontas."
+                        )}
                       </p>
                     </div>
                     <div class="rounded-[1.5rem] border border-white/10 bg-white/5 p-4">
-                      <p class="text-sm font-semibold text-white">Saidas suportadas</p>
+                      <p class="text-sm font-semibold text-white">{gettext("Saidas suportadas")}</p>
                       <p class="mt-2 text-sm text-slate-300">
                         {Enum.map_join(@formats, ", ", &String.upcase/1)}
                       </p>
