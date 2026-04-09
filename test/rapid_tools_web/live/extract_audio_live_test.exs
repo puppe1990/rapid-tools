@@ -25,9 +25,9 @@ defmodule RapidToolsWeb.ExtractAudioLiveTest do
     assert has_element?(view, "#extract-audio-button")
     assert has_element?(view, "#extract-audio-upload-list")
     assert has_element?(view, "a[href=\"/extract-audio\"]", "Extract Audio")
-    assert render(view) =~ "Extraia o audio de videos em MP3, WAV, OGG, AAC e FLAC"
-    assert render(view) =~ "Extraindo audio"
-    assert render(view) =~ "Nenhum video selecionado ainda."
+    assert render(view) =~ "Extract audio from videos as MP3, WAV, OGG, AAC, and FLAC"
+    assert render(view) =~ "Extracting audio"
+    assert render(view) =~ "No video selected yet."
     assert render(view) =~ ~s(value="mp3")
   end
 
@@ -47,8 +47,8 @@ defmodule RapidToolsWeb.ExtractAudioLiveTest do
 
     rendered_upload = render_upload(upload, "clip.mp4")
     assert rendered_upload =~ "clip.mp4"
-    assert rendered_upload =~ "pronto"
-    refute rendered_upload =~ "Formato nao aceito"
+    assert rendered_upload =~ "ready"
+    refute rendered_upload =~ "Format not accepted"
   end
 
   test "shows a specific error for videos without an audio track", %{conn: conn} do
@@ -72,7 +72,7 @@ defmodule RapidToolsWeb.ExtractAudioLiveTest do
       |> form("#extract-audio-form", conversion: %{target_format: "mp3"})
       |> render_submit()
 
-    html = eventually_render_including(view, "Este video nao possui uma trilha de audio.")
-    assert html =~ "Este video nao possui uma trilha de audio."
+    html = eventually_render_including(view, "This video does not contain an audio track.")
+    assert html =~ "This video does not contain an audio track."
   end
 end

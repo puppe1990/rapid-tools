@@ -11,7 +11,12 @@ defmodule RapidToolsWeb.ExtractAudioLive do
   @max_video_upload_size 1_073_741_824
 
   @impl true
-  def mount(_params, _session, socket) do
+  def mount(_params, session, socket) do
+    locale =
+      Locale.set_gettext_locale(
+        session["locale"] || socket.assigns[:current_locale] || Locale.default_locale()
+      )
+
     form =
       to_form(
         %{"target_format" => default_target_format()},
@@ -20,6 +25,7 @@ defmodule RapidToolsWeb.ExtractAudioLive do
 
     {:ok,
      socket
+     |> assign(:current_locale, locale)
      |> assign(:formats, AudioExtractor.supported_formats())
      |> assign(:tools, ToolNavigation.tools("extract-audio"))
      |> assign(:form, form)
@@ -29,7 +35,6 @@ defmodule RapidToolsWeb.ExtractAudioLive do
      |> assign(:currently_extracting, nil)
      |> assign(:processing_queue, [])
      |> assign(:processing_total, 0)
-     |> assign(:current_locale, socket.assigns[:current_locale] || "en")
      |> assign(:my_path, "/extract-audio")
      |> allow_upload(:video,
        accept: @video_accept,
@@ -188,7 +193,7 @@ defmodule RapidToolsWeb.ExtractAudioLive do
         build_batch_response(
           socket,
           successful_results,
-          "#{length(successful_results)} audios extraidos.",
+          gettext("%{count} audio tracks extracted.", count: length(successful_results)),
           gettext("Os audios foram extraidos, mas o ZIP nao pode ser gerado.")
         )
 
@@ -324,10 +329,16 @@ defmodule RapidToolsWeb.ExtractAudioLive do
         gettext("Nenhum video selecionado ainda.")
 
       upload_in_progress?(entries) ->
-        "#{total} videos na fila. #{completed}/#{total} concluidos ate agora, o restante ainda esta enviando."
+        gettext(
+          "%{total} videos in queue. %{completed}/%{total} finished so far, the rest are still uploading.",
+          total: total,
+          completed: completed
+        )
 
       true ->
-        "#{total} videos selecionados. Todos aparecem nesta caixa com scroll."
+        gettext("%{count} videos selected. All of them appear in this scrollable list.",
+          count: total
+        )
     end
   end
 
@@ -379,10 +390,10 @@ defmodule RapidToolsWeb.ExtractAudioLive do
             <div class="space-y-6">
               <div class="space-y-4 px-2 py-2">
                 <span class="inline-flex items-center rounded-full border border-fuchsia-200 bg-white/80 px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-fuchsia-700">
-                  Audio extraction
+                  {gettext("Audio extraction")}
                 </span>
                 <h1 class="text-4xl font-black tracking-tight text-slate-950 sm:text-5xl">
-                  Extract Audio
+                  {gettext("Extract Audio")}
                 </h1>
                 <p class="max-w-3xl text-base text-slate-600 sm:text-lg">
                   {gettext(
@@ -464,7 +475,10 @@ defmodule RapidToolsWeb.ExtractAudioLive do
                           </p>
                           <p class="text-sm text-fuchsia-800">{@currently_extracting}</p>
                           <p class="text-xs uppercase tracking-[0.25em] text-fuchsia-600">
-                            {processing_position(assigns)} de {@processing_total} videos
+                            {gettext("%{current} of %{total} videos",
+                              current: processing_position(assigns),
+                              total: @processing_total
+                            )}
                           </p>
                         </div>
                       </div>
@@ -505,7 +519,7 @@ defmodule RapidToolsWeb.ExtractAudioLive do
                               phx-click="cancel-upload"
                               phx-value-ref={entry.ref}
                               class="rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600 transition hover:border-fuchsia-200 hover:text-fuchsia-700"
-                              aria-label={"Remover #{entry.client_name}"}
+                              aria-label={gettext("Remove %{filename}", filename: entry.client_name)}
                             >
                               {gettext("Remover")}
                             </button>
@@ -550,7 +564,7 @@ defmodule RapidToolsWeb.ExtractAudioLive do
                       <button
                         id="extract-audio-button"
                         type="submit"
-                        phx-disable-with="Extraindo audio..."
+                        phx-disable-with={gettext("Extracting audio...")}
                         disabled={
                           @uploads.video.entries == [] || upload_in_progress?(@uploads.video.entries) ||
                             processing?(@currently_extracting)
@@ -588,7 +602,7 @@ defmodule RapidToolsWeb.ExtractAudioLive do
 
                   <div class="rounded-[1.5rem] border border-slate-200 bg-slate-50/80 p-4">
                     <p class="text-sm font-semibold text-slate-900">
-                      {length(@results)} audios extraidos
+                      {gettext("%{count} audio tracks extracted", count: length(@results))}
                     </p>
 
                     <div class="mt-4 space-y-3">

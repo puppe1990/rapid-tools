@@ -31,6 +31,6 @@ defmodule RapidToolsWeb.PdfConverterLiveTest do
 
     rendered_upload = render_upload(upload, "sample.pdf")
     assert rendered_upload =~ "sample.pdf"
-    assert rendered_upload =~ "1 arquivos na fila. 1/1 concluidos ate agora"
+    assert rendered_upload =~ "1 files in queue. 1/1 finished so far."
   end
 end

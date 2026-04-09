@@ -24,6 +24,20 @@ defmodule RapidToolsWeb.Locale do
   def validate_locale(_), do: @default_locale
 
   @doc """
+  Detects the best supported locale from an Accept-Language header.
+  """
+  def detect_locale(nil), do: @default_locale
+  def detect_locale(""), do: @default_locale
+
+  def detect_locale(header) when is_binary(header) do
+    header
+    |> String.split(",")
+    |> Enum.map(&String.trim/1)
+    |> Enum.map(&(String.split(&1, ";") |> List.first()))
+    |> Enum.find_value(@default_locale, &normalize_locale/1)
+  end
+
+  @doc """
   Returns the locale display name.
   """
   def display_name("en"), do: gettext("English")
@@ -51,4 +65,16 @@ defmodule RapidToolsWeb.Locale do
   def toggle_locale("en"), do: "pt_BR"
   def toggle_locale("pt_BR"), do: "en"
   def toggle_locale(_), do: "pt_BR"
+
+  defp normalize_locale(nil), do: nil
+
+  defp normalize_locale(locale) do
+    locale
+    |> String.replace("-", "_")
+    |> case do
+      <<"pt", _::binary>> -> "pt_BR"
+      <<"en", _::binary>> -> "en"
+      _ -> nil
+    end
+  end
 end

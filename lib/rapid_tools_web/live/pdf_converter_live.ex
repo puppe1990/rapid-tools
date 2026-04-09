@@ -9,14 +9,19 @@ defmodule RapidToolsWeb.PdfConverterLive do
   @document_accept ~w(.pdf .jpg .jpeg .png .webp)
 
   @impl true
-  def mount(_params, _session, socket) do
+  def mount(_params, session, socket) do
+    locale =
+      Locale.set_gettext_locale(
+        session["locale"] || socket.assigns[:current_locale] || Locale.default_locale()
+      )
+
     {:ok,
      socket
+     |> assign(:current_locale, locale)
      |> assign(:tools, ToolNavigation.tools("pdf-converter"))
      |> assign(:results, [])
      |> assign(:batch_download_path, nil)
      |> assign(:form, to_form(default_form_params(), as: :conversion))
-     |> assign(:current_locale, socket.assigns[:current_locale] || "en")
      |> assign(:my_path, "/pdf-converter")
      |> allow_upload(:document, accept: @document_accept, max_entries: 10, auto_upload: true)}
   end
@@ -102,7 +107,7 @@ defmodule RapidToolsWeb.PdfConverterLive do
         build_batch_response(
           socket,
           successful_results,
-          "#{length(successful_results)} paginas convertidas.",
+          gettext("%{count} pages converted.", count: length(successful_results)),
           gettext("As paginas foram convertidas, mas o ZIP nao pode ser criado.")
         )
 
@@ -191,10 +196,17 @@ defmodule RapidToolsWeb.PdfConverterLive do
         gettext("Nenhum arquivo selecionado ainda.")
 
       upload_in_progress?(entries) ->
-        "#{total} arquivos na fila. #{completed}/#{total} concluidos ate agora, o restante ainda esta enviando."
+        gettext(
+          "%{total} files in queue. %{completed}/%{total} finished so far, the rest are still uploading.",
+          total: total,
+          completed: completed
+        )
 
       true ->
-        "#{total} arquivos na fila. #{completed}/#{total} concluidos ate agora."
+        gettext("%{total} files in queue. %{completed}/%{total} finished so far.",
+          total: total,
+          completed: completed
+        )
     end
   end
 
@@ -233,13 +245,15 @@ defmodule RapidToolsWeb.PdfConverterLive do
             <div class="space-y-6">
               <div class="space-y-4 px-2 py-2">
                 <span class="inline-flex items-center rounded-full border border-lime-200 bg-white/80 px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-lime-700">
-                  PDF workflow
+                  {gettext("PDF workflow")}
                 </span>
                 <h1 class="text-4xl font-black tracking-tight text-slate-950 sm:text-5xl">
-                  Convert PDFs and images
+                  {gettext("Convert PDFs and images")}
                 </h1>
                 <p class="max-w-3xl text-base text-slate-600 sm:text-lg">
-                  Turn PDF pages into PNG or JPG files, or combine multiple images into a single PDF ready to download.
+                  {gettext(
+                    "Turn PDF pages into PNG or JPG files, or combine multiple images into a single PDF ready to download."
+                  )}
                 </p>
                 <p class="text-sm text-slate-500">
                   {gettext(
@@ -301,7 +315,7 @@ defmodule RapidToolsWeb.PdfConverterLive do
                             type="button"
                             phx-click="cancel-upload"
                             phx-value-ref={entry.ref}
-                            aria-label={"Remover #{entry.client_name}"}
+                            aria-label={gettext("Remove %{filename}", filename: entry.client_name)}
                             class="inline-flex size-8 shrink-0 items-center justify-center rounded-full border border-slate-200 text-sm font-bold text-slate-500 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600"
                           >
                             X
@@ -315,16 +329,16 @@ defmodule RapidToolsWeb.PdfConverterLive do
                       type="select"
                       label={gettext("Modo")}
                       options={[
-                        {"PDF to PNG", "pdf_to_png"},
-                        {"PDF to JPG", "pdf_to_jpg"},
-                        {"Images to PDF", "images_to_pdf"}
+                        {gettext("PDF to PNG"), "pdf_to_png"},
+                        {gettext("PDF to JPG"), "pdf_to_jpg"},
+                        {gettext("Images to PDF"), "images_to_pdf"}
                       ]}
                     />
 
                     <button
                       type="submit"
                       id="pdf-convert-button"
-                      phx-disable-with="Convertendo arquivos..."
+                      phx-disable-with={gettext("Converting files...")}
                       disabled={
                         @uploads.document.entries == [] ||
                           upload_in_progress?(@uploads.document.entries)
@@ -343,7 +357,7 @@ defmodule RapidToolsWeb.PdfConverterLive do
                 <aside class="rounded-[2rem] border border-white/70 bg-slate-950 p-6 text-white shadow-[0_24px_60px_rgba(15,23,42,0.16)]">
                   <div :if={@results != []} class="space-y-4">
                     <p class="text-sm font-semibold uppercase tracking-[0.25em] text-lime-300">
-                      {length(@results)} arquivos prontos
+                      {gettext("%{count} files ready", count: length(@results))}
                     </p>
                     <a
                       :if={@batch_download_path}
@@ -371,7 +385,7 @@ defmodule RapidToolsWeb.PdfConverterLive do
                   <div :if={@results == []} class="space-y-4">
                     <div class="rounded-[1.5rem] border border-white/10 bg-white/5 p-4">
                       <p class="text-sm font-semibold uppercase tracking-[0.25em] text-lime-300">
-                        PDF to PNG
+                        {gettext("PDF to PNG")}
                       </p>
                       <p class="mt-3 text-sm text-slate-300">
                         {gettext(

@@ -20,14 +20,24 @@ defmodule RapidToolsWeb.ImageConverterLiveTest do
     assert html =~ "Tools"
     assert html =~ "Image Converter"
     assert html =~ "Image workflow"
-    assert html =~ "Converta imagens para PNG, JPG, WEBP, HEIC e AVIF"
-
-    assert html =~
-             "Ideal para exportar assets para web, social, aplicativos e bibliotecas de design."
-
-    assert html =~ "Convertendo imagens"
-    assert html =~ "Isso pode levar alguns segundos."
+    assert html =~ "Convert images to PNG, JPG, WEBP, HEIC, and AVIF"
+    assert html =~ "Ideal for exporting assets for web, social, apps, and design libraries."
+    assert html =~ "Converting images"
+    assert html =~ "This can take a few seconds."
     assert html =~ ~s(value="png")
+  end
+
+  test "renders sidebar navigation in pt_BR when locale is stored in session", %{conn: conn} do
+    conn = init_test_session(conn, %{"locale" => "pt_BR"})
+
+    {:ok, view, html} = live(conn, ~p"/")
+
+    assert has_element?(view, "nav[aria-label=\"Ferramentas\"]")
+    assert has_element?(view, "a[href=\"/\"]", "Conversor de Imagem")
+    assert has_element?(view, "a[href=\"/video-converter\"]", "Conversor de Vídeo")
+    assert has_element?(view, "a[href=\"/audio-converter\"]", "Conversor de Áudio")
+    assert html =~ "Ferramentas"
+    assert html =~ "Conversão rápida para imagem, vídeo e áudio."
   end
 
   test "accepts multiple selected images in the upload list", %{conn: conn} do
@@ -54,7 +64,7 @@ defmodule RapidToolsWeb.ImageConverterLiveTest do
     rendered_upload = render_upload(upload, "sample-1.png")
     assert rendered_upload =~ "sample-1.png"
     assert rendered_upload =~ "sample-2.png"
-    assert rendered_upload =~ "2 imagens na fila. 1/2 concluidas ate agora"
+    assert rendered_upload =~ "2 images in queue. 1/2 finished so far"
   end
 
   test "clearing uploads keeps converted results intact", %{conn: conn} do

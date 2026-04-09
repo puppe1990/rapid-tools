@@ -16,16 +16,21 @@ defmodule RapidToolsWeb.ImageResizerLive do
   }
 
   @impl true
-  def mount(_params, _session, socket) do
+  def mount(_params, session, socket) do
+    locale =
+      Locale.set_gettext_locale(
+        session["locale"] || socket.assigns[:current_locale] || Locale.default_locale()
+      )
+
     {:ok,
      socket
+     |> assign(:current_locale, locale)
      |> assign(:formats, ImageResizer.supported_formats())
      |> assign(:tools, ToolNavigation.tools("image-resizer"))
      |> assign(:presets, @presets)
      |> assign(:results, [])
      |> assign(:batch_download_path, nil)
      |> assign(:form, to_form(default_form_params(), as: :resize))
-     |> assign(:current_locale, socket.assigns[:current_locale] || "en")
      |> assign(:my_path, "/image-resizer")
      |> allow_upload(:image, accept: @image_accept, max_entries: 10, auto_upload: true)}
   end
@@ -103,7 +108,7 @@ defmodule RapidToolsWeb.ImageResizerLive do
         build_batch_response(
           socket,
           successful_results,
-          "#{length(successful_results)} imagens redimensionadas.",
+          gettext("%{count} images resized.", count: length(successful_results)),
           gettext("As imagens foram geradas, mas o ZIP nao pode ser criado.")
         )
 
@@ -201,10 +206,16 @@ defmodule RapidToolsWeb.ImageResizerLive do
         gettext("Nenhuma imagem selecionada ainda.")
 
       upload_in_progress?(entries) ->
-        "#{total} imagens na fila. #{completed}/#{total} concluidas ate agora, o restante ainda esta enviando."
+        gettext(
+          "%{total} images in queue. %{completed}/%{total} finished so far, the rest are still uploading.",
+          total: total,
+          completed: completed
+        )
 
       true ->
-        "#{total} imagens selecionadas. Todas aparecem nesta caixa com scroll."
+        gettext("%{count} images selected. All of them appear in this scrollable list.",
+          count: total
+        )
     end
   end
 
@@ -230,13 +241,15 @@ defmodule RapidToolsWeb.ImageResizerLive do
             <div class="space-y-6">
               <div class="space-y-4 px-2 py-2">
                 <span class="inline-flex items-center rounded-full border border-cyan-200 bg-white/80 px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-cyan-700">
-                  Image sizing
+                  {gettext("Image sizing")}
                 </span>
                 <h1 class="text-4xl font-black tracking-tight text-slate-950 sm:text-5xl">
-                  Resize images in bulk
+                  {gettext("Resize images in bulk")}
                 </h1>
                 <p class="max-w-3xl text-base text-slate-600 sm:text-lg">
-                  Prepare product images, ad creatives, story assets, and thumbnails without editing one by one.
+                  {gettext(
+                    "Prepare product images, ad creatives, story assets, and thumbnails without editing one by one."
+                  )}
                 </p>
                 <p class="text-sm text-slate-500">
                   {gettext(
@@ -298,7 +311,7 @@ defmodule RapidToolsWeb.ImageResizerLive do
                             type="button"
                             phx-click="cancel-upload"
                             phx-value-ref={entry.ref}
-                            aria-label={"Remover #{entry.client_name}"}
+                            aria-label={gettext("Remove %{filename}", filename: entry.client_name)}
                             class="inline-flex size-8 shrink-0 items-center justify-center rounded-full border border-slate-200 text-sm font-bold text-slate-500 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600"
                           >
                             X
@@ -329,14 +342,18 @@ defmodule RapidToolsWeb.ImageResizerLive do
                         field={@form[:fit]}
                         type="select"
                         label={gettext("Ajuste")}
-                        options={[{"Contain", "contain"}, {"Cover", "cover"}, {"Stretch", "stretch"}]}
+                        options={[
+                          {gettext("Contain"), "contain"},
+                          {gettext("Cover"), "cover"},
+                          {gettext("Stretch"), "stretch"}
+                        ]}
                       />
                     </div>
 
                     <button
                       type="submit"
                       id="image-resize-button"
-                      phx-disable-with="Gerando imagens..."
+                      phx-disable-with={gettext("Generating images...")}
                       disabled={
                         @uploads.image.entries == [] || upload_in_progress?(@uploads.image.entries)
                       }
@@ -354,7 +371,7 @@ defmodule RapidToolsWeb.ImageResizerLive do
                 <aside class="rounded-[2rem] border border-white/70 bg-slate-950 p-6 text-white shadow-[0_24px_60px_rgba(15,23,42,0.16)]">
                   <div :if={@results != []} class="space-y-4">
                     <p class="text-sm font-semibold uppercase tracking-[0.25em] text-cyan-300">
-                      {length(@results)} imagens prontas
+                      {gettext("%{count} images ready", count: length(@results))}
                     </p>
                     <a
                       :if={@batch_download_path}
@@ -370,7 +387,11 @@ defmodule RapidToolsWeb.ImageResizerLive do
                       >
                         <p class="font-semibold">{result.filename}</p>
                         <p class="mt-1 text-sm text-slate-300">
-                          {result.width} x {result.height} em {String.upcase(result.target_format)}
+                          {gettext("%{width} x %{height} in %{format}",
+                            width: result.width,
+                            height: result.height,
+                            format: String.upcase(result.target_format)
+                          )}
                         </p>
                         <a
                           href={result.download_path}

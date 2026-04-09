@@ -8,7 +8,12 @@ defmodule RapidToolsWeb.TogetherAudiosLive do
   @audio_accept ~w(.mp3 .wav .ogg .aac)
 
   @impl true
-  def mount(_params, _session, socket) do
+  def mount(_params, session, socket) do
+    locale =
+      Locale.set_gettext_locale(
+        session["locale"] || socket.assigns[:current_locale] || Locale.default_locale()
+      )
+
     form =
       to_form(
         %{"target_format" => default_target_format()},
@@ -17,12 +22,12 @@ defmodule RapidToolsWeb.TogetherAudiosLive do
 
     {:ok,
      socket
+     |> assign(:current_locale, locale)
      |> assign(:formats, AudioJoiner.supported_formats())
      |> assign(:tools, ToolNavigation.tools("together-audios"))
      |> assign(:form, form)
      |> assign(:result, nil)
      |> assign(:audio_order, [])
-     |> assign(:current_locale, socket.assigns[:current_locale] || "en")
      |> assign(:my_path, "/together-audios")
      |> allow_upload(:audio, accept: @audio_accept, max_entries: 100, auto_upload: true)}
   end
@@ -119,7 +124,10 @@ defmodule RapidToolsWeb.TogetherAudiosLive do
 
         socket
         |> assign(:result, joined_result)
-        |> put_flash(:info, "#{length(source_paths)} audios unidos com sucesso.")
+        |> put_flash(
+          :info,
+          gettext("%{count} audio files joined successfully.", count: length(source_paths))
+        )
 
       {:error, :not_enough_source_files} ->
         put_flash(socket, :error, gettext("Selecione pelo menos dois audios para unir."))
@@ -168,10 +176,16 @@ defmodule RapidToolsWeb.TogetherAudiosLive do
         gettext("Nenhum audio selecionado ainda.")
 
       upload_in_progress?(entries) ->
-        "#{total} audios na fila. #{completed}/#{total} concluidos ate agora, o restante ainda esta enviando."
+        gettext(
+          "%{total} audio files in queue. %{completed}/%{total} finished so far, the rest are still uploading.",
+          total: total,
+          completed: completed
+        )
 
       true ->
-        "#{total} audios selecionados. Todos aparecem nesta caixa com scroll."
+        gettext("%{count} audio files selected. All of them appear in this scrollable list.",
+          count: total
+        )
     end
   end
 
@@ -244,10 +258,10 @@ defmodule RapidToolsWeb.TogetherAudiosLive do
             <div class="space-y-6">
               <div class="space-y-4 px-2 py-2">
                 <span class="inline-flex items-center rounded-full border border-amber-200 bg-white/80 px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-amber-700">
-                  Audio assembly
+                  {gettext("Audio assembly")}
                 </span>
                 <h1 class="text-4xl font-black tracking-tight text-slate-950 sm:text-5xl">
-                  Together Audios
+                  {gettext("Together Audios")}
                 </h1>
                 <p class="max-w-3xl text-base text-slate-600 sm:text-lg">
                   {gettext("Junte varios arquivos de audio em uma unica faixa final.")}
@@ -343,7 +357,7 @@ defmodule RapidToolsWeb.TogetherAudiosLive do
                               type="button"
                               phx-click="move-up"
                               phx-value-ref={entry.ref}
-                              aria-label={"Mover #{entry.client_name} para cima"}
+                              aria-label={gettext("Move %{filename} up", filename: entry.client_name)}
                               class="inline-flex size-8 shrink-0 items-center justify-center rounded-full border border-slate-200 text-sm font-bold text-slate-500 transition hover:border-amber-300 hover:bg-amber-50 hover:text-amber-700"
                             >
                               ↑
@@ -353,7 +367,9 @@ defmodule RapidToolsWeb.TogetherAudiosLive do
                               type="button"
                               phx-click="move-down"
                               phx-value-ref={entry.ref}
-                              aria-label={"Mover #{entry.client_name} para baixo"}
+                              aria-label={
+                                gettext("Move %{filename} down", filename: entry.client_name)
+                              }
                               class="inline-flex size-8 shrink-0 items-center justify-center rounded-full border border-slate-200 text-sm font-bold text-slate-500 transition hover:border-amber-300 hover:bg-amber-50 hover:text-amber-700"
                             >
                               ↓
@@ -363,7 +379,7 @@ defmodule RapidToolsWeb.TogetherAudiosLive do
                             type="button"
                             phx-click="cancel-upload"
                             phx-value-ref={entry.ref}
-                            aria-label={"Remover #{entry.client_name}"}
+                            aria-label={gettext("Remove %{filename}", filename: entry.client_name)}
                             class="inline-flex size-8 shrink-0 items-center justify-center rounded-full border border-slate-200 text-sm font-bold text-slate-500 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600"
                           >
                             X
@@ -384,7 +400,7 @@ defmodule RapidToolsWeb.TogetherAudiosLive do
                     <button
                       type="submit"
                       id="together-audios-button"
-                      phx-disable-with="Unindo audios..."
+                      phx-disable-with={gettext("Joining audio files...")}
                       disabled={
                         !enough_completed_uploads?(@uploads.audio.entries) ||
                           upload_in_progress?(@uploads.audio.entries)
@@ -412,7 +428,10 @@ defmodule RapidToolsWeb.TogetherAudiosLive do
                     <div class="rounded-[1.5rem] border border-white/10 bg-white/5 p-4">
                       <p class="font-semibold">{@result.filename}</p>
                       <p class="mt-1 text-sm text-slate-300">
-                        {@result.source_count} audios unidos em {String.upcase(@result.target_format)}
+                        {gettext("%{count} audio files joined as %{format}",
+                          count: @result.source_count,
+                          format: String.upcase(@result.target_format)
+                        )}
                       </p>
                       <a
                         href={@result.download_path}

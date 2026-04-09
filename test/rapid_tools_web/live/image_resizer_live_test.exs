@@ -39,6 +39,6 @@ defmodule RapidToolsWeb.ImageResizerLiveTest do
     rendered_upload = render_upload(upload, "resize-1.png")
     assert rendered_upload =~ "resize-1.png"
     assert rendered_upload =~ "resize-2.png"
-    assert rendered_upload =~ "2 imagens na fila. 1/2 concluidas ate agora"
+    assert rendered_upload =~ "2 images in queue. 1/2 finished so far"
   end
 end

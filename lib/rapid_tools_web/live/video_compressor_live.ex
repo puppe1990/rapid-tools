@@ -10,14 +10,19 @@ defmodule RapidToolsWeb.VideoCompressorLive do
   @max_video_upload_size 150_000_000
 
   @impl true
-  def mount(_params, _session, socket) do
+  def mount(_params, session, socket) do
+    locale =
+      Locale.set_gettext_locale(
+        session["locale"] || socket.assigns[:current_locale] || Locale.default_locale()
+      )
+
     {:ok,
      socket
+     |> assign(:current_locale, locale)
      |> assign(:tools, ToolNavigation.tools("video-compressor"))
      |> assign(:results, [])
      |> assign(:batch_download_path, nil)
      |> assign(:form, to_form(default_form_params(), as: :compression))
-     |> assign(:current_locale, socket.assigns[:current_locale] || "en")
      |> assign(:my_path, "/video-compressor")
      |> allow_upload(:video,
        accept: @video_accept,
@@ -98,7 +103,7 @@ defmodule RapidToolsWeb.VideoCompressorLive do
         build_batch_response(
           socket,
           successful_results,
-          "#{length(successful_results)} videos comprimidos.",
+          gettext("%{count} videos compressed.", count: length(successful_results)),
           gettext("Os videos foram gerados, mas o ZIP nao pode ser criado.")
         )
 
@@ -163,10 +168,16 @@ defmodule RapidToolsWeb.VideoCompressorLive do
         gettext("Nenhum video selecionado ainda.")
 
       upload_in_progress?(entries) ->
-        "#{total} videos na fila. #{completed}/#{total} concluidos ate agora, o restante ainda esta enviando."
+        gettext(
+          "%{total} videos in queue. %{completed}/%{total} finished so far, the rest are still uploading.",
+          total: total,
+          completed: completed
+        )
 
       true ->
-        "#{total} videos selecionados. Todos aparecem nesta caixa com scroll."
+        gettext("%{count} videos selected. All of them appear in this scrollable list.",
+          count: total
+        )
     end
   end
 
@@ -219,13 +230,15 @@ defmodule RapidToolsWeb.VideoCompressorLive do
             <div class="space-y-6">
               <div class="space-y-4 px-2 py-2">
                 <span class="inline-flex items-center rounded-full border border-rose-200 bg-white/80 px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-rose-700">
-                  Video optimization
+                  {gettext("Video optimization")}
                 </span>
                 <h1 class="text-4xl font-black tracking-tight text-slate-950 sm:text-5xl">
-                  Compress videos for sharing
+                  {gettext("Compress videos for sharing")}
                 </h1>
                 <p class="max-w-3xl text-base text-slate-600 sm:text-lg">
-                  Shrink heavy uploads for email, WhatsApp, landing pages, and client approvals while keeping playback compatible.
+                  {gettext(
+                    "Shrink heavy uploads for email, WhatsApp, landing pages, and client approvals while keeping playback compatible."
+                  )}
                 </p>
                 <p class="text-sm text-slate-500">
                   {gettext(
@@ -296,7 +309,7 @@ defmodule RapidToolsWeb.VideoCompressorLive do
                             type="button"
                             phx-click="cancel-upload"
                             phx-value-ref={entry.ref}
-                            aria-label={"Remover #{entry.client_name}"}
+                            aria-label={gettext("Remove %{filename}", filename: entry.client_name)}
                             class="inline-flex size-8 shrink-0 items-center justify-center rounded-full border border-slate-200 text-sm font-bold text-slate-500 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600"
                           >
                             X
@@ -311,9 +324,9 @@ defmodule RapidToolsWeb.VideoCompressorLive do
                         type="select"
                         label={gettext("Preset")}
                         options={[
-                          {"Small size", "small"},
-                          {"Balanced", "balanced"},
-                          {"High quality", "high"}
+                          {gettext("Small size"), "small"},
+                          {gettext("Balanced"), "balanced"},
+                          {gettext("High quality"), "high"}
                         ]}
                       />
                       <.input
@@ -321,7 +334,7 @@ defmodule RapidToolsWeb.VideoCompressorLive do
                         type="select"
                         label={gettext("Resolucao maxima")}
                         options={[
-                          {"Keep original", "original"},
+                          {gettext("Keep original"), "original"},
                           {"1080p", "1080"},
                           {"720p", "720"},
                           {"480p", "480"}
@@ -343,7 +356,7 @@ defmodule RapidToolsWeb.VideoCompressorLive do
                     <button
                       type="submit"
                       id="video-compress-button"
-                      phx-disable-with="Comprimindo videos..."
+                      phx-disable-with={gettext("Compressing videos...")}
                       disabled={
                         @uploads.video.entries == [] || upload_in_progress?(@uploads.video.entries)
                       }
@@ -361,7 +374,7 @@ defmodule RapidToolsWeb.VideoCompressorLive do
                 <aside class="rounded-[2rem] border border-white/70 bg-slate-950 p-6 text-white shadow-[0_24px_60px_rgba(15,23,42,0.16)]">
                   <div :if={@results != []} class="space-y-4">
                     <p class="text-sm font-semibold uppercase tracking-[0.25em] text-rose-300">
-                      {length(@results)} videos prontos
+                      {gettext("%{count} videos ready", count: length(@results))}
                     </p>
                     <a
                       :if={@batch_download_path}

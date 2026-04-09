@@ -44,10 +44,10 @@ defmodule RapidToolsWeb.VideoConverterLiveTest do
     assert has_element?(view, "a[href=\"/audio-converter\"]", "Audio Converter")
     assert has_element?(view, "a[href=\"/pdf-converter\"]", "PDF Converter")
     assert has_element?(view, "a[href=\"/together-audios\"]", "Together Audios")
-    assert render(view) =~ "Converta videos para MP4, MOV, WEBM, MKV, AVI e TS"
-    assert render(view) =~ "Convertendo video"
-    assert render(view) =~ "Isso pode levar alguns segundos."
-    assert render(view) =~ "Nenhum video selecionado ainda."
+    assert render(view) =~ "Convert videos to MP4, MOV, WEBM, MKV, AVI, and TS"
+    assert render(view) =~ "Converting video"
+    assert render(view) =~ "This can take a few seconds."
+    assert render(view) =~ "No video selected yet."
     assert render(view) =~ ~s(value="mp4")
   end
 
@@ -75,8 +75,8 @@ defmodule RapidToolsWeb.VideoConverterLiveTest do
     rendered_upload = render_upload(upload, "sample-1.mp4")
     assert rendered_upload =~ "sample-1.mp4"
     assert rendered_upload =~ "sample-2.mp4"
-    assert rendered_upload =~ "2 videos na fila. 1/2 concluidos ate agora"
-    assert rendered_upload =~ "Remover sample-1.mp4"
+    assert rendered_upload =~ "2 videos in queue. 1/2 finished so far"
+    assert rendered_upload =~ "Remove sample-1.mp4"
     assert rendered_upload =~ "phx-click=\"cancel-upload\""
   end
 
@@ -98,8 +98,8 @@ defmodule RapidToolsWeb.VideoConverterLiveTest do
 
     rendered_upload = render_upload(upload, "recording.webm")
     assert rendered_upload =~ "recording.webm"
-    assert rendered_upload =~ "pronto"
-    refute rendered_upload =~ "Formato nao aceito"
+    assert rendered_upload =~ "ready"
+    refute rendered_upload =~ "Format not accepted"
   end
 
   test "accepts ts uploads", %{conn: conn} do
@@ -118,8 +118,8 @@ defmodule RapidToolsWeb.VideoConverterLiveTest do
 
     rendered_upload = render_upload(upload, "broadcast.ts")
     assert rendered_upload =~ "broadcast.ts"
-    assert rendered_upload =~ "pronto"
-    refute rendered_upload =~ "Formato nao aceito"
+    assert rendered_upload =~ "ready"
+    refute rendered_upload =~ "Format not accepted"
   end
 
   test "accepts ts uploads when the browser falls back to application/octet-stream", %{
@@ -140,8 +140,8 @@ defmodule RapidToolsWeb.VideoConverterLiveTest do
 
     rendered_upload = render_upload(upload, "camera-export.ts")
     assert rendered_upload =~ "camera-export.ts"
-    assert rendered_upload =~ "pronto"
-    refute rendered_upload =~ "Formato nao aceito"
+    assert rendered_upload =~ "ready"
+    refute rendered_upload =~ "Format not accepted"
   end
 
   test "accepts uppercase TS uploads", %{conn: conn} do
@@ -160,14 +160,14 @@ defmodule RapidToolsWeb.VideoConverterLiveTest do
 
     rendered_upload = render_upload(upload, "CAM001.TS")
     assert rendered_upload =~ "CAM001.TS"
-    assert rendered_upload =~ "pronto"
-    refute rendered_upload =~ "Formato nao aceito"
+    assert rendered_upload =~ "ready"
+    refute rendered_upload =~ "Format not accepted"
   end
 
   test "shows an explicit initial status message", %{conn: conn} do
     {:ok, view, _html} = live(conn, ~p"/video-converter")
 
-    assert render(view) =~ "Selecione um ou mais videos para habilitar a conversao."
+    assert render(view) =~ "Select one or more videos to enable conversion."
   end
 
   test "shows a specific error flash instead of crashing when media is invalid", %{conn: conn} do
@@ -190,8 +190,8 @@ defmodule RapidToolsWeb.VideoConverterLiveTest do
       |> form("#video-converter-form", conversion: %{target_format: "mp4"})
       |> render_submit()
 
-    html = eventually_render_including(view, "Este arquivo parece corrompido ou incompleto.")
-    assert html =~ "Este arquivo parece corrompido ou incompleto."
+    html = eventually_render_including(view, "This file seems corrupted or incomplete.")
+    assert html =~ "This file seems corrupted or incomplete."
   end
 
   test "shows a specific error for mp4 files without a video track", %{conn: conn} do
@@ -215,8 +215,8 @@ defmodule RapidToolsWeb.VideoConverterLiveTest do
       |> form("#video-converter-form", conversion: %{target_format: "webm"})
       |> render_submit()
 
-    html = eventually_render_including(view, "Este arquivo nao possui uma trilha de video.")
-    assert html =~ "Este arquivo nao possui uma trilha de video."
+    html = eventually_render_including(view, "This file does not contain a video track.")
+    assert html =~ "This file does not contain a video track."
   end
 
   test "surfaces a friendly error when uploaded entries become unavailable before conversion", %{
@@ -262,7 +262,7 @@ defmodule RapidToolsWeb.VideoConverterLiveTest do
       |> form("#video-converter-form", conversion: %{target_format: "mp4"})
       |> render_submit()
 
-    assert html =~ "O upload deste video foi perdido antes da conversao."
+    assert html =~ "This video upload was lost before conversion."
     assert html =~ "stale.mp4"
   end
 
@@ -284,9 +284,9 @@ defmodule RapidToolsWeb.VideoConverterLiveTest do
        ], "mp4", []}
     )
 
-    html = eventually_render_including(view, "Convertendo agora")
-    assert html =~ "Convertendo agora"
+    html = eventually_render_including(view, "Converting now")
+    assert html =~ "Converting now"
     assert html =~ "progress-demo.mp4" or html =~ "next-up.mov"
-    assert html =~ "de 2 videos"
+    assert html =~ "of 2 videos"
   end
 end

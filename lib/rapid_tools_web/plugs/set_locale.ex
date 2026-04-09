@@ -10,11 +10,24 @@ defmodule RapidToolsWeb.Plugs.SetLocale do
   def call(conn, _default) do
     locale =
       get_session(conn, "locale") ||
-        Locale.default_locale()
+        conn
+        |> get_req_header("accept-language")
+        |> List.first()
+        |> Locale.detect_locale()
         |> Locale.validate_locale()
 
     Locale.set_gettext_locale(locale)
 
-    assign(conn, :current_locale, locale)
+    conn
+    |> maybe_store_locale(locale)
+    |> assign(:current_locale, locale)
+  end
+
+  defp maybe_store_locale(conn, locale) do
+    if get_session(conn, "locale") do
+      conn
+    else
+      put_session(conn, "locale", locale)
+    end
   end
 end

@@ -9,7 +9,12 @@ defmodule RapidToolsWeb.ImageConverterLive do
   @image_accept ~w(.jpg .jpeg .png .webp .heic .avif)
 
   @impl true
-  def mount(_params, _session, socket) do
+  def mount(_params, session, socket) do
+    locale =
+      Locale.set_gettext_locale(
+        session["locale"] || socket.assigns[:current_locale] || Locale.default_locale()
+      )
+
     form =
       to_form(
         %{"target_format" => default_target_format()},
@@ -18,12 +23,12 @@ defmodule RapidToolsWeb.ImageConverterLive do
 
     {:ok,
      socket
+     |> assign(:current_locale, locale)
      |> assign(:formats, ImageConverter.supported_formats())
      |> assign(:tools, ToolNavigation.tools("image"))
      |> assign(:form, form)
      |> assign(:results, [])
      |> assign(:batch_download_path, nil)
-     |> assign(:current_locale, socket.assigns[:current_locale] || "en")
      |> assign(:my_path, "/")
      |> allow_upload(:image, accept: @image_accept, max_entries: 10, auto_upload: true)}
   end
@@ -118,7 +123,7 @@ defmodule RapidToolsWeb.ImageConverterLive do
         build_batch_response(
           socket,
           successful_results,
-          "#{length(successful_results)} imagens convertidas.",
+          gettext("%{count} images converted.", count: length(successful_results)),
           gettext("As imagens foram convertidas, mas o pacote ZIP nao pode ser gerado.")
         )
 
@@ -199,10 +204,16 @@ defmodule RapidToolsWeb.ImageConverterLive do
         gettext("Nenhuma imagem selecionada ainda.")
 
       upload_in_progress?(entries) ->
-        "#{total} imagens na fila. #{completed}/#{total} concluidas ate agora, o restante ainda esta enviando."
+        gettext(
+          "%{total} images in queue. %{completed}/%{total} finished so far, the rest are still uploading.",
+          total: total,
+          completed: completed
+        )
 
       true ->
-        "#{total} imagens selecionadas. Todas aparecem nesta caixa com scroll."
+        gettext("%{count} images selected. All of them appear in this scrollable list.",
+          count: total
+        )
     end
   end
 
@@ -228,10 +239,10 @@ defmodule RapidToolsWeb.ImageConverterLive do
             <div class="space-y-6">
               <div class="space-y-4 px-2 py-2">
                 <span class="inline-flex items-center rounded-full border border-orange-200 bg-white/80 px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-orange-700">
-                  Image workflow
+                  {gettext("Image workflow")}
                 </span>
                 <h1 class="text-4xl font-black tracking-tight text-slate-950 sm:text-5xl">
-                  Image Converter
+                  {gettext("Image Converter")}
                 </h1>
                 <p class="max-w-3xl text-base text-slate-600 sm:text-lg">
                   {gettext(
@@ -323,7 +334,7 @@ defmodule RapidToolsWeb.ImageConverterLive do
                             type="button"
                             phx-click="cancel-upload"
                             phx-value-ref={entry.ref}
-                            aria-label={"Remover #{entry.client_name}"}
+                            aria-label={gettext("Remove %{filename}", filename: entry.client_name)}
                             class="inline-flex size-8 shrink-0 items-center justify-center rounded-full border border-slate-200 text-sm font-bold text-slate-500 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600"
                           >
                             X
@@ -344,7 +355,7 @@ defmodule RapidToolsWeb.ImageConverterLive do
                     <button
                       type="submit"
                       id="image-convert-button"
-                      phx-disable-with="Convertendo imagens..."
+                      phx-disable-with={gettext("Converting images...")}
                       disabled={
                         @uploads.image.entries == [] || upload_in_progress?(@uploads.image.entries)
                       }
@@ -364,7 +375,7 @@ defmodule RapidToolsWeb.ImageConverterLive do
                   <div :if={@results != []} id="converted-results" class="space-y-4">
                     <div class="flex items-center justify-between gap-3">
                       <p class="text-sm font-semibold uppercase tracking-[0.25em] text-orange-300">
-                        {length(@results)} imagens convertidas
+                        {gettext("%{count} images converted", count: length(@results))}
                       </p>
                       <button
                         type="button"

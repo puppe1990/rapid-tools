@@ -39,6 +39,6 @@ defmodule RapidToolsWeb.VideoCompressorLiveTest do
     rendered_upload = render_upload(upload, "compress-1.mp4")
     assert rendered_upload =~ "compress-1.mp4"
     assert rendered_upload =~ "compress-2.mp4"
-    assert rendered_upload =~ "2 videos na fila. 1/2 concluidos ate agora"
+    assert rendered_upload =~ "2 videos in queue. 1/2 finished so far"
   end
 end

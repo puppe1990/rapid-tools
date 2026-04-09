@@ -17,11 +17,11 @@ defmodule RapidToolsWeb.TogetherAudiosLiveTest do
     assert has_element?(view, "a[href=\"/audio-converter\"]", "Audio Converter")
     assert has_element?(view, "a[href=\"/pdf-converter\"]", "PDF Converter")
     assert has_element?(view, "a[href=\"/together-audios\"]", "Together Audios")
-    assert render(view) =~ "Junte varios arquivos de audio em uma unica faixa final."
-    assert render(view) =~ "Unindo audios"
-    assert render(view) =~ "Isso pode levar alguns segundos."
-    assert render(view) =~ "Nenhum audio selecionado ainda."
-    assert render(view) =~ "Reordene a fila com as setas para definir a sequencia final da faixa."
+    assert render(view) =~ "Join multiple audio files into a single final track."
+    assert render(view) =~ "Joining audio files"
+    assert render(view) =~ "This can take a few seconds."
+    assert render(view) =~ "No audio selected yet."
+    assert render(view) =~ "Reorder the queue with the arrows to define the final track order."
     assert render(view) =~ ~s(value="mp3")
   end
 
@@ -49,10 +49,10 @@ defmodule RapidToolsWeb.TogetherAudiosLiveTest do
     rendered_upload = render_upload(upload, "sample-1.wav")
     assert rendered_upload =~ "sample-1.wav"
     assert rendered_upload =~ "sample-2.ogg"
-    assert rendered_upload =~ "2 audios na fila. 1/2 concluidos ate agora"
-    assert rendered_upload =~ "Remover sample-1.wav"
+    assert rendered_upload =~ "2 audio files in queue. 1/2 finished so far"
+    assert rendered_upload =~ "Remove sample-1.wav"
     assert rendered_upload =~ "phx-click=\"cancel-upload\""
-    assert rendered_upload =~ "Mover sample-1.wav para baixo"
+    assert rendered_upload =~ "Move sample-1.wav down"
   end
 
   test "allows reordering uploaded audios before joining", %{conn: conn} do
@@ -85,7 +85,7 @@ defmodule RapidToolsWeb.TogetherAudiosLiveTest do
 
     reordered_render =
       view
-      |> element("button[aria-label=\"Mover first.wav para baixo\"]")
+      |> element("button[aria-label=\"Move first.wav down\"]")
       |> render_click()
 
     assert text_position(reordered_render, "second.ogg") <
@@ -95,7 +95,7 @@ defmodule RapidToolsWeb.TogetherAudiosLiveTest do
   test "shows an explicit initial status message", %{conn: conn} do
     {:ok, view, _html} = live(conn, ~p"/together-audios")
 
-    assert render(view) =~ "Selecione pelo menos dois audios para habilitar a uniao."
+    assert render(view) =~ "Select at least two audio files to enable joining."
   end
 
   defp text_position(rendered, text) do

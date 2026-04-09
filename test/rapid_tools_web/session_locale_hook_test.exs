@@ -12,4 +12,13 @@ defmodule RapidToolsWeb.SessionLocaleHookTest do
     assert updated_socket.assigns.current_locale == "pt_BR"
     assert Gettext.get_locale(RapidToolsWeb.Gettext) == "pt_BR"
   end
+
+  test "falls back to en when there is no locale in the liveview session" do
+    socket = %Phoenix.LiveView.Socket{}
+
+    assert {:cont, updated_socket} = SessionLocaleHook.on_mount(:default, %{}, %{}, socket)
+
+    assert updated_socket.assigns.current_locale == "en"
+    assert Gettext.get_locale(RapidToolsWeb.Gettext) == "en"
+  end
 end

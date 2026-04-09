@@ -18,10 +18,10 @@ defmodule RapidToolsWeb.AudioConverterLiveTest do
     assert has_element?(view, "a[href=\"/audio-converter\"]", "Audio Converter")
     assert has_element?(view, "a[href=\"/pdf-converter\"]", "PDF Converter")
     assert has_element?(view, "a[href=\"/together-audios\"]", "Together Audios")
-    assert render(view) =~ "Converta arquivos de audio para MP3, WAV, OGG, AAC e FLAC"
-    assert render(view) =~ "Convertendo audio"
-    assert render(view) =~ "Isso pode levar alguns segundos."
-    assert render(view) =~ "Nenhum audio selecionado ainda."
+    assert render(view) =~ "Convert audio files to MP3, WAV, OGG, AAC, and FLAC"
+    assert render(view) =~ "Converting audio"
+    assert render(view) =~ "This can take a few seconds."
+    assert render(view) =~ "No audio selected yet."
     assert render(view) =~ ~s(value="mp3")
   end
 
@@ -49,14 +49,14 @@ defmodule RapidToolsWeb.AudioConverterLiveTest do
     rendered_upload = render_upload(upload, "sample-1.wav")
     assert rendered_upload =~ "sample-1.wav"
     assert rendered_upload =~ "sample-2.ogg"
-    assert rendered_upload =~ "2 audios na fila. 1/2 concluidos ate agora"
-    assert rendered_upload =~ "Remover sample-1.wav"
+    assert rendered_upload =~ "2 audio files in queue. 1/2 finished so far"
+    assert rendered_upload =~ "Remove sample-1.wav"
     assert rendered_upload =~ "phx-click=\"cancel-upload\""
   end
 
   test "shows an explicit initial status message", %{conn: conn} do
     {:ok, view, _html} = live(conn, ~p"/audio-converter")
 
-    assert render(view) =~ "Selecione um ou mais audios para habilitar a conversao."
+    assert render(view) =~ "Select one or more audio files to enable conversion."
   end
 end

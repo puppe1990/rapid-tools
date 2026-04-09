@@ -11,7 +11,12 @@ defmodule RapidToolsWeb.VideoConverterLive do
   @max_video_upload_size 150_000_000
 
   @impl true
-  def mount(_params, _session, socket) do
+  def mount(_params, session, socket) do
+    locale =
+      Locale.set_gettext_locale(
+        session["locale"] || socket.assigns[:current_locale] || Locale.default_locale()
+      )
+
     form =
       to_form(
         %{"target_format" => default_target_format()},
@@ -20,6 +25,7 @@ defmodule RapidToolsWeb.VideoConverterLive do
 
     {:ok,
      socket
+     |> assign(:current_locale, locale)
      |> assign(:formats, VideoConverter.supported_formats())
      |> assign(:tools, ToolNavigation.tools("video"))
      |> assign(:form, form)
@@ -29,7 +35,6 @@ defmodule RapidToolsWeb.VideoConverterLive do
      |> assign(:currently_converting, nil)
      |> assign(:processing_queue, [])
      |> assign(:processing_total, 0)
-     |> assign(:current_locale, socket.assigns[:current_locale] || "en")
      |> assign(:my_path, "/video-converter")
      |> allow_upload(:video,
        accept: @video_accept,
@@ -184,7 +189,7 @@ defmodule RapidToolsWeb.VideoConverterLive do
         build_batch_response(
           socket,
           successful_results,
-          "#{length(successful_results)} videos convertidos.",
+          gettext("%{count} videos converted.", count: length(successful_results)),
           gettext("Os videos foram convertidos, mas o ZIP nao pode ser gerado.")
         )
 
@@ -322,10 +327,16 @@ defmodule RapidToolsWeb.VideoConverterLive do
         gettext("Nenhum video selecionado ainda.")
 
       upload_in_progress?(entries) ->
-        "#{total} videos na fila. #{completed}/#{total} concluidos ate agora, o restante ainda esta enviando."
+        gettext(
+          "%{total} videos in queue. %{completed}/%{total} finished so far, the rest are still uploading.",
+          total: total,
+          completed: completed
+        )
 
       true ->
-        "#{total} videos selecionados. Todos aparecem nesta caixa com scroll."
+        gettext("%{count} videos selected. All of them appear in this scrollable list.",
+          count: total
+        )
     end
   end
 
@@ -377,10 +388,10 @@ defmodule RapidToolsWeb.VideoConverterLive do
             <div class="space-y-6">
               <div class="space-y-4 px-2 py-2">
                 <span class="inline-flex items-center rounded-full border border-sky-200 bg-white/80 px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-sky-700">
-                  Video workflow
+                  {gettext("Video workflow")}
                 </span>
                 <h1 class="text-4xl font-black tracking-tight text-slate-950 sm:text-5xl">
-                  Video Converter
+                  {gettext("Video Converter")}
                 </h1>
                 <p class="max-w-3xl text-base text-slate-600 sm:text-lg">
                   {gettext(
@@ -463,7 +474,10 @@ defmodule RapidToolsWeb.VideoConverterLive do
                               {@currently_converting}
                             </p>
                             <p class="mt-2 text-sm text-sky-800">
-                              {processing_position(assigns)} de {@processing_total} videos
+                              {gettext("%{current} of %{total} videos",
+                                current: processing_position(assigns),
+                                total: @processing_total
+                              )}
                             </p>
                           </div>
                         </div>
@@ -506,7 +520,7 @@ defmodule RapidToolsWeb.VideoConverterLive do
                             type="button"
                             phx-click="cancel-upload"
                             phx-value-ref={entry.ref}
-                            aria-label={"Remover #{entry.client_name}"}
+                            aria-label={gettext("Remove %{filename}", filename: entry.client_name)}
                             class="inline-flex size-8 shrink-0 items-center justify-center rounded-full border border-slate-200 text-sm font-bold text-slate-500 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600"
                           >
                             X
@@ -527,7 +541,7 @@ defmodule RapidToolsWeb.VideoConverterLive do
                     <button
                       type="submit"
                       id="video-convert-button"
-                      phx-disable-with="Convertendo video..."
+                      phx-disable-with={gettext("Converting video...")}
                       disabled={
                         @uploads.video.entries == [] || upload_in_progress?(@uploads.video.entries) ||
                           processing?(@currently_converting)
@@ -547,7 +561,7 @@ defmodule RapidToolsWeb.VideoConverterLive do
                 <aside class="rounded-[2rem] border border-white/70 bg-slate-950 p-6 text-white shadow-[0_24px_60px_rgba(15,23,42,0.16)]">
                   <div :if={@results != []} class="space-y-4">
                     <p class="text-sm font-semibold uppercase tracking-[0.25em] text-sky-300">
-                      {length(@results)} videos convertidos
+                      {gettext("%{count} videos converted", count: length(@results))}
                     </p>
                     <a
                       :if={@batch_download_path}
