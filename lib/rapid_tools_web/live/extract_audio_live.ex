@@ -8,7 +8,7 @@ defmodule RapidToolsWeb.ExtractAudioLive do
   alias RapidToolsWeb.ToolNavigation
 
   @video_accept ~w(.mp4 .mov .webm .mkv .avi .ts video/mp4 video/quicktime video/webm video/x-msvideo video/x-matroska video/mp2t video/mpeg application/octet-stream audio/webm)
-  @max_video_upload_size 150_000_000
+  @max_video_upload_size 1_073_741_824
 
   @impl true
   def mount(_params, _session, socket) do
@@ -449,7 +449,7 @@ defmodule RapidToolsWeb.ExtractAudioLive do
                       />
 
                       <p class="text-sm text-slate-500">
-                        Entradas aceitas: MP4, MOV, WEBM, MKV, AVI e TS. Ate 150 MB por video.
+                        Entradas aceitas: MP4, MOV, WEBM, MKV, AVI e TS. Ate 1 GB por video.
                       </p>
                     </div>
 
