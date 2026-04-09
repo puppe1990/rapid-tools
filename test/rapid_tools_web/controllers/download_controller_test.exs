@@ -27,4 +27,37 @@ defmodule RapidToolsWeb.DownloadControllerTest do
     assert disposition =~ ".zip"
     assert byte_size(conn.resp_body) > 0
   end
+
+  test "GET /downloads/:id returns a single converted file", %{conn: conn} do
+    dir = ImageFixtures.temp_dir!("single-download")
+    file_path = Path.join(dir, "image.png")
+
+    File.write!(file_path, "image-content")
+
+    {:ok, id} =
+      ConversionStore.put(%{
+        path: file_path,
+        filename: "image.png",
+        media_type: "image/png"
+      })
+
+    conn = get(conn, "/downloads/#{id}")
+
+    assert conn.status == 200
+    assert get_resp_header(conn, "content-type") == ["image/png"]
+
+    [disposition] = get_resp_header(conn, "content-disposition")
+    assert disposition =~ "image.png"
+    assert conn.resp_body == "image-content"
+  end
+
+  test "GET /downloads/:id returns 404 for non-existent id", %{conn: conn} do
+    conn = get(conn, "/downloads/non-existent-id")
+    assert conn.status == 404
+  end
+
+  test "GET /downloads/batches/:id returns 404 for non-existent batch", %{conn: conn} do
+    conn = get(conn, "/downloads/batches/non-existent-batch")
+    assert conn.status == 404
+  end
 end

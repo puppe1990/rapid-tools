@@ -23,4 +23,12 @@ defmodule RapidTools.ConversionStoreTest do
     assert {:ok, stored} = ConversionStore.fetch_batch(id)
     assert Enum.map(stored, & &1.filename) == ["example-1.jpg", "example-2.jpg"]
   end
+
+  test "fetch/1 returns error for non-existent id" do
+    assert {:error, :not_found} = ConversionStore.fetch("non-existent-id")
+  end
+
+  test "fetch_batch/1 returns error for non-existent batch id" do
+    assert {:error, :not_found} = ConversionStore.fetch_batch("non-existent-batch")
+  end
 end

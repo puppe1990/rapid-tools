@@ -24,4 +24,8 @@ defmodule RapidTools.ZipArchiveTest do
     assert listing =~ "image.png"
     assert listing =~ "image (2).png"
   end
+
+  test "build/2 returns an explicit error for empty entries" do
+    assert {:error, :empty_entries} = ZipArchive.build("empty", [])
+  end
 end

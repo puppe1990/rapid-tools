@@ -31,6 +31,8 @@ defmodule RapidTools.ZipArchive do
     end
   end
 
+  def build(_id, []), do: {:error, :empty_entries}
+
   defp stage_entries(entries, staging_dir) do
     {staged_entries, _used} =
       Enum.map_reduce(entries, %{}, fn entry, used ->
