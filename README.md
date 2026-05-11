@@ -14,7 +14,8 @@ RapidTools is a Phoenix LiveView app for batch media workflows including convers
 - Extract audio at `/extract-audio`
 - Video compressor at `/video-compressor`
 - Audio converter at `/audio-converter`
-- PDF converter at `/pdf-converter`
+- Document converter at `/document-converter`
+- Photos to PDF at `/photos-to-pdf`
 - Together audios at `/together-audios`
 
 ## Supported formats
@@ -59,11 +60,24 @@ RapidTools is a Phoenix LiveView app for batch media workflows including convers
 - Input: `MP4`, `MOV`, `WEBM`, `MKV`, `AVI`, `TS`
 - Output: `MP3`, `WAV`, `OGG`, `AAC`, `FLAC`
 
-### PDF workflows
+### Document workflows
 
 - `PDF -> PNG`
 - `PDF -> JPG`
+- `PDF -> Markdown (Clean)`
+- `PDF -> Markdown (Fidelity)`
 - `JPG/PNG/WEBP -> PDF`
+- `DOCX -> PDF` when LibreOffice is available
+- `ODT -> PDF` when LibreOffice is available
+- `RTF -> PDF` when LibreOffice is available
+- `TXT -> PDF` when LibreOffice is available
+- `MD -> PDF` when LibreOffice is available
+- `HTML -> PDF` when LibreOffice is available
+
+### Photos to PDF input/output
+
+- Input: `JPG`, `PNG`, `WEBP`, `HEIC`, `AVIF`
+- Output: `PDF`
 
 ## Features
 
@@ -71,11 +85,12 @@ RapidTools is a Phoenix LiveView app for batch media workflows including convers
 - Batch audio extraction from uploaded videos
 - Batch image resizing with presets for social, thumbnails, and stores
 - Batch video compression with quality and resolution presets
-- PDF page extraction and image-to-PDF generation
+- PDF page extraction, image-to-PDF generation, and runtime-backed document-to-PDF conversion
+- Dedicated photo-to-PDF route with manual page reordering before export
 - Audio joining into a single downloadable file
 - Individual file download after conversion
 - ZIP package download for converted batches
-- Phoenix LiveView interface with dedicated screens for image, video, audio, extraction, PDF, and assembly workflows
+- Phoenix LiveView interface with dedicated screens for image, video, audio, extraction, documents, and assembly workflows
 
 ## Requirements
 
@@ -124,7 +139,8 @@ mix test test/rapid_tools_web/live/image_resizer_live_test.exs
 mix test test/rapid_tools/video_compressor_test.exs
 mix test test/rapid_tools_web/live/video_compressor_live_test.exs
 mix test test/rapid_tools/pdf_converter_test.exs
-mix test test/rapid_tools_web/live/pdf_converter_live_test.exs
+mix test test/rapid_tools/document_converter_test.exs
+mix test test/rapid_tools_web/live/document_converter_live_test.exs
 mix test test/rapid_tools/audio_joiner_test.exs
 mix test test/rapid_tools_web/live/together_audios_live_test.exs
 ```

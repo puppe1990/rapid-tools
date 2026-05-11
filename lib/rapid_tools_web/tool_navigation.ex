@@ -88,16 +88,29 @@ defmodule RapidToolsWeb.ToolNavigation do
         blurb_class: "text-emerald-700/80"
       },
       %{
-        key: "pdf-converter",
-        name: gettext("PDF Converter"),
-        blurb: gettext("Turn PDF pages into images or back to PDF"),
-        current: current == "pdf-converter",
-        path: ~p"/pdf-converter",
-        current_class: "border-lime-300 bg-lime-50 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]",
-        idle_class: "border-slate-200 bg-white hover:border-lime-200 hover:bg-lime-50/40",
-        dot_class: "bg-lime-500",
-        name_class: "text-lime-800",
-        blurb_class: "text-lime-700/80"
+        key: "document-converter",
+        name: gettext("Document Converter"),
+        blurb: gettext("Convert PDFs, docs and text files"),
+        current: current == "document-converter",
+        path: ~p"/document-converter",
+        current_class:
+          "border-violet-300 bg-violet-50 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]",
+        idle_class: "border-slate-200 bg-white hover:border-violet-200 hover:bg-violet-50/40",
+        dot_class: "bg-violet-500",
+        name_class: "text-violet-800",
+        blurb_class: "text-violet-700/80"
+      },
+      %{
+        key: "photos-to-pdf",
+        name: gettext("Photos to PDF"),
+        blurb: gettext("Reorder images and export a single PDF"),
+        current: current == "photos-to-pdf",
+        path: ~p"/photos-to-pdf",
+        current_class: "border-sky-300 bg-sky-50 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]",
+        idle_class: "border-slate-200 bg-white hover:border-sky-200 hover:bg-sky-50/40",
+        dot_class: "bg-sky-500",
+        name_class: "text-sky-800",
+        blurb_class: "text-sky-700/80"
       },
       %{
         key: "together-audios",

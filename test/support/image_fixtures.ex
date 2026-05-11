@@ -30,6 +30,7 @@ defmodule RapidTools.TestSupport.ImageFixtures do
         "rapid_tools_tests/#{name}-#{System.unique_integer([:positive])}"
       )
 
+    File.rm_rf!(dir)
     File.mkdir_p!(dir)
     dir
   end
@@ -202,6 +203,162 @@ defmodule RapidTools.TestSupport.ImageFixtures do
     end
 
     path
+  end
+
+  def text_pdf_path!(name \\ "text.pdf") do
+    dir = Path.join(System.tmp_dir!(), "rapid_tools_test_fixtures")
+    File.mkdir_p!(dir)
+
+    path = Path.join(dir, name)
+
+    lines = [
+      "%PDF-1.4",
+      "1 0 obj",
+      "<< /Type /Catalog /Pages 2 0 R >>",
+      "endobj",
+      "2 0 obj",
+      "<< /Type /Pages /Count 1 /Kids [3 0 R] >>",
+      "endobj",
+      "3 0 obj",
+      "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>",
+      "endobj"
+    ]
+
+    stream =
+      [
+        "BT",
+        "/F1 24 Tf",
+        "72 720 Td",
+        "(Rapid Tools PDF Title) Tj",
+        "0 -36 Td",
+        "/F1 12 Tf",
+        "(First paragraph for markdown extraction.) Tj",
+        "0 -20 Td",
+        "(Bullet one) Tj",
+        "0 -20 Td",
+        "(Bullet two) Tj",
+        "ET"
+      ]
+      |> Enum.join("\n")
+
+    object_4 = [
+      "4 0 obj",
+      "<< /Length #{byte_size(stream)} >>",
+      "stream",
+      stream,
+      "endstream",
+      "endobj"
+    ]
+
+    object_5 = [
+      "5 0 obj",
+      "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
+      "endobj"
+    ]
+
+    objects = lines ++ object_4 ++ object_5
+
+    {body, offsets, next_offset} =
+      Enum.reduce(objects, {"", [0], 0}, fn line, {acc, acc_offsets, offset} ->
+        chunk = line <> "\n"
+        {acc <> chunk, acc_offsets ++ [offset], offset + byte_size(chunk)}
+      end)
+
+    xref_offset = next_offset
+
+    xref =
+      [
+        "xref",
+        "0 6",
+        "0000000000 65535 f ",
+        Enum.at(offsets, 1) |> format_xref_entry(),
+        Enum.at(offsets, 4) |> format_xref_entry(),
+        Enum.at(offsets, 7) |> format_xref_entry(),
+        Enum.at(offsets, 10) |> format_xref_entry(),
+        Enum.at(offsets, 15) |> format_xref_entry(),
+        "trailer",
+        "<< /Size 6 /Root 1 0 R >>",
+        "startxref",
+        Integer.to_string(xref_offset),
+        "%%EOF"
+      ]
+      |> Enum.join("\n")
+
+    File.write!(path, body <> xref)
+    path
+  end
+
+  def docx_path!(name \\ "sample.docx") do
+    dir = Path.join(System.tmp_dir!(), "rapid_tools_test_fixtures")
+    File.mkdir_p!(dir)
+
+    path = Path.join(dir, name)
+    File.rm(path)
+
+    {:ok, _zip_path} =
+      :zip.create(
+        String.to_charlist(path),
+        [
+          {~c"[Content_Types].xml", docx_content_types_xml()},
+          {~c"_rels/.rels", docx_package_rels_xml()},
+          {~c"word/document.xml", docx_document_xml()}
+        ],
+        []
+      )
+
+    path
+  end
+
+  defp format_xref_entry(offset) do
+    offset
+    |> Integer.to_string()
+    |> String.pad_leading(10, "0")
+    |> then(&"#{&1} 00000 n ")
+  end
+
+  defp docx_content_types_xml do
+    """
+    <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+      <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+      <Default Extension="xml" ContentType="application/xml"/>
+      <Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>
+    </Types>
+    """
+  end
+
+  defp docx_package_rels_xml do
+    """
+    <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+      <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>
+    </Relationships>
+    """
+  end
+
+  defp docx_document_xml do
+    """
+    <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    <w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+      <w:body>
+        <w:p>
+          <w:r><w:t>Rapid Tools DOCX Title</w:t></w:r>
+        </w:p>
+        <w:p>
+          <w:r><w:t>First paragraph for markdown extraction.</w:t></w:r>
+        </w:p>
+        <w:p>
+          <w:r><w:t>Bullet one</w:t></w:r>
+        </w:p>
+        <w:p>
+          <w:r><w:t>Bullet two</w:t></w:r>
+        </w:p>
+        <w:sectPr>
+          <w:pgSz w:w="12240" w:h="15840"/>
+        </w:sectPr>
+      </w:body>
+    </w:document>
+    """
   end
 
   def tiny_ogg_path!(name \\ "tiny.ogg") do

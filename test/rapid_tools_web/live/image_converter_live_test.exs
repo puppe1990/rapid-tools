@@ -15,7 +15,7 @@ defmodule RapidToolsWeb.ImageConverterLiveTest do
     assert has_element?(view, "a[href=\"/video-converter\"]", "Video Converter")
     assert has_element?(view, "a[href=\"/video-compressor\"]", "Video Compressor")
     assert has_element?(view, "a[href=\"/audio-converter\"]", "Audio Converter")
-    assert has_element?(view, "a[href=\"/pdf-converter\"]", "PDF Converter")
+    assert has_element?(view, "a[href=\"/document-converter\"]", "Document Converter")
     assert has_element?(view, "a[href=\"/together-audios\"]", "Together Audios")
     assert html =~ "Tools"
     assert html =~ "Image Converter"
