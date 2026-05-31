@@ -42,7 +42,7 @@ defmodule RapidToolsWeb.RouteLocaleConsistencyTest do
       {~p"/video-compressor", "Otimização de vídeos", "Tamanho reduzido"},
       {~p"/extract-audio", "Extração de áudio", "Download em lote"},
       {~p"/document-converter", "Fluxo de documentos", "PDF para PNG"},
-      {~p"/photos-to-pdf", "Photos to PDF", "Como funciona"},
+      {~p"/photos-to-pdf", "Fotos para PDF", "Como funciona"},
       {~p"/together-audios", "Montagem de áudio", "Como funciona"}
     ]
 

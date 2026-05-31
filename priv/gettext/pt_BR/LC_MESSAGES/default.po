@@ -60,7 +60,7 @@ msgstr "Conversor de Imagem"
 msgid "Image Resizer"
 msgstr "Redimensionador de Imagem"
 
-#: lib/rapid_tools_web/tool_navigation.ex:106
+#: lib/rapid_tools_web/tool_navigation.ex:118
 #, elixir-autogen, elixir-format
 msgid "Join multiple audio files into one track"
 msgstr "Una vários arquivos de áudio em uma faixa"
@@ -70,12 +70,12 @@ msgstr "Una vários arquivos de áudio em uma faixa"
 msgid "Pull MP3, WAV, OGG, AAC and FLAC from video"
 msgstr "Extraia MP3, WAV, OGG, AAC e FLAC de vídeos"
 
-#: lib/rapid_tools_web/components/core_components.ex:502
+#: lib/rapid_tools_web/components/core_components.ex:506
 #, elixir-autogen, elixir-format
 msgid "Quick conversion for image, video and audio."
 msgstr "Conversão rápida para imagem, vídeo e áudio."
 
-#: lib/rapid_tools_web/components/core_components.ex:497
+#: lib/rapid_tools_web/components/core_components.ex:501
 #, elixir-autogen, elixir-format
 msgid "Rapid Tools"
 msgstr "Rapid Tools"
@@ -96,13 +96,13 @@ msgid "Something went wrong!"
 msgstr "Algo deu errado!"
 
 #: lib/rapid_tools_web/live/together_audios_live.ex:264
-#: lib/rapid_tools_web/tool_navigation.ex:105
+#: lib/rapid_tools_web/tool_navigation.ex:117
 #, elixir-autogen, elixir-format
 msgid "Together Audios"
 msgstr "Juntar Áudios"
 
-#: lib/rapid_tools_web/components/core_components.ex:500
-#: lib/rapid_tools_web/components/core_components.ex:507
+#: lib/rapid_tools_web/components/core_components.ex:504
+#: lib/rapid_tools_web/components/core_components.ex:533
 #, elixir-autogen, elixir-format
 msgid "Tools"
 msgstr "Ferramentas"
@@ -288,11 +288,6 @@ msgstr "Conversão em andamento. Acompanhe qual arquivo está sendo processado a
 msgid "Converta arquivos de audio para MP3, WAV, OGG, AAC e FLAC com downloads individuais ou em lote."
 msgstr "Converta arquivos de áudio para MP3, WAV, OGG, AAC e FLAC com downloads individuais ou em lote."
 
-#: lib/rapid_tools_web/live/image_converter_live.ex:248
-#, elixir-autogen, elixir-format
-msgid "Converta imagens para PNG, JPG, WEBP, HEIC, AVIF e ENC com downloads individuais ou em lote."
-msgstr "Converta imagens para PNG, JPG, WEBP, HEIC, AVIF e ENC com downloads individuais ou em lote."
-
 #: lib/rapid_tools_web/live/video_converter_live.ex:397
 #, elixir-autogen, elixir-format
 msgid "Converta videos para MP4, MOV, WEBM, MKV, AVI e TS com um fluxo simples e downloads individuais ou em lote."
@@ -348,11 +343,10 @@ msgstr "Converter vídeo"
 msgid "Download em lote"
 msgstr "Download em lote"
 
-#: lib/rapid_tools_web/live/image_converter_live.ex:293
 #: lib/rapid_tools_web/live/image_resizer_live.ex:281
 #, elixir-autogen, elixir-format
-msgid "Entradas aceitas: JPG, JPEG, PNG, WEBP, HEIC, AVIF e ENC."
-msgstr "Entradas aceitas: JPG, JPEG, PNG, WEBP, HEIC, AVIF e ENC."
+msgid "Entradas aceitas: JPG, JPEG, PNG, WEBP, HEIC e AVIF."
+msgstr "Entradas aceitas: JPG, JPEG, PNG, WEBP, HEIC e AVIF."
 
 #: lib/rapid_tools_web/live/audio_converter_live.ex:272
 #, elixir-autogen, elixir-format
@@ -465,9 +459,9 @@ msgid "Extraindo audio"
 msgstr "Extraindo áudio"
 
 #: lib/rapid_tools_web/live/extract_audio_live.ex:574
-#, elixir-autogen, elixir-format, fuzzy
+#, elixir-autogen, elixir-format
 msgid "Extrair audio"
-msgstr "Extrair Áudio"
+msgstr "Extrair áudio"
 
 #: lib/rapid_tools_web/live/together_audios_live.ex:163
 #, elixir-autogen, elixir-format
@@ -574,6 +568,8 @@ msgstr "Instagram Post, Instagram Story, YouTube Thumb e Shopify Product já ent
 #: lib/rapid_tools_web/live/audio_converter_live.ex:255
 #: lib/rapid_tools_web/live/extract_audio_live.ex:427
 #: lib/rapid_tools_web/live/image_converter_live.ex:276
+#: lib/rapid_tools_web/live/images_to_video_live.ex:307
+#: lib/rapid_tools_web/live/photos_to_pdf_live.ex:284
 #: lib/rapid_tools_web/live/together_audios_live.ex:293
 #: lib/rapid_tools_web/live/video_converter_live.ex:432
 #, elixir-autogen, elixir-format
@@ -953,6 +949,7 @@ msgstr "Você selecionou mais arquivos do que o permitido."
 #: lib/rapid_tools_web/live/extract_audio_live.ex:512
 #: lib/rapid_tools_web/live/image_converter_live.ex:328
 #: lib/rapid_tools_web/live/image_resizer_live.ex:307
+#: lib/rapid_tools_web/live/photos_to_pdf_live.ex:338
 #: lib/rapid_tools_web/live/together_audios_live.ex:349
 #: lib/rapid_tools_web/live/video_compressor_live.ex:305
 #: lib/rapid_tools_web/live/video_converter_live.ex:514
@@ -1134,6 +1131,7 @@ msgstr "%{count} imagens redimensionadas."
 
 #: lib/rapid_tools_web/live/image_converter_live.ex:214
 #: lib/rapid_tools_web/live/image_resizer_live.ex:216
+#: lib/rapid_tools_web/live/images_to_video_live.ex:196
 #, elixir-autogen, elixir-format
 msgid "%{count} images selected. All of them appear in this scrollable list."
 msgstr "%{count} imagens selecionadas. Todas aparecem nesta lista com rolagem."
@@ -1195,6 +1193,7 @@ msgstr "%{total} arquivos na fila. %{completed}/%{total} concluídos até agora.
 
 #: lib/rapid_tools_web/live/image_converter_live.ex:207
 #: lib/rapid_tools_web/live/image_resizer_live.ex:209
+#: lib/rapid_tools_web/live/images_to_video_live.ex:189
 #, elixir-autogen, elixir-format
 msgid "%{total} images in queue. %{completed}/%{total} finished so far, the rest are still uploading."
 msgstr "%{total} imagens na fila. %{completed}/%{total} concluídas até agora, o restante ainda está enviando."
@@ -1217,9 +1216,9 @@ msgid "Compressing videos..."
 msgstr "Comprimindo vídeos..."
 
 #: lib/rapid_tools_web/live/audio_converter_live.ex:328
-#, elixir-autogen, elixir-format, fuzzy
+#, elixir-autogen, elixir-format
 msgid "Converting audio..."
-msgstr "Convertendo"
+msgstr "Convertendo áudio..."
 
 #: lib/rapid_tools_web/live/document_converter_live.ex:420
 #, elixir-autogen, elixir-format
@@ -1227,19 +1226,19 @@ msgid "Converting files..."
 msgstr "Convertendo arquivos..."
 
 #: lib/rapid_tools_web/live/image_converter_live.ex:358
-#, elixir-autogen, elixir-format, fuzzy
+#, elixir-autogen, elixir-format
 msgid "Converting images..."
-msgstr "Convertendo imagens"
+msgstr "Convertendo imagens..."
 
 #: lib/rapid_tools_web/live/video_converter_live.ex:544
-#, elixir-autogen, elixir-format, fuzzy
+#, elixir-autogen, elixir-format
 msgid "Converting video..."
-msgstr "Convertendo"
+msgstr "Convertendo vídeo..."
 
 #: lib/rapid_tools_web/live/extract_audio_live.ex:567
-#, elixir-autogen, elixir-format, fuzzy
+#, elixir-autogen, elixir-format
 msgid "Extracting audio..."
-msgstr "Extrair Áudio"
+msgstr "Extraindo áudio..."
 
 #: lib/rapid_tools_web/live/image_resizer_live.ex:356
 #, elixir-autogen, elixir-format
@@ -1256,6 +1255,8 @@ msgstr "Unindo arquivos de áudio..."
 #: lib/rapid_tools_web/live/extract_audio_live.ex:522
 #: lib/rapid_tools_web/live/image_converter_live.ex:337
 #: lib/rapid_tools_web/live/image_resizer_live.ex:314
+#: lib/rapid_tools_web/live/images_to_video_live.ex:394
+#: lib/rapid_tools_web/live/photos_to_pdf_live.ex:371
 #: lib/rapid_tools_web/live/together_audios_live.ex:382
 #: lib/rapid_tools_web/live/video_compressor_live.ex:312
 #: lib/rapid_tools_web/live/video_converter_live.ex:523
@@ -1263,11 +1264,15 @@ msgstr "Unindo arquivos de áudio..."
 msgid "Remove %{filename}"
 msgstr "Remover %{filename}"
 
+#: lib/rapid_tools_web/live/images_to_video_live.ex:383
+#: lib/rapid_tools_web/live/photos_to_pdf_live.ex:360
 #: lib/rapid_tools_web/live/together_audios_live.ex:371
 #, elixir-autogen, elixir-format
 msgid "Move %{filename} down"
 msgstr "Mover %{filename} para baixo"
 
+#: lib/rapid_tools_web/live/images_to_video_live.ex:372
+#: lib/rapid_tools_web/live/photos_to_pdf_live.ex:349
 #: lib/rapid_tools_web/live/together_audios_live.ex:360
 #, elixir-autogen, elixir-format
 msgid "Move %{filename} up"
@@ -1463,7 +1468,328 @@ msgstr "Instale o extrator de documentos para habilitar PDF para Markdown (Clean
 msgid "PDF extraction modes are unavailable"
 msgstr "Os modos de extração de PDF não estão disponíveis"
 
-#: lib/rapid_tools_web/live/photos_to_pdf_live.ex:391
+#: lib/rapid_tools_web/live/images_to_video_live.ex:474
+#: lib/rapid_tools_web/live/photos_to_pdf_live.ex:423
 #, elixir-autogen, elixir-format
 msgid "How it works"
 msgstr "Como funciona"
+
+#: lib/rapid_tools_web/live/images_to_video_live.ex:133
+#, elixir-autogen, elixir-format
+msgid "%{count} images converted successfully."
+msgstr "%{count} imagens convertidas com sucesso."
+
+#: lib/rapid_tools_web/live/images_to_video_live.ex:455
+#, elixir-autogen, elixir-format
+msgid "%{count} images joined as %{format} with %{interval}s between frames"
+msgstr "%{count} imagens unidas como %{format} com %{interval}s entre quadros"
+
+#: lib/rapid_tools_web/live/photos_to_pdf_live.ex:126
+#, elixir-autogen, elixir-format
+msgid "%{count} photos combined into a PDF successfully."
+msgstr "%{count} fotos combinadas em um PDF com sucesso."
+
+#: lib/rapid_tools_web/live/photos_to_pdf_live.ex:175
+#, elixir-autogen, elixir-format
+msgid "%{count} photos selected. Reorder them below before generating the PDF."
+msgstr "%{count} fotos selecionadas. Reordene-as abaixo antes de gerar o PDF."
+
+#: lib/rapid_tools_web/live/photos_to_pdf_live.ex:408
+#, elixir-autogen, elixir-format
+msgid "%{count} photos turned into a single PDF"
+msgstr "%{count} fotos transformadas em um único PDF"
+
+#: lib/rapid_tools_web/live/photos_to_pdf_live.ex:168
+#, elixir-autogen, elixir-format
+msgid "%{total} photos in queue. %{completed}/%{total} finished so far, the rest are still uploading."
+msgstr "%{total} fotos na fila. %{completed}/%{total} concluídas até agora, o restante ainda está enviando."
+
+#: lib/rapid_tools_web/live/photos_to_pdf_live.ex:304
+#, elixir-autogen, elixir-format
+msgid "Accepted inputs: JPG, PNG, WEBP, HEIC and AVIF. Upload at least two photos."
+msgstr "Entradas aceitas: JPG, PNG, WEBP, HEIC e AVIF. Envie ao menos duas fotos."
+
+#: lib/rapid_tools_web/live/images_to_video_live.ex:327
+#, elixir-autogen, elixir-format
+msgid "Accepted: PNG, JPG, JPEG and WEBP. Select at least one image."
+msgstr "Aceitos: PNG, JPG, JPEG e WEBP. Selecione ao menos uma imagem."
+
+#: lib/rapid_tools_web/live/photos_to_pdf_live.ex:152
+#, elixir-autogen, elixir-format
+msgid "Add at least one more photo before starting the PDF build."
+msgstr "Adicione ao menos mais uma foto antes de iniciar a geração do PDF."
+
+#: lib/rapid_tools_web/live/photos_to_pdf_live.ex:432
+#, elixir-autogen, elixir-format
+msgid "Best for"
+msgstr "Ideal para"
+
+#: lib/rapid_tools_web/live/image_converter_live.ex:248
+#, elixir-autogen, elixir-format
+msgid "Converta imagens para PNG, JPG, WEBP, HEIC, AVIF e ENC com downloads individuais ou em lote."
+msgstr "Converta imagens para PNG, JPG, WEBP, HEIC, AVIF e ENC com downloads individuais ou em lote."
+
+#: lib/rapid_tools_web/live/photos_to_pdf_live.ex:391
+#, elixir-autogen, elixir-format
+msgid "Create PDF from photos"
+msgstr "Criar PDF a partir de fotos"
+
+#: lib/rapid_tools_web/live/images_to_video_live.ex:435
+#, elixir-autogen, elixir-format
+msgid "Create video"
+msgstr "Criar vídeo"
+
+#: lib/rapid_tools_web/live/images_to_video_live.ex:304
+#, elixir-autogen, elixir-format
+msgid "Creating video"
+msgstr "Criando vídeo"
+
+#: lib/rapid_tools_web/live/images_to_video_live.ex:427
+#, elixir-autogen, elixir-format
+msgid "Creating video..."
+msgstr "Criando vídeo..."
+
+#: lib/rapid_tools_web/live/images_to_video_live.ex:251
+#, elixir-autogen, elixir-format
+msgid "Download"
+msgstr "Baixar"
+
+#: lib/rapid_tools_web/live/images_to_video_live.ex:250
+#, elixir-autogen, elixir-format
+msgid "Download GIF"
+msgstr "Baixar GIF"
+
+#: lib/rapid_tools_web/live/images_to_video_live.ex:249
+#, elixir-autogen, elixir-format
+msgid "Download MP4"
+msgstr "Baixar MP4"
+
+#: lib/rapid_tools_web/live/photos_to_pdf_live.ex:416
+#, elixir-autogen, elixir-format
+msgid "Download PDF"
+msgstr "Baixar PDF"
+
+#: lib/rapid_tools_web/live/image_converter_live.ex:293
+#, elixir-autogen, elixir-format
+msgid "Entradas aceitas: JPG, JPEG, PNG, WEBP, HEIC, AVIF e ENC."
+msgstr "Entradas aceitas: JPG, JPEG, PNG, WEBP, HEIC, AVIF e ENC."
+
+#: lib/rapid_tools_web/live/photos_to_pdf_live.ex:403
+#, elixir-autogen, elixir-format
+msgid "Generated PDF"
+msgstr "PDF gerado"
+
+#: lib/rapid_tools_web/live/images_to_video_live.ex:450
+#, elixir-autogen, elixir-format
+msgid "Generated file"
+msgstr "Arquivo gerado"
+
+#: lib/rapid_tools_web/live/photos_to_pdf_live.ex:281
+#, elixir-autogen, elixir-format
+msgid "Generating PDF"
+msgstr "Gerando PDF"
+
+#: lib/rapid_tools_web/live/photos_to_pdf_live.ex:383
+#, elixir-autogen, elixir-format
+msgid "Generating PDF..."
+msgstr "Gerando PDF..."
+
+#: lib/rapid_tools_web/live/photos_to_pdf_live.ex:261
+#, elixir-autogen, elixir-format
+msgid "Ideal for portfolios, receipts, scans, product photos and visual sequences that should become one document."
+msgstr "Ideal para portfólios, recibos, digitalizações, fotos de produtos e sequências visuais que devem se tornar um único documento."
+
+#: lib/rapid_tools_web/live/images_to_video_live.ex:275
+#, elixir-autogen, elixir-format
+msgid "Image sequence"
+msgstr "Sequência de imagens"
+
+#: lib/rapid_tools_web/live/images_to_video_live.ex:278
+#: lib/rapid_tools_web/tool_navigation.ex:130
+#, elixir-autogen, elixir-format
+msgid "Images to Video"
+msgstr "Imagens para Vídeo"
+
+#: lib/rapid_tools_web/live/images_to_video_live.ex:186
+#, elixir-autogen, elixir-format
+msgid "No images selected yet."
+msgstr "Nenhuma imagem selecionada ainda."
+
+#: lib/rapid_tools_web/live/photos_to_pdf_live.ex:165
+#, elixir-autogen, elixir-format
+msgid "No photo selected yet."
+msgstr "Nenhuma foto selecionada ainda."
+
+#: lib/rapid_tools_web/live/images_to_video_live.ex:408
+#, elixir-autogen, elixir-format
+msgid "Output format"
+msgstr "Formato de saída"
+
+#: lib/rapid_tools_web/live/photos_to_pdf_live.ex:250
+#, elixir-autogen, elixir-format
+msgid "Photo layout"
+msgstr "Layout de fotos"
+
+#: lib/rapid_tools_web/live/photos_to_pdf_live.ex:253
+#: lib/rapid_tools_web/tool_navigation.ex:105
+#, elixir-autogen, elixir-format
+msgid "Photos to PDF"
+msgstr "Fotos para PDF"
+
+#: lib/rapid_tools_web/live/photos_to_pdf_live.ex:434
+#, elixir-autogen, elixir-format
+msgid "Quick catalogs, visual dossiers, scanned documents, receipts and image sequences you need to share as a single file."
+msgstr "Catálogos rápidos, dossiês visuais, documentos digitalizados, recibos e sequências de imagens que você precisa compartilhar como um único arquivo."
+
+#: lib/rapid_tools_web/live/images_to_video_live.ex:477
+#, elixir-autogen, elixir-format
+msgid "Rapid Tools arranges the images in the order they were uploaded and exports a single MP4 or GIF file with the chosen interval between frames."
+msgstr "O Rapid Tools organiza as imagens na ordem em que foram enviadas e exporta um único arquivo MP4 ou GIF com o intervalo escolhido entre quadros."
+
+#: lib/rapid_tools_web/live/photos_to_pdf_live.ex:426
+#, elixir-autogen, elixir-format
+msgid "Rapid Tools respects the order shown in the queue and turns each photo into a page in the final PDF."
+msgstr "O Rapid Tools respeita a ordem exibida na fila e transforma cada foto em uma página no PDF final."
+
+#: lib/rapid_tools_web/tool_navigation.ex:106
+#, elixir-autogen, elixir-format
+msgid "Reorder images and export a single PDF"
+msgstr "Reordenar imagens e exportar um único PDF"
+
+#: lib/rapid_tools_web/live/photos_to_pdf_live.ex:318
+#, elixir-autogen, elixir-format
+msgid "Reorder the queue with the arrows to define the PDF page order."
+msgstr "Reordene a fila com as setas para definir a ordem das páginas do PDF."
+
+#: lib/rapid_tools_web/live/images_to_video_live.ex:339
+#, elixir-autogen, elixir-format
+msgid "Reorder the queue with the arrows to define the final sequence of frames."
+msgstr "Reordene a fila com as setas para definir a sequência final de quadros."
+
+#: lib/rapid_tools_web/components/core_components.ex:527
+#, elixir-autogen, elixir-format
+msgid "Search tools..."
+msgstr "Buscar ferramentas..."
+
+#: lib/rapid_tools_web/live/images_to_video_live.ex:417
+#, elixir-autogen, elixir-format
+msgid "Seconds between frames"
+msgstr "Segundos entre quadros"
+
+#: lib/rapid_tools_web/live/images_to_video_live.ex:78
+#: lib/rapid_tools_web/live/images_to_video_live.ex:137
+#, elixir-autogen, elixir-format
+msgid "Select at least one image to create a video."
+msgstr "Selecione ao menos uma imagem para criar um vídeo."
+
+#: lib/rapid_tools_web/live/images_to_video_live.ex:170
+#, elixir-autogen, elixir-format
+msgid "Select at least one image to enable conversion."
+msgstr "Selecione ao menos uma imagem para habilitar a conversão."
+
+#: lib/rapid_tools_web/live/photos_to_pdf_live.ex:65
+#: lib/rapid_tools_web/live/photos_to_pdf_live.ex:77
+#: lib/rapid_tools_web/live/photos_to_pdf_live.ex:132
+#, elixir-autogen, elixir-format
+msgid "Select at least two photos to create the PDF."
+msgstr "Selecione ao menos duas fotos para criar o PDF."
+
+#: lib/rapid_tools_web/live/photos_to_pdf_live.ex:146
+#, elixir-autogen, elixir-format
+msgid "Select at least two photos to enable PDF generation."
+msgstr "Selecione ao menos duas fotos para habilitar a geração do PDF."
+
+#: lib/rapid_tools_web/live/images_to_video_live.ex:319
+#, elixir-autogen, elixir-format
+msgid "Source images"
+msgstr "Imagens de origem"
+
+#: lib/rapid_tools_web/live/photos_to_pdf_live.ex:296
+#, elixir-autogen, elixir-format
+msgid "Source photos"
+msgstr "Fotos de origem"
+
+#: lib/rapid_tools_web/live/images_to_video_live.ex:483
+#, elixir-autogen, elixir-format
+msgid "Supported outputs"
+msgstr "Saídas suportadas"
+
+#: lib/rapid_tools_web/live/images_to_video_live.ex:140
+#, elixir-autogen, elixir-format
+msgid "The images could not be converted."
+msgstr "As imagens não puderam ser convertidas."
+
+#: lib/rapid_tools_web/live/photos_to_pdf_live.ex:135
+#, elixir-autogen, elixir-format
+msgid "The photos could not be combined into a PDF."
+msgstr "As fotos não puderam ser combinadas em um PDF."
+
+#: lib/rapid_tools_web/tool_navigation.ex:131
+#, elixir-autogen, elixir-format
+msgid "Turn photos into MP4 or GIF"
+msgstr "Transforme fotos em MP4 ou GIF"
+
+#: lib/rapid_tools_web/live/images_to_video_live.ex:281
+#, elixir-autogen, elixir-format
+msgid "Turn your photos into a video or animated GIF."
+msgstr "Transforme suas fotos em um vídeo ou GIF animado."
+
+#: lib/rapid_tools_web/live/images_to_video_live.ex:284
+#, elixir-autogen, elixir-format
+msgid "Upload images, set the duration between frames, choose the output format and download the result."
+msgstr "Envie imagens, defina a duração entre quadros, escolha o formato de saída e baixe o resultado."
+
+#: lib/rapid_tools_web/live/photos_to_pdf_live.ex:256
+#, elixir-autogen, elixir-format
+msgid "Upload multiple photos, rearrange the page order and generate a single PDF ready to download."
+msgstr "Envie várias fotos, reorganize a ordem das páginas e gere um único PDF pronto para download."
+
+#: lib/rapid_tools_web/live/images_to_video_live.ex:173
+#, elixir-autogen, elixir-format
+msgid "Uploading files to the server. Wait for all to reach 100%."
+msgstr "Enviando arquivos para o servidor. Aguarde todos chegarem a 100%."
+
+#: lib/rapid_tools_web/live/photos_to_pdf_live.ex:149
+#, elixir-autogen, elixir-format
+msgid "Uploading photos to the server. Wait until all of them reach 100%."
+msgstr "Enviando fotos para o servidor. Aguarde até que todas cheguem a 100%."
+
+#: lib/rapid_tools_web/live/images_to_video_live.ex:176
+#, elixir-autogen, elixir-format
+msgid "Uploads complete. You can now create the video."
+msgstr "Uploads concluídos. Agora você pode criar o vídeo."
+
+#: lib/rapid_tools_web/live/photos_to_pdf_live.ex:155
+#, elixir-autogen, elixir-format
+msgid "Uploads completed. You can now generate the PDF."
+msgstr "Uploads concluídos. Agora você pode gerar o PDF."
+
+#: lib/rapid_tools_web/live/images_to_video_live.ex:82
+#, elixir-autogen, elixir-format
+msgid "Wait for the upload to finish before converting."
+msgstr "Aguarde o upload terminar antes de converter."
+
+#: lib/rapid_tools_web/live/photos_to_pdf_live.ex:72
+#, elixir-autogen, elixir-format
+msgid "Wait for uploads to finish before generating the PDF."
+msgstr "Aguarde os uploads terminarem antes de gerar o PDF."
+
+#: lib/rapid_tools_web/live/images_to_video_live.ex:361
+#, elixir-autogen, elixir-format
+msgid "ready"
+msgstr "pronto"
+
+#: lib/rapid_tools_web/components/layouts.ex:70
+#, elixir-autogen, elixir-format
+msgid "Get Started"
+msgstr "Comece Agora"
+
+#: lib/rapid_tools_web/components/layouts.ex:63
+#, elixir-autogen, elixir-format
+msgid "GitHub"
+msgstr "GitHub"
+
+#: lib/rapid_tools_web/components/layouts.ex:60
+#, elixir-autogen, elixir-format
+msgid "Website"
+msgstr "Website"

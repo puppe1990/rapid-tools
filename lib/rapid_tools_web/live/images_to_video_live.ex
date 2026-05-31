@@ -304,7 +304,7 @@ defmodule RapidToolsWeb.ImagesToVideoLive do
                             {gettext("Creating video")}
                           </p>
                           <p class="text-xs text-slate-500">
-                            {gettext("This can take a few seconds.")}
+                            {gettext("Isso pode levar alguns segundos.")}
                           </p>
                         </div>
                       </div>
