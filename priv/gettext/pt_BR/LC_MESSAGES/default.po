@@ -46,8 +46,8 @@ msgstr "Converta MP4, MOV, WEBM, MKV e AVI"
 #: lib/rapid_tools_web/live/extract_audio_live.ex:396
 #: lib/rapid_tools_web/tool_navigation.ex:66
 #, elixir-autogen, elixir-format
-msgid "Extract Audio"
-msgstr "Extrair Áudio"
+msgid "Extract Audio from Video"
+msgstr "Extrair Áudio de Vídeo"
 
 #: lib/rapid_tools_web/live/image_converter_live.ex:245
 #: lib/rapid_tools_web/tool_navigation.ex:16
@@ -460,13 +460,13 @@ msgstr "Extraindo agora"
 
 #: lib/rapid_tools_web/live/extract_audio_live.ex:424
 #, elixir-autogen, elixir-format
-msgid "Extraindo audio"
-msgstr "Extraindo áudio"
+msgid "Extraindo audio de video"
+msgstr "Extraindo áudio de vídeo"
 
 #: lib/rapid_tools_web/live/extract_audio_live.ex:574
 #, elixir-autogen, elixir-format
-msgid "Extrair audio"
-msgstr "Extrair áudio"
+msgid "Extrair audio de video"
+msgstr "Extrair áudio de vídeo"
 
 #: lib/rapid_tools_web/live/together_audios_live.ex:163
 #, elixir-autogen, elixir-format
@@ -992,8 +992,8 @@ msgstr "Montagem de áudio"
 
 #: lib/rapid_tools_web/live/extract_audio_live.ex:393
 #, elixir-autogen, elixir-format
-msgid "Audio extraction"
-msgstr "Extração de áudio"
+msgid "Audio extraction from video"
+msgstr "Extração de áudio de vídeo"
 
 #: lib/rapid_tools_web/live/audio_converter_live.ex:221
 #, elixir-autogen, elixir-format

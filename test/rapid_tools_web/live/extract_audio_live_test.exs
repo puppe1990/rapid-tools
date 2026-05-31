@@ -24,7 +24,7 @@ defmodule RapidToolsWeb.ExtractAudioLiveTest do
     assert has_element?(view, "form#extract-audio-form")
     assert has_element?(view, "#extract-audio-button")
     assert has_element?(view, "#extract-audio-upload-list")
-    assert has_element?(view, "a[href=\"/extract-audio\"]", "Extract Audio")
+    assert has_element?(view, "a[href=\"/extract-audio\"]", "Extract Audio from Video")
     assert render(view) =~ "Extract audio from videos as MP3, WAV, OGG, AAC, and FLAC"
     assert render(view) =~ "Extracting audio"
     assert render(view) =~ "No video selected yet."

@@ -18,7 +18,8 @@ defmodule RapidToolsWeb.RouteLocaleConsistencyTest do
       {~p"/image-resizer", "Image sizing", "Ready-made presets", "Escolha um preset pronto"},
       {~p"/video-compressor", "Video optimization", "Small size",
        "Escolha um preset de compressao"},
-      {~p"/extract-audio", "Audio extraction", "Batch download", "audios extraidos"},
+      {~p"/extract-audio", "Audio extraction from video", "Supported outputs",
+       "audios extraidos"},
       {~p"/document-converter", "Document workflow", "PDF to PNG",
        "Use PDF to PNG para extrair paginas"},
       {~p"/photos-to-pdf", "Photo layout", "How it works", "respeita a ordem mostrada na fila"},
@@ -40,7 +41,7 @@ defmodule RapidToolsWeb.RouteLocaleConsistencyTest do
     localized_expectations = [
       {~p"/image-resizer", "Dimensionamento de imagens", "Presets prontos"},
       {~p"/video-compressor", "Otimização de vídeos", "Tamanho reduzido"},
-      {~p"/extract-audio", "Extração de áudio", "Download em lote"},
+      {~p"/extract-audio", "Extração de áudio de vídeo", "Saídas suportadas"},
       {~p"/document-converter", "Fluxo de documentos", "PDF para PNG"},
       {~p"/photos-to-pdf", "Fotos para PDF", "Como funciona"},
       {~p"/together-audios", "Montagem de áudio", "Como funciona"}
