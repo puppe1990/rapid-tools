@@ -61,7 +61,8 @@ config :phoenix, :json_library, Jason
 
 config :mime, :types, %{
   "audio/ogg" => ["ogg"],
-  "video/x-matroska" => ["mkv"]
+  "video/x-matroska" => ["mkv"],
+  "image/enc" => ["enc"]
 }
 
 # Import environment specific config. This must remain at the bottom

@@ -290,8 +290,8 @@ msgstr "Convert audio files to MP3, WAV, OGG, AAC, and FLAC with individual or b
 
 #: lib/rapid_tools_web/live/image_converter_live.ex:248
 #, elixir-autogen, elixir-format
-msgid "Converta imagens para PNG, JPG, WEBP, HEIC e AVIF com downloads individuais ou em lote."
-msgstr "Convert images to PNG, JPG, WEBP, HEIC, and AVIF with individual or batch downloads."
+msgid "Converta imagens para PNG, JPG, WEBP, HEIC, AVIF e ENC com downloads individuais ou em lote."
+msgstr "Convert images to PNG, JPG, WEBP, HEIC, AVIF, and ENC with individual or batch downloads."
 
 #: lib/rapid_tools_web/live/video_converter_live.ex:397
 #, elixir-autogen, elixir-format
@@ -351,8 +351,8 @@ msgstr "Batch download"
 #: lib/rapid_tools_web/live/image_converter_live.ex:293
 #: lib/rapid_tools_web/live/image_resizer_live.ex:281
 #, elixir-autogen, elixir-format
-msgid "Entradas aceitas: JPG, JPEG, PNG, WEBP, HEIC e AVIF."
-msgstr "Accepted inputs: JPG, JPEG, PNG, WEBP, HEIC, and AVIF."
+msgid "Entradas aceitas: JPG, JPEG, PNG, WEBP, HEIC, AVIF e ENC."
+msgstr "Accepted inputs: JPG, JPEG, PNG, WEBP, HEIC, AVIF, and ENC."
 
 #: lib/rapid_tools_web/live/audio_converter_live.ex:272
 #, elixir-autogen, elixir-format

@@ -1,13 +1,14 @@
 defmodule RapidTools.ImageConverter do
   @moduledoc false
 
-  @supported_formats ~w(png jpg webp heic avif)
+  @supported_formats ~w(png jpg webp heic avif enc)
   @media_types %{
     "jpg" => "image/jpeg",
     "png" => "image/png",
     "webp" => "image/webp",
     "heic" => "image/heic",
-    "avif" => "image/avif"
+    "avif" => "image/avif",
+    "enc" => "image/enc"
   }
 
   def supported_formats, do: @supported_formats
@@ -18,10 +19,8 @@ defmodule RapidTools.ImageConverter do
     with :ok <- validate_target_format(target_format),
          :ok <- ensure_source_exists(source_path),
          {:ok, output_dir} <- ensure_output_dir(opts),
-         {:ok, command, args} <- command_for(source_path, output_dir, target_format),
+         {:ok, command, args, output_path} <- command_for(source_path, output_dir, target_format),
          {_, 0} <- System.cmd(command, args, stderr_to_stdout: true) do
-      output_path = List.last(args)
-
       {:ok,
        %{
          output_path: output_path,
@@ -74,14 +73,21 @@ defmodule RapidTools.ImageConverter do
         "#{Path.rootname(Path.basename(source_path))}.#{target_format}"
       )
 
+    command_output_path =
+      if target_format == "enc" do
+        "EPS:#{output_path}"
+      else
+        output_path
+      end
+
     case System.find_executable("magick") || System.find_executable("convert") do
       nil ->
         {:error, :imagemagick_not_found}
 
       command ->
-        args = [source_path, "-auto-orient", output_path]
+        args = [source_path, "-auto-orient", command_output_path]
 
-        {:ok, command, args}
+        {:ok, command, args, output_path}
     end
   end
 end

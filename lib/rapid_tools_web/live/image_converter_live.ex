@@ -6,7 +6,7 @@ defmodule RapidToolsWeb.ImageConverterLive do
   alias RapidTools.ZipArchive
   alias RapidToolsWeb.ToolNavigation
 
-  @image_accept ~w(.jpg .jpeg .png .webp .heic .avif)
+  @image_accept ~w(.jpg .jpeg .png .webp .heic .avif .enc)
 
   @impl true
   def mount(_params, session, socket) do
@@ -246,7 +246,7 @@ defmodule RapidToolsWeb.ImageConverterLive do
                 </h1>
                 <p class="max-w-3xl text-base text-slate-600 sm:text-lg">
                   {gettext(
-                    "Converta imagens para PNG, JPG, WEBP, HEIC e AVIF com downloads individuais ou em lote."
+                    "Converta imagens para PNG, JPG, WEBP, HEIC, AVIF e ENC com downloads individuais ou em lote."
                   )}
                 </p>
                 <p class="text-sm text-slate-500">
@@ -290,7 +290,7 @@ defmodule RapidToolsWeb.ImageConverterLive do
                           class="block w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 shadow-sm transition file:mr-4 file:rounded-xl file:border-0 file:bg-slate-950 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:border-orange-300"
                         />
                         <p class="text-sm text-slate-500">
-                          {gettext("Entradas aceitas: JPG, JPEG, PNG, WEBP, HEIC e AVIF.")}
+                          {gettext("Entradas aceitas: JPG, JPEG, PNG, WEBP, HEIC, AVIF e ENC.")}
                         </p>
                       </div>
 

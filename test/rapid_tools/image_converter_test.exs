@@ -5,7 +5,7 @@ defmodule RapidTools.ImageConverterTest do
   alias RapidTools.TestSupport.ImageFixtures
 
   test "supported_formats/0 exposes the requested target formats" do
-    assert ImageConverter.supported_formats() == ~w(png jpg webp heic avif)
+    assert ImageConverter.supported_formats() == ~w(png jpg webp heic avif enc)
   end
 
   test "convert/2 converts an image into the target format" do
@@ -33,6 +33,17 @@ defmodule RapidTools.ImageConverterTest do
              )
 
     assert identify_output == "30x20 orientation=TopLeft"
+  end
+
+  test "convert/2 converts an image into enc format" do
+    source_path = ImageFixtures.tiny_png_path!("source-for-enc.png")
+    output_dir = ImageFixtures.temp_dir!("enc-conversion")
+
+    assert {:ok, result} = ImageConverter.convert(source_path, "enc", output_dir: output_dir)
+    assert result.target_format == "enc"
+    assert result.media_type == "image/enc"
+    assert String.ends_with?(result.output_path, ".enc")
+    assert File.exists?(result.output_path)
   end
 
   test "convert/2 rejects unsupported target formats" do
