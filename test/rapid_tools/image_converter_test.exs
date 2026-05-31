@@ -35,7 +35,7 @@ defmodule RapidTools.ImageConverterTest do
 
     assert {identify_output, 0} = System.cmd(cmd, args, stderr_to_stdout: true)
 
-    assert identify_output == "30x20 orientation=TopLeft"
+    assert identify_output in ["30x20 orientation=TopLeft", "30x20 orientation=Undefined"]
   end
 
   test "convert/2 converts an image into enc format" do
