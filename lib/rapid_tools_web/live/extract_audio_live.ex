@@ -430,7 +430,11 @@ defmodule RapidToolsWeb.ExtractAudioLive do
                       </div>
                     </div>
 
-                    <div class="space-y-3">
+                    <div
+                      class="space-y-3"
+                      id="extract-audio-drop-zone"
+                      phx-drop-target={@uploads.video.ref}
+                    >
                       <div>
                         <p class="text-sm font-semibold uppercase tracking-[0.25em] text-fuchsia-500">
                           {gettext("Upload de videos")}

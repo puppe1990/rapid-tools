@@ -310,7 +310,11 @@ defmodule RapidToolsWeb.ImagesToVideoLive do
                       </div>
                     </div>
 
-                    <div class="rounded-[1.75rem] border border-dashed border-teal-200 bg-teal-50/60 p-5">
+                    <div
+                      id="images-to-video-drop-zone"
+                      phx-drop-target={@uploads.image.ref}
+                      class="rounded-[1.75rem] border border-dashed border-teal-200 bg-teal-50/60 p-5"
+                    >
                       <div class="space-y-2">
                         <label
                           for="images-to-video-upload"

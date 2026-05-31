@@ -302,7 +302,11 @@ defmodule RapidToolsWeb.TogetherVideosLive do
                       </div>
                     </div>
 
-                    <div class="rounded-[1.75rem] border border-dashed border-pink-200 bg-pink-50/60 p-5">
+                    <div
+                      id="together-videos-drop-zone"
+                      phx-drop-target={@uploads.video.ref}
+                      class="rounded-[1.75rem] border border-dashed border-pink-200 bg-pink-50/60 p-5"
+                    >
                       <div class="space-y-2">
                         <label
                           for="together-video-upload"

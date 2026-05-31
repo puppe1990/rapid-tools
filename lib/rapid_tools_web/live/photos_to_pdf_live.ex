@@ -287,7 +287,11 @@ defmodule RapidToolsWeb.PhotosToPdfLive do
                       </div>
                     </div>
 
-                    <div class="rounded-[1.75rem] border border-dashed border-sky-200 bg-sky-50/60 p-5">
+                    <div
+                      id="photos-to-pdf-drop-zone"
+                      phx-drop-target={@uploads.image.ref}
+                      class="rounded-[1.75rem] border border-dashed border-sky-200 bg-sky-50/60 p-5"
+                    >
                       <div class="space-y-2">
                         <label
                           for={"photos-to-pdf-upload-#{@upload_input_version}"}

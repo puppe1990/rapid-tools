@@ -258,7 +258,11 @@ defmodule RapidToolsWeb.AudioConverterLive do
                       </div>
                     </div>
 
-                    <div class="rounded-[1.75rem] border border-dashed border-emerald-200 bg-emerald-50/60 p-5">
+                    <div
+                      id="audio-drop-zone"
+                      phx-drop-target={@uploads.audio.ref}
+                      class="rounded-[1.75rem] border border-dashed border-emerald-200 bg-emerald-50/60 p-5"
+                    >
                       <div class="space-y-2">
                         <label for="audio-upload" class="text-sm font-semibold text-slate-900">
                           {gettext("Audio de origem")}

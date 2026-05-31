@@ -279,7 +279,11 @@ defmodule RapidToolsWeb.ImageConverterLive do
                       </div>
                     </div>
 
-                    <div class="rounded-[1.75rem] border border-dashed border-orange-200 bg-orange-50/60 p-5">
+                    <div
+                      id="image-drop-zone"
+                      phx-drop-target={@uploads.image.ref}
+                      class="rounded-[1.75rem] border border-dashed border-orange-200 bg-orange-50/60 p-5"
+                    >
                       <div class="space-y-2">
                         <label for="image-upload" class="text-sm font-semibold text-slate-900">
                           {gettext("Imagens de origem")}
