@@ -267,7 +267,11 @@ defmodule RapidToolsWeb.ImageResizerLive do
                     phx-submit="resize"
                     class="space-y-6"
                   >
-                    <div class="rounded-[1.75rem] border border-dashed border-cyan-200 bg-cyan-50/60 p-5">
+                    <div
+                      id="image-resizer-drop-zone"
+                      phx-drop-target={@uploads.image.ref}
+                      class="rounded-[1.75rem] border border-dashed border-cyan-200 bg-cyan-50/60 p-5"
+                    >
                       <div class="space-y-2">
                         <label for="image-resizer-upload" class="text-sm font-semibold text-slate-900">
                           {gettext("Imagens de origem")}

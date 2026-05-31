@@ -436,7 +436,11 @@ defmodule RapidToolsWeb.VideoConverterLive do
                       </div>
                     </div>
 
-                    <div class="rounded-[1.75rem] border border-dashed border-sky-200 bg-sky-50/60 p-5">
+                    <div
+                      id="video-drop-zone"
+                      phx-drop-target={@uploads.video.ref}
+                      class="rounded-[1.75rem] border border-dashed border-sky-200 bg-sky-50/60 p-5"
+                    >
                       <div class="space-y-2">
                         <label for="video-upload" class="text-sm font-semibold text-slate-900">
                           {gettext("Video de origem")}

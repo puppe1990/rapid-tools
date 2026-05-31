@@ -63,7 +63,7 @@ defmodule RapidToolsWeb.ToolNavigation do
       },
       %{
         key: "extract-audio",
-        name: gettext("Extract Audio"),
+        name: gettext("Extract Audio from Video"),
         blurb: gettext("Pull MP3, WAV, OGG, AAC and FLAC from video"),
         current: current == "extract-audio",
         path: ~p"/extract-audio",

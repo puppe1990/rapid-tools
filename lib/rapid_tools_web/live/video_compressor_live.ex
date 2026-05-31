@@ -256,7 +256,11 @@ defmodule RapidToolsWeb.VideoCompressorLive do
                     phx-submit="compress"
                     class="space-y-6"
                   >
-                    <div class="rounded-[1.75rem] border border-dashed border-rose-200 bg-rose-50/60 p-5">
+                    <div
+                      id="video-compressor-drop-zone"
+                      phx-drop-target={@uploads.video.ref}
+                      class="rounded-[1.75rem] border border-dashed border-rose-200 bg-rose-50/60 p-5"
+                    >
                       <div class="space-y-2">
                         <label
                           for="video-compressor-upload"

@@ -390,10 +390,10 @@ defmodule RapidToolsWeb.ExtractAudioLive do
             <div class="space-y-6 overflow-y-auto">
               <div class="space-y-4 px-2 py-2">
                 <span class="inline-flex items-center rounded-full border border-fuchsia-200 bg-white/80 px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-fuchsia-700">
-                  {gettext("Audio extraction")}
+                  {gettext("Audio extraction from video")}
                 </span>
                 <h1 class="text-4xl font-black tracking-tight text-slate-950 sm:text-5xl">
-                  {gettext("Extract Audio")}
+                  {gettext("Extract Audio from Video")}
                 </h1>
                 <p class="max-w-3xl text-base text-slate-600 sm:text-lg">
                   {gettext(
@@ -421,7 +421,7 @@ defmodule RapidToolsWeb.ExtractAudioLive do
                         <span class="inline-block size-5 animate-spin rounded-full border-2 border-fuchsia-200 border-t-fuchsia-600" />
                         <div>
                           <p class="text-sm font-semibold text-slate-950">
-                            {gettext("Extraindo audio")}
+                            {gettext("Extraindo audio de video")}
                           </p>
                           <p class="text-xs text-slate-500">
                             {gettext("Isso pode levar alguns segundos.")}
@@ -430,7 +430,11 @@ defmodule RapidToolsWeb.ExtractAudioLive do
                       </div>
                     </div>
 
-                    <div class="space-y-3">
+                    <div
+                      class="space-y-3"
+                      id="extract-audio-drop-zone"
+                      phx-drop-target={@uploads.video.ref}
+                    >
                       <div>
                         <p class="text-sm font-semibold uppercase tracking-[0.25em] text-fuchsia-500">
                           {gettext("Upload de videos")}
@@ -571,7 +575,7 @@ defmodule RapidToolsWeb.ExtractAudioLive do
                         }
                         class="inline-flex items-center justify-center rounded-full bg-fuchsia-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-fuchsia-600/20 transition hover:bg-fuchsia-500 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none"
                       >
-                        <span>{gettext("Extrair audio")}</span>
+                        <span>{gettext("Extrair audio de video")}</span>
                       </button>
                     </div>
 
@@ -585,71 +589,54 @@ defmodule RapidToolsWeb.ExtractAudioLive do
                   </.form>
                 </div>
 
-                <aside class="space-y-4 rounded-[2rem] border border-white/70 bg-white/90 p-6 shadow-[0_24px_60px_rgba(15,23,42,0.08)]">
-                  <div>
-                    <p class="text-sm font-semibold uppercase tracking-[0.25em] text-fuchsia-500">
-                      {gettext("Resultados")}
-                    </p>
-                    <h2 class="mt-2 text-2xl font-black tracking-tight text-slate-950">
-                      {gettext("Audios prontos para download")}
-                    </h2>
-                    <p class="mt-2 text-sm leading-6 text-slate-600">
-                      {gettext(
-                        "Cada arquivo extraido aparece aqui com link individual. Quando houver mais de um resultado, o lote tambem fica disponivel."
-                      )}
-                    </p>
-                  </div>
-
-                  <div class="rounded-[1.5rem] border border-slate-200 bg-slate-50/80 p-4">
-                    <p class="text-sm font-semibold text-slate-900">
+                <aside class="rounded-[2rem] border border-white/70 bg-slate-950 p-6 text-white shadow-[0_24px_60px_rgba(15,23,42,0.16)]">
+                  <div :if={@results != []} class="space-y-4">
+                    <p class="text-sm font-semibold uppercase tracking-[0.25em] text-fuchsia-300">
                       {gettext("%{count} audio tracks extracted", count: length(@results))}
                     </p>
-
-                    <div class="mt-4 space-y-3">
+                    <a
+                      :if={@batch_download_path}
+                      href={@batch_download_path}
+                      class="inline-flex w-full items-center justify-center rounded-2xl bg-fuchsia-400 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-fuchsia-300"
+                    >
+                      {gettext("Baixar pacote ZIP")}
+                    </a>
+                    <div class="space-y-3">
                       <div
                         :for={result <- @results}
-                        class="rounded-[1.25rem] border border-white bg-white p-4 shadow-sm"
+                        class="rounded-[1.5rem] border border-white/10 bg-white/5 p-4"
                       >
-                        <p class="truncate text-sm font-semibold text-slate-900">{result.filename}</p>
-                        <p class="mt-1 text-xs uppercase tracking-[0.2em] text-slate-500">
+                        <p class="font-semibold">{result.filename}</p>
+                        <p class="mt-1 text-sm text-slate-300">
                           {String.upcase(result.target_format)}
                         </p>
-                        <.link
-                          navigate={result.download_path}
-                          class="mt-3 inline-flex text-sm font-semibold text-fuchsia-700 hover:text-fuchsia-600"
+                        <a
+                          href={result.download_path}
+                          class="mt-3 inline-flex w-full items-center justify-center rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/20"
                         >
                           {gettext("Baixar arquivo")}
-                        </.link>
-                      </div>
-
-                      <div
-                        :if={@results == []}
-                        class="rounded-[1.25rem] border border-dashed border-slate-200 bg-white/80 px-4 py-6 text-sm text-slate-500"
-                      >
-                        {gettext(
-                          "Os audios extraidos vao aparecer aqui assim que o processamento terminar."
-                        )}
+                        </a>
                       </div>
                     </div>
                   </div>
 
-                  <div class="rounded-[1.5rem] border border-fuchsia-100 bg-fuchsia-50/60 p-4">
-                    <p class="text-sm font-semibold text-fuchsia-900">
-                      {gettext("Download em lote")}
-                    </p>
-                    <p class="mt-2 text-sm leading-6 text-fuchsia-900/80">
-                      {gettext(
-                        "Gere um ZIP com todos os audios extraidos para baixar o pacote inteiro de uma vez."
-                      )}
-                    </p>
-
-                    <.link
-                      :if={@batch_download_path}
-                      navigate={@batch_download_path}
-                      class="mt-4 inline-flex rounded-full bg-fuchsia-600 px-5 py-2 text-sm font-semibold text-white transition hover:bg-fuchsia-500"
-                    >
-                      {gettext("Baixar ZIP")}
-                    </.link>
+                  <div :if={@results == []} class="space-y-4">
+                    <div class="rounded-[1.5rem] border border-white/10 bg-white/5 p-4">
+                      <p class="text-sm font-semibold uppercase tracking-[0.25em] text-fuchsia-300">
+                        {gettext("Audio extraction from video")}
+                      </p>
+                      <p class="mt-3 text-sm text-slate-300">
+                        {gettext(
+                          "Extraia o audio de videos em MP3, WAV, OGG, AAC e FLAC com downloads individuais ou em lote."
+                        )}
+                      </p>
+                    </div>
+                    <div class="rounded-[1.5rem] border border-white/10 bg-white/5 p-4">
+                      <p class="text-sm font-semibold text-white">{gettext("Saidas suportadas")}</p>
+                      <p class="mt-2 text-sm text-slate-300">
+                        {Enum.map_join(@formats, ", ", &String.upcase/1)}
+                      </p>
+                    </div>
                   </div>
                 </aside>
               </div>

@@ -296,7 +296,11 @@ defmodule RapidToolsWeb.TogetherAudiosLive do
                       </div>
                     </div>
 
-                    <div class="rounded-[1.75rem] border border-dashed border-amber-200 bg-amber-50/60 p-5">
+                    <div
+                      id="together-audios-drop-zone"
+                      phx-drop-target={@uploads.audio.ref}
+                      class="rounded-[1.75rem] border border-dashed border-amber-200 bg-amber-50/60 p-5"
+                    >
                       <div class="space-y-2">
                         <label
                           for="together-audio-upload"

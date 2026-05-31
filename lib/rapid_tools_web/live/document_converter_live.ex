@@ -354,7 +354,11 @@ defmodule RapidToolsWeb.DocumentConverterLive do
                     phx-submit="convert"
                     class="space-y-6"
                   >
-                    <div class="rounded-[1.75rem] border border-dashed border-violet-200 bg-violet-50/60 p-5">
+                    <div
+                      id="document-drop-zone"
+                      phx-drop-target={@uploads.document.ref}
+                      class="rounded-[1.75rem] border border-dashed border-violet-200 bg-violet-50/60 p-5"
+                    >
                       <div class="space-y-2">
                         <label for="document-upload" class="text-sm font-semibold text-slate-900">
                           {gettext("Arquivos de origem")}
