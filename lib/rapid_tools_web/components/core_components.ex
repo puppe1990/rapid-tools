@@ -488,7 +488,7 @@ defmodule RapidToolsWeb.CoreComponents do
   def tool_sidebar(assigns) do
     ~H"""
     <aside class={[
-      "rounded-[2rem] border bg-white/85 p-5 shadow-[0_18px_50px_rgba(15,23,42,0.08)] backdrop-blur",
+      "rounded-[2rem] border bg-white/85 p-5 shadow-[0_18px_50px_rgba(15,23,42,0.08)] backdrop-blur overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
       @theme.sidebar_border_class
     ]}>
       <div class="space-y-6">
@@ -504,10 +504,33 @@ defmodule RapidToolsWeb.CoreComponents do
           </div>
         </div>
 
+        <div id="tool-search" phx-hook="ToolSearch" class="relative">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <circle cx="11" cy="11" r="8" />
+            <path d="m21 21-4.3-4.3" />
+          </svg>
+          <input
+            type="text"
+            placeholder={gettext("Search tools...")}
+            class="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm text-slate-700 placeholder:text-slate-400 transition focus:border-orange-300 focus:ring-2 focus:ring-orange-100 focus:outline-none"
+            autocomplete="off"
+          />
+        </div>
+
         <nav class="space-y-3" aria-label={gettext("Tools")}>
           <.link
             :for={tool <- @tools}
             navigate={tool.path}
+            data-search-text={String.downcase(tool.name <> " " <> tool.blurb)}
             class={[
               "block rounded-[1.5rem] border px-4 py-4 transition duration-200",
               tool.current && tool.current_class,

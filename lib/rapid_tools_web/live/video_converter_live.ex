@@ -375,9 +375,9 @@ defmodule RapidToolsWeb.VideoConverterLive do
       content_class="w-full"
       show_header={false}
     >
-      <section class="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(99,102,241,0.18),_transparent_30%),radial-gradient(circle_at_bottom_right,_rgba(56,189,248,0.14),_transparent_28%),linear-gradient(180deg,_rgba(241,244,252,1)_0%,_rgba(255,255,255,1)_52%,_rgba(238,242,252,1)_100%)]">
-        <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-          <div class="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
+      <section class="h-screen overflow-hidden bg-[radial-gradient(circle_at_top_left,_rgba(99,102,241,0.18),_transparent_30%),radial-gradient(circle_at_bottom_right,_rgba(56,189,248,0.14),_transparent_28%),linear-gradient(180deg,_rgba(241,244,252,1)_0%,_rgba(255,255,255,1)_52%,_rgba(238,242,252,1)_100%)]">
+        <div class="mx-auto max-w-7xl h-full px-4 py-6 sm:px-6 lg:px-8">
+          <div class="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)] h-full">
             <.tool_sidebar
               tools={@tools}
               current_locale={@current_locale}
@@ -385,7 +385,7 @@ defmodule RapidToolsWeb.VideoConverterLive do
               theme={%{sidebar_border_class: "border-white/70", accent_class: "text-sky-600"}}
             />
 
-            <div class="space-y-6">
+            <div class="space-y-6 overflow-y-auto">
               <div class="space-y-4 px-2 py-2">
                 <span class="inline-flex items-center rounded-full border border-sky-200 bg-white/80 px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-sky-700">
                   {gettext("Video workflow")}

@@ -226,9 +226,9 @@ defmodule RapidToolsWeb.ImageConverterLive do
       content_class="w-full"
       show_header={false}
     >
-      <section class="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(255,118,35,0.16),_transparent_28%),radial-gradient(circle_at_bottom_right,_rgba(251,191,36,0.14),_transparent_26%),linear-gradient(180deg,_rgba(250,245,239,1)_0%,_rgba(255,255,255,1)_50%,_rgba(248,244,238,1)_100%)]">
-        <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-          <div class="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
+      <section class="h-screen overflow-hidden bg-[radial-gradient(circle_at_top_left,_rgba(255,118,35,0.16),_transparent_28%),radial-gradient(circle_at_bottom_right,_rgba(251,191,36,0.14),_transparent_26%),linear-gradient(180deg,_rgba(250,245,239,1)_0%,_rgba(255,255,255,1)_50%,_rgba(248,244,238,1)_100%)]">
+        <div class="mx-auto max-w-7xl h-full px-4 py-6 sm:px-6 lg:px-8">
+          <div class="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)] h-full">
             <.tool_sidebar
               tools={@tools}
               current_locale={@current_locale}
@@ -236,7 +236,7 @@ defmodule RapidToolsWeb.ImageConverterLive do
               theme={%{sidebar_border_class: "border-orange-100", accent_class: "text-orange-600"}}
             />
 
-            <div class="space-y-6">
+            <div class="space-y-6 overflow-y-auto">
               <div class="space-y-4 px-2 py-2">
                 <span class="inline-flex items-center rounded-full border border-orange-200 bg-white/80 px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-orange-700">
                   {gettext("Image workflow")}

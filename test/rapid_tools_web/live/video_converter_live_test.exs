@@ -44,11 +44,17 @@ defmodule RapidToolsWeb.VideoConverterLiveTest do
     assert has_element?(view, "a[href=\"/audio-converter\"]", "Audio Converter")
     assert has_element?(view, "a[href=\"/document-converter\"]", "Document Converter")
     assert has_element?(view, "a[href=\"/together-audios\"]", "Together Audios")
+    assert has_element?(view, "a[href=\"/images-to-video\"]", "Images to Video")
     assert render(view) =~ "Convert videos to MP4, MOV, WEBM, MKV, AVI, and TS"
     assert render(view) =~ "Converting video"
     assert render(view) =~ "This can take a few seconds."
     assert render(view) =~ "No video selected yet."
     assert render(view) =~ ~s(value="mp4")
+  end
+
+  test "sidebar search input exists on video page", %{conn: conn} do
+    {:ok, view, _html} = live(conn, ~p"/video-converter")
+    assert has_element?(view, "#tool-search input")
   end
 
   test "accepts multiple selected videos in the upload list", %{conn: conn} do

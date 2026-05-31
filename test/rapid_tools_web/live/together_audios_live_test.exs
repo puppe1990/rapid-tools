@@ -17,12 +17,18 @@ defmodule RapidToolsWeb.TogetherAudiosLiveTest do
     assert has_element?(view, "a[href=\"/audio-converter\"]", "Audio Converter")
     assert has_element?(view, "a[href=\"/document-converter\"]", "Document Converter")
     assert has_element?(view, "a[href=\"/together-audios\"]", "Together Audios")
+    assert has_element?(view, "a[href=\"/images-to-video\"]", "Images to Video")
     assert render(view) =~ "Join multiple audio files into a single final track."
     assert render(view) =~ "Joining audio files"
     assert render(view) =~ "This can take a few seconds."
     assert render(view) =~ "No audio selected yet."
     assert render(view) =~ "Reorder the queue with the arrows to define the final track order."
     assert render(view) =~ ~s(value="mp3")
+  end
+
+  test "sidebar search input exists", %{conn: conn} do
+    {:ok, view, _html} = live(conn, ~p"/together-audios")
+    assert has_element?(view, "#tool-search input")
   end
 
   test "accepts multiple selected audios in the upload list", %{conn: conn} do

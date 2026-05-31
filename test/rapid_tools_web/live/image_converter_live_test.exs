@@ -17,10 +17,11 @@ defmodule RapidToolsWeb.ImageConverterLiveTest do
     assert has_element?(view, "a[href=\"/audio-converter\"]", "Audio Converter")
     assert has_element?(view, "a[href=\"/document-converter\"]", "Document Converter")
     assert has_element?(view, "a[href=\"/together-audios\"]", "Together Audios")
+    assert has_element?(view, "a[href=\"/images-to-video\"]", "Images to Video")
     assert html =~ "Tools"
     assert html =~ "Image Converter"
     assert html =~ "Image workflow"
-    assert html =~ "Convert images to PNG, JPG, WEBP, HEIC, and AVIF"
+    assert html =~ "Convert images to PNG, JPG, WEBP, HEIC, AVIF, and ENC"
     assert html =~ "Ideal for exporting assets for web, social, apps, and design libraries."
     assert html =~ "Converting images"
     assert html =~ "This can take a few seconds."
@@ -110,6 +111,24 @@ defmodule RapidToolsWeb.ImageConverterLiveTest do
 
     refute has_element?(view, "#image-upload-list", "pending-source.png")
     assert has_element?(view, "#converted-results")
+  end
+
+  test "sidebar and content area have independent scroll inside viewport", %{conn: conn} do
+    {:ok, _view, html} = live(conn, ~p"/")
+
+    assert html =~ "h-screen"
+    assert html =~ "overflow-hidden"
+    assert html =~ "h-full"
+    assert html =~ "overflow-y-auto"
+  end
+
+  test "sidebar has search input with data-search-text on nav items", %{conn: conn} do
+    {:ok, view, html} = live(conn, ~p"/")
+
+    assert has_element?(view, "#tool-search input")
+    assert html =~ "data-search-text"
+    assert html =~ "image converter"
+    assert html =~ "video converter"
   end
 
   test "clearing converted results keeps uploaded images intact", %{conn: conn} do
