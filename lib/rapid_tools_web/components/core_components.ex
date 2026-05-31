@@ -487,10 +487,14 @@ defmodule RapidToolsWeb.CoreComponents do
 
   def tool_sidebar(assigns) do
     ~H"""
-    <aside class={[
-      "rounded-[2rem] border bg-white/85 p-5 shadow-[0_18px_50px_rgba(15,23,42,0.08)] backdrop-blur overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
-      @theme.sidebar_border_class
-    ]}>
+    <aside
+      id="tool-sidebar"
+      phx-hook="PreserveScroll"
+      class={[
+        "rounded-[2rem] border bg-white/85 p-5 shadow-[0_18px_50px_rgba(15,23,42,0.08)] backdrop-blur overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
+        @theme.sidebar_border_class
+      ]}
+    >
       <div class="space-y-6">
         <div class="space-y-2">
           <p class={["text-sm font-semibold uppercase tracking-[0.3em]", @theme.accent_class]}>

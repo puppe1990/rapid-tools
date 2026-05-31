@@ -23,7 +23,7 @@ import "phoenix_html"
 import {Socket} from "phoenix"
 import {LiveSocket} from "phoenix_live_view"
 import {hooks as colocatedHooks} from "phoenix-colocated/rapid_tools"
-import {ToolSearch} from "./hooks.js"
+import {ToolSearch, PreserveScroll} from "./hooks.js"
 import topbar from "../vendor/topbar"
 
 const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
@@ -35,7 +35,7 @@ const longPollFallbackMs = localHostsWithoutLongPollFallback.has(window.location
 const liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs,
   params: {_csrf_token: csrfToken},
-  hooks: {...colocatedHooks, ToolSearch},
+  hooks: {...colocatedHooks, ToolSearch, PreserveScroll},
 })
 
 // Show progress bar on live navigation and form submits

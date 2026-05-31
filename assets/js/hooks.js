@@ -12,4 +12,17 @@ let ToolSearch = {
   },
 }
 
-export { ToolSearch }
+let PreserveScroll = {
+  mounted() {
+    const key = `scroll-${this.el.id || "sidebar"}`
+    const saved = sessionStorage.getItem(key)
+    if (saved) {
+      this.el.scrollTop = parseInt(saved, 10)
+    }
+    this.el.addEventListener("scroll", () => {
+      sessionStorage.setItem(key, this.el.scrollTop)
+    })
+  },
+}
+
+export { ToolSearch, PreserveScroll }
