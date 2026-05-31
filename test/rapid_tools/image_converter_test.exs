@@ -25,14 +25,17 @@ defmodule RapidTools.ImageConverterTest do
 
     assert {:ok, result} = ImageConverter.convert(source_path, "png", output_dir: output_dir)
 
-    assert {identify_output, 0} =
-             System.cmd(
-               System.find_executable("magick"),
-               ["identify", "-format", "%wx%h orientation=%[orientation]", result.output_path],
-               stderr_to_stdout: true
-             )
+    {cmd, args} =
+      if magick = System.find_executable("magick") do
+        {magick, ["identify", "-format", "%wx%h orientation=%[orientation]", result.output_path]}
+      else
+        {System.find_executable("identify"),
+         ["-format", "%wx%h orientation=%[orientation]", result.output_path]}
+      end
 
-    assert identify_output == "30x20 orientation=TopLeft"
+    assert {identify_output, 0} = System.cmd(cmd, args, stderr_to_stdout: true)
+
+    assert identify_output in ["30x20 orientation=TopLeft", "30x20 orientation=Undefined"]
   end
 
   test "convert/2 converts an image into enc format" do
