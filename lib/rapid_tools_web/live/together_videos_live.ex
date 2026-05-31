@@ -6,6 +6,7 @@ defmodule RapidToolsWeb.TogetherVideosLive do
   alias RapidToolsWeb.ToolNavigation
 
   @video_accept ~w(.mp4 .mov .webm .mkv .avi)
+  @max_video_upload_size 150_000_000
 
   @impl true
   def mount(_params, session, socket) do
@@ -29,7 +30,12 @@ defmodule RapidToolsWeb.TogetherVideosLive do
      |> assign(:result, nil)
      |> assign(:video_order, [])
      |> assign(:my_path, "/together-videos")
-     |> allow_upload(:video, accept: @video_accept, max_entries: 100, auto_upload: true)}
+     |> allow_upload(:video,
+       accept: @video_accept,
+       max_entries: 100,
+       max_file_size: @max_video_upload_size,
+       auto_upload: true
+     )}
   end
 
   @impl true
