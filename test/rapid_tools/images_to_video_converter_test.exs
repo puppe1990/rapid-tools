@@ -110,7 +110,9 @@ defmodule RapidTools.ImagesToVideoConverterTest do
             "-of",
             "default=noprint_wrappers=1:nokey=1",
             result.output_path
-          ], stderr_to_stdout: true)
+          ],
+          stderr_to_stdout: true
+        )
 
       duration = output |> String.trim() |> String.to_float()
       assert duration >= 2.5

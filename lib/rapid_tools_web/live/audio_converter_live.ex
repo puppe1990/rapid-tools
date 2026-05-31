@@ -201,7 +201,7 @@ defmodule RapidToolsWeb.AudioConverterLive do
     ~H"""
     <Layouts.app
       flash={@flash}
-      main_class="px-0 pb-8 pt-0 sm:px-0 lg:px-0"
+      main_class="px-0 pb-0 pt-0 sm:px-0 lg:px-0"
       content_class="w-full"
       show_header={false}
     >

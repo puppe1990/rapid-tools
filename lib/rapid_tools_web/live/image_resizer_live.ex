@@ -224,7 +224,7 @@ defmodule RapidToolsWeb.ImageResizerLive do
     ~H"""
     <Layouts.app
       flash={@flash}
-      main_class="px-0 pb-8 pt-0 sm:px-0 lg:px-0"
+      main_class="px-0 pb-0 pt-0 sm:px-0 lg:px-0"
       content_class="w-full"
       show_header={false}
     >
@@ -238,7 +238,7 @@ defmodule RapidToolsWeb.ImageResizerLive do
               theme={%{sidebar_border_class: "border-cyan-100", accent_class: "text-cyan-700"}}
             />
 
-            <div class="space-y-6 overflow-y-auto">
+            <div class="min-h-0 space-y-6 overflow-y-auto">
               <div class="space-y-4 px-2 py-2">
                 <span class="inline-flex items-center rounded-full border border-cyan-200 bg-white/80 px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-cyan-700">
                   {gettext("Image sizing")}
