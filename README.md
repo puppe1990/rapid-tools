@@ -28,6 +28,7 @@ RapidTools is a Phoenix LiveView app for batch media workflows including convers
 - `WEBP`
 - `HEIC`
 - `AVIF`
+- `ENC`
 
 ### Image resizing output
 
@@ -77,7 +78,7 @@ RapidTools is a Phoenix LiveView app for batch media workflows including convers
 
 ### Photos to PDF input/output
 
-- Input: `JPG`, `PNG`, `WEBP`, `HEIC`, `AVIF`
+- Input: `JPG`, `PNG`, `WEBP`, `HEIC`, `AVIF`, `ENC`
 - Output: `PDF`
 
 ### Images to video output

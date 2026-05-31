@@ -12,7 +12,7 @@ This repository contains `RapidTools`, a Phoenix LiveView application for batch 
 
 The app currently supports:
 
-- Image conversion via ImageMagick: `png`, `jpg`, `webp`, `heic`, `avif`
+- Image conversion via ImageMagick: `png`, `jpg`, `webp`, `heic`, `avif`, `enc`
 - Video conversion via `ffmpeg`: `mp4`, `mov`, `webm`, `mkv`, `avi`
 - Audio conversion via `ffmpeg`: `mp3`, `wav`, `ogg`, `aac`, `flac`
 
