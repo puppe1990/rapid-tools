@@ -124,6 +124,18 @@ defmodule RapidToolsWeb.ToolNavigation do
         dot_class: "bg-amber-500",
         name_class: "text-amber-800",
         blurb_class: "text-amber-700/80"
+      },
+      %{
+        key: "images-to-video",
+        name: gettext("Images to Video"),
+        blurb: gettext("Turn photos into MP4 or GIF"),
+        current: current == "images-to-video",
+        path: ~p"/images-to-video",
+        current_class: "border-teal-300 bg-teal-50 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]",
+        idle_class: "border-slate-200 bg-white hover:border-teal-200 hover:bg-teal-50/40",
+        dot_class: "bg-teal-500",
+        name_class: "text-teal-800",
+        blurb_class: "text-teal-700/80"
       }
     ]
   end

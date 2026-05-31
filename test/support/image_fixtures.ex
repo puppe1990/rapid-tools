@@ -361,6 +361,65 @@ defmodule RapidTools.TestSupport.ImageFixtures do
     """
   end
 
+  def sized_png_path!(name, width, height) do
+    dir = Path.join(System.tmp_dir!(), "rapid_tools_test_fixtures")
+    File.mkdir_p!(dir)
+
+    path = Path.join(dir, name)
+    command = System.find_executable("magick") || System.find_executable("convert")
+
+    case command do
+      nil ->
+        raise "ImageMagick is required to build test fixtures"
+
+      _ ->
+        {_, 0} =
+          System.cmd(command, ["-size", "#{width}x#{height}", "xc:#4f46e5", path],
+            stderr_to_stdout: true
+          )
+    end
+
+    path
+  end
+
+  def sized_webp_path!(name, width, height) do
+    png_source = sized_png_path!("#{Path.rootname(name)}.png", width, height)
+    dir = Path.join(System.tmp_dir!(), "rapid_tools_test_fixtures")
+    File.mkdir_p!(dir)
+
+    path = Path.join(dir, name)
+    command = System.find_executable("magick") || System.find_executable("convert")
+
+    case command do
+      nil ->
+        raise "ImageMagick is required to build test fixtures"
+
+      _ ->
+        {_, 0} = System.cmd(command, [png_source, path], stderr_to_stdout: true)
+    end
+
+    path
+  end
+
+  def tiny_webp_path!(name \\ "tiny.webp") do
+    png_source = tiny_png_path!("#{Path.rootname(name)}.png")
+    dir = Path.join(System.tmp_dir!(), "rapid_tools_test_fixtures")
+    File.mkdir_p!(dir)
+
+    path = Path.join(dir, name)
+    command = System.find_executable("magick") || System.find_executable("convert")
+
+    case command do
+      nil ->
+        raise "ImageMagick is required to build test fixtures"
+
+      _ ->
+        {_, 0} = System.cmd(command, [png_source, path], stderr_to_stdout: true)
+    end
+
+    path
+  end
+
   def tiny_ogg_path!(name \\ "tiny.ogg") do
     dir = Path.join(System.tmp_dir!(), "rapid_tools_test_fixtures")
     File.mkdir_p!(dir)
