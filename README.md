@@ -17,6 +17,7 @@ RapidTools is a Phoenix LiveView app for batch media workflows including convers
 - Document converter at `/document-converter`
 - Photos to PDF at `/photos-to-pdf`
 - Together audios at `/together-audios`
+- Together videos at `/together-videos`
 - Images to video at `/images-to-video`
 
 ## Supported formats

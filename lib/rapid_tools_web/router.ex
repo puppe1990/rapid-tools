@@ -27,6 +27,7 @@ defmodule RapidToolsWeb.Router do
     live "/document-converter", DocumentConverterLive
     live "/photos-to-pdf", PhotosToPdfLive
     live "/together-audios", TogetherAudiosLive
+    live "/together-videos", TogetherVideosLive
     live "/images-to-video", ImagesToVideoLive
     get "/downloads/batches/:id", DownloadController, :batch
     get "/downloads/:id", DownloadController, :show
