@@ -50,6 +50,7 @@ defmodule RapidToolsWeb.VideoConverterLiveTest do
     assert render(view) =~ "This can take a few seconds."
     assert render(view) =~ "No video selected yet."
     assert render(view) =~ ~s(value="mp4")
+    assert has_element?(view, "select#video-orientation")
   end
 
   test "sidebar search input exists on video page", %{conn: conn} do
@@ -193,7 +194,9 @@ defmodule RapidToolsWeb.VideoConverterLiveTest do
 
     _html =
       view
-      |> form("#video-converter-form", conversion: %{target_format: "mp4"})
+      |> form("#video-converter-form",
+        conversion: %{target_format: "mp4", orientation: "original"}
+      )
       |> render_submit()
 
     html = eventually_render_including(view, "This file seems corrupted or incomplete.")
@@ -218,7 +221,9 @@ defmodule RapidToolsWeb.VideoConverterLiveTest do
 
     _html =
       view
-      |> form("#video-converter-form", conversion: %{target_format: "webm"})
+      |> form("#video-converter-form",
+        conversion: %{target_format: "webm", orientation: "original"}
+      )
       |> render_submit()
 
     html = eventually_render_including(view, "This file does not contain a video track.")
@@ -265,7 +270,9 @@ defmodule RapidToolsWeb.VideoConverterLiveTest do
 
     html =
       view
-      |> form("#video-converter-form", conversion: %{target_format: "mp4"})
+      |> form("#video-converter-form",
+        conversion: %{target_format: "mp4", orientation: "original"}
+      )
       |> render_submit()
 
     assert html =~ "This video upload was lost before conversion."
@@ -287,7 +294,7 @@ defmodule RapidToolsWeb.VideoConverterLiveTest do
        [
          temp_video_stage("progress-demo.mp4"),
          temp_video_stage("next-up.mov")
-       ], "mp4", []}
+       ], "mp4", "original", []}
     )
 
     html = eventually_render_including(view, "Converting now")

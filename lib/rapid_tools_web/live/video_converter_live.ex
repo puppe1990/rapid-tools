@@ -19,7 +19,10 @@ defmodule RapidToolsWeb.VideoConverterLive do
 
     form =
       to_form(
-        %{"target_format" => default_target_format()},
+        %{
+          "target_format" => default_target_format(),
+          "orientation" => default_orientation()
+        },
         as: :conversion
       )
 
@@ -27,6 +30,7 @@ defmodule RapidToolsWeb.VideoConverterLive do
      socket
      |> assign(:current_locale, locale)
      |> assign(:formats, VideoConverter.supported_formats())
+     |> assign(:orientations, VideoConverter.supported_orientations())
      |> assign(:tools, ToolNavigation.tools("video"))
      |> assign(:form, form)
      |> assign(:results, [])
@@ -58,7 +62,10 @@ defmodule RapidToolsWeb.VideoConverterLive do
   end
 
   @impl true
-  def handle_event("convert", %{"conversion" => %{"target_format" => target_format}}, socket) do
+  def handle_event("convert", %{"conversion" => conversion_params}, socket) do
+    target_format = conversion_params["target_format"]
+    orientation = conversion_params["orientation"] || default_orientation()
+
     case reconcile_video_uploads(socket) do
       {:error, socket} ->
         {:noreply, socket}
@@ -74,19 +81,22 @@ defmodule RapidToolsWeb.VideoConverterLive do
              put_flash(socket, :error, gettext("Aguarde o upload terminar antes de converter."))}
 
           _ ->
-            {:noreply, start_conversion(socket, target_format)}
+            {:noreply, start_conversion(socket, target_format, orientation)}
         end
     end
   end
 
   @impl true
-  def handle_info({:begin_video_conversion, staged_entries, target_format, results}, socket) do
+  def handle_info(
+        {:begin_video_conversion, staged_entries, target_format, orientation, results},
+        socket
+      ) do
     case staged_entries do
       [] ->
         {:noreply, finish_conversion(socket, Enum.reverse(results))}
 
       [entry | rest] ->
-        send(self(), {:run_video_conversion, entry, rest, target_format, results})
+        send(self(), {:run_video_conversion, entry, rest, target_format, orientation, results})
 
         {:noreply,
          socket
@@ -96,19 +106,22 @@ defmodule RapidToolsWeb.VideoConverterLive do
   end
 
   @impl true
-  def handle_info({:run_video_conversion, entry, rest, target_format, results}, socket) do
-    result = convert_staged_entry(entry, target_format)
-    send(self(), {:begin_video_conversion, rest, target_format, [result | results]})
+  def handle_info(
+        {:run_video_conversion, entry, rest, target_format, orientation, results},
+        socket
+      ) do
+    result = convert_staged_entry(entry, target_format, orientation)
+    send(self(), {:begin_video_conversion, rest, target_format, orientation, [result | results]})
     {:noreply, socket}
   end
 
-  defp start_conversion(socket, target_format) do
+  defp start_conversion(socket, target_format, orientation) do
     case stage_uploaded_entries(socket) do
       {:ok, []} ->
         put_flash(socket, :error, gettext("Selecione um video antes de converter."))
 
       {:ok, staged_entries} ->
-        send(self(), {:begin_video_conversion, staged_entries, target_format, []})
+        send(self(), {:begin_video_conversion, staged_entries, target_format, orientation, []})
 
         socket
         |> assign(:results, [])
@@ -152,8 +165,11 @@ defmodule RapidToolsWeb.VideoConverterLive do
        |> put_flash(:error, lost_upload_message())}
   end
 
-  defp convert_staged_entry(entry, target_format) do
-    case VideoConverter.convert(entry.source_path, target_format, output_dir: entry.output_dir) do
+  defp convert_staged_entry(entry, target_format, orientation) do
+    case VideoConverter.convert(entry.source_path, target_format,
+           output_dir: entry.output_dir,
+           orientation: orientation
+         ) do
       {:ok, result} ->
         store_entry = %{
           path: result.output_path,
@@ -288,6 +304,14 @@ defmodule RapidToolsWeb.VideoConverterLive do
   end
 
   defp default_target_format, do: "mp4"
+
+  defp default_orientation, do: "original"
+
+  defp orientation_label("original"), do: gettext("Manter original")
+  defp orientation_label("landscape"), do: gettext("Paisagem")
+  defp orientation_label("portrait"), do: gettext("Retrato")
+  defp orientation_label("square"), do: gettext("Quadrado")
+  defp orientation_label(other), do: other
 
   defp completed_upload_count(entries) do
     Enum.count(entries, &(&1.progress == 100))
@@ -539,6 +563,15 @@ defmodule RapidToolsWeb.VideoConverterLive do
                       id="video-target-format"
                       label={gettext("Formato de destino")}
                       options={Enum.map(@formats, &{String.upcase(&1), &1})}
+                      class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-sky-400"
+                    />
+
+                    <.input
+                      field={@form[:orientation]}
+                      type="select"
+                      id="video-orientation"
+                      label={gettext("Orientacao do video")}
+                      options={Enum.map(@orientations, &{orientation_label(&1), &1})}
                       class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-sky-400"
                     />
 
