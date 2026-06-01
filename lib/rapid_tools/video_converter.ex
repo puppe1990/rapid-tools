@@ -135,6 +135,7 @@ defmodule RapidTools.VideoConverter do
         args =
           [
             "-y",
+            "-noautorotate",
             "-i",
             source_path
           ] ++
@@ -161,21 +162,29 @@ defmodule RapidTools.VideoConverter do
   defp orientation_filter(orientation, source_path)
        when orientation in ["landscape", "portrait"] do
     case get_video_dimensions(source_path) do
-      nil ->
-        nil
-
-      {width, height} when orientation == "landscape" and height > width ->
-        "transpose=1"
-
-      {width, height} when orientation == "portrait" and width > height ->
-        "transpose=2"
-
-      _ ->
-        nil
+      nil -> nil
+      {width, height} -> maybe_transpose(orientation, width, height, source_path)
     end
   end
 
   defp orientation_filter(_orientation, _source_path), do: nil
+
+  defp maybe_transpose("landscape", width, height, source_path) do
+    {eff_width, eff_height} = effective_dimensions(width, height, source_path)
+    if eff_height > eff_width, do: "transpose=1", else: nil
+  end
+
+  defp maybe_transpose("portrait", width, height, source_path) do
+    {eff_width, eff_height} = effective_dimensions(width, height, source_path)
+    if eff_width > eff_height, do: "transpose=2", else: nil
+  end
+
+  defp effective_dimensions(width, height, source_path) do
+    case get_video_rotation(source_path) do
+      rotation when rotation in [90, 270, -90, -270] -> {height, width}
+      _ -> {width, height}
+    end
+  end
 
   defp get_video_dimensions(source_path) do
     case System.find_executable("ffprobe") do
@@ -206,6 +215,39 @@ defmodule RapidTools.VideoConverter do
     case String.trim(output) |> String.split(",") do
       [w, h] -> {String.to_integer(w), String.to_integer(h)}
       _ -> nil
+    end
+  end
+
+  defp get_video_rotation(source_path) do
+    case System.find_executable("ffprobe") do
+      nil ->
+        0
+
+      command ->
+        args = [
+          "-v",
+          "error",
+          "-select_streams",
+          "v:0",
+          "-show_entries",
+          "stream_side_data=rotation",
+          "-of",
+          "default=nw=1:nk=1",
+          source_path
+        ]
+
+        case System.cmd(command, args, stderr_to_stdout: true) do
+          {"", 0} -> 0
+          {output, 0} -> parse_rotation(output)
+          _ -> 0
+        end
+    end
+  end
+
+  defp parse_rotation(output) do
+    case Integer.parse(String.trim(output)) do
+      {rotation, _} -> rotation
+      :error -> 0
     end
   end
 end
