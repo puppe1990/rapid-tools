@@ -2,6 +2,7 @@ defmodule RapidTools.VideoJoiner do
   @moduledoc false
 
   @supported_formats ~w(mp4 mov webm mkv avi)
+  @supported_orientations ~w(original landscape portrait square)
   @media_types %{
     "avi" => "video/x-msvideo",
     "mkv" => "video/x-matroska",
@@ -11,16 +12,19 @@ defmodule RapidTools.VideoJoiner do
   }
 
   def supported_formats, do: @supported_formats
+  def supported_orientations, do: @supported_orientations
 
   def join(source_paths, target_format, opts \\ []) when is_list(source_paths) do
     target_format = normalize_format(target_format)
+    orientation = normalize_orientation(Keyword.get(opts, :orientation, "original"))
 
     with :ok <- validate_source_paths(source_paths),
          :ok <- validate_target_format(target_format),
+         :ok <- validate_orientation(orientation),
          :ok <- ensure_sources_exist(source_paths),
          {:ok, output_dir} <- ensure_output_dir(opts),
          {:ok, command, args, output_path} <-
-           command_for(source_paths, output_dir, target_format),
+           command_for(source_paths, output_dir, target_format, orientation),
          {_, 0} <- System.cmd(command, args, stderr_to_stdout: true) do
       {:ok,
        %{
@@ -45,6 +49,13 @@ defmodule RapidTools.VideoJoiner do
     |> String.downcase()
   end
 
+  defp normalize_orientation(orientation) do
+    orientation
+    |> to_string()
+    |> String.trim()
+    |> String.downcase()
+  end
+
   defp validate_source_paths(source_paths) when length(source_paths) >= 2, do: :ok
   defp validate_source_paths(_source_paths), do: {:error, :not_enough_source_files}
 
@@ -52,6 +63,11 @@ defmodule RapidTools.VideoJoiner do
 
   defp validate_target_format(target_format),
     do: {:error, {:unsupported_target_format, target_format}}
+
+  defp validate_orientation(orientation) when orientation in @supported_orientations, do: :ok
+
+  defp validate_orientation(orientation),
+    do: {:error, {:unsupported_orientation, orientation}}
 
   defp ensure_sources_exist(source_paths) do
     if Enum.all?(source_paths, &File.exists?/1),
@@ -72,7 +88,7 @@ defmodule RapidTools.VideoJoiner do
     Path.join(System.tmp_dir!(), "rapid_tools_together_videos")
   end
 
-  defp command_for(source_paths, output_dir, target_format) do
+  defp command_for(source_paths, output_dir, target_format, orientation) do
     case System.find_executable("ffmpeg") do
       nil ->
         {:error, :ffmpeg_not_found}
@@ -82,7 +98,7 @@ defmodule RapidTools.VideoJoiner do
         audio_flags = Enum.map(source_paths, &has_audio?/1)
         all_have_audio = Enum.all?(audio_flags)
 
-        filter_complex = build_filter_complex(source_paths, audio_flags)
+        filter_complex = build_filter_complex(source_paths, audio_flags, orientation)
 
         inputs = Enum.flat_map(source_paths, fn path -> ["-i", path] end)
 
@@ -128,16 +144,17 @@ defmodule RapidTools.VideoJoiner do
     end
   end
 
-  defp build_filter_complex(source_paths, audio_flags) do
+  defp build_filter_complex(source_paths, audio_flags, orientation) do
     n = length(source_paths)
     all_have_audio = Enum.all?(audio_flags)
+    {w, h} = orientation_dimensions(orientation)
 
-    # Normalize every video to 1280x720, 30fps so concat never fails.
+    # Normalize every video to the target dimensions, 30fps so concat never fails.
     normalized =
       source_paths
       |> Enum.with_index()
       |> Enum.map_join(";", fn {_path, i} ->
-        "[#{i}:v]scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:" <>
+        "[#{i}:v]scale=#{w}:#{h}:force_original_aspect_ratio=decrease,pad=#{w}:#{h}:" <>
           "(ow-iw)/2:(oh-ih)/2,setsar=1,fps=30[v#{i}]"
       end)
 
@@ -158,6 +175,11 @@ defmodule RapidTools.VideoJoiner do
 
     "#{normalized};#{concat}"
   end
+
+  defp orientation_dimensions("original"), do: {1280, 720}
+  defp orientation_dimensions("landscape"), do: {1280, 720}
+  defp orientation_dimensions("portrait"), do: {720, 1280}
+  defp orientation_dimensions("square"), do: {720, 720}
 
   defp codec_video_args("mp4"), do: ["-c:v", "libx264", "-pix_fmt", "yuv420p"]
   defp codec_video_args("mov"), do: ["-c:v", "libx264", "-pix_fmt", "yuv420p"]
