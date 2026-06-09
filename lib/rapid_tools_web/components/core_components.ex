@@ -530,7 +530,7 @@ defmodule RapidToolsWeb.CoreComponents do
           />
         </div>
 
-        <nav class="space-y-3" aria-label={gettext("Tools")}>
+        <nav id="tool-nav" data-nav="tools" class="space-y-3" aria-label={gettext("Tools")}>
           <.link
             :for={tool <- @tools}
             navigate={tool.path}

@@ -19,6 +19,37 @@ defmodule RapidTools.VideoJoinerTest do
     assert File.exists?(result.output_path)
   end
 
+  test "supported_orientations/0 exposes orientation options" do
+    assert VideoJoiner.supported_orientations() == ~w(original landscape portrait square)
+  end
+
+  test "join/3 applies orientation filter" do
+    first_source = ImageFixtures.tiny_mp4_path!("join-square-1.mp4")
+    second_source = ImageFixtures.tiny_mp4_path!("join-square-2.mp4")
+    output_dir = ImageFixtures.temp_dir!("video-join-square")
+
+    assert {:ok, result} =
+             VideoJoiner.join([first_source, second_source], "mp4",
+               output_dir: output_dir,
+               orientation: "square"
+             )
+
+    assert result.target_format == "mp4"
+    assert File.exists?(result.output_path)
+  end
+
+  test "join/3 rejects unsupported orientations" do
+    first_source = ImageFixtures.tiny_mp4_path!("join-bad-orientation-1.mp4")
+    second_source = ImageFixtures.tiny_mp4_path!("join-bad-orientation-2.mp4")
+    output_dir = ImageFixtures.temp_dir!("video-join-bad-orientation")
+
+    assert {:error, {:unsupported_orientation, "diagonal"}} =
+             VideoJoiner.join([first_source, second_source], "mp4",
+               output_dir: output_dir,
+               orientation: "diagonal"
+             )
+  end
+
   test "join/3 rejects fewer than two video files" do
     source_path = ImageFixtures.tiny_mp4_path!("join-single-video.mp4")
     output_dir = ImageFixtures.temp_dir!("video-join-single")

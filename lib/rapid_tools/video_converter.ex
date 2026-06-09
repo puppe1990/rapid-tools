@@ -12,14 +12,21 @@ defmodule RapidTools.VideoConverter do
 
   def supported_formats, do: @supported_formats
 
+  @orientations ~w(original landscape portrait square)
+
+  def supported_orientations, do: @orientations
+
   def convert(source_path, target_format, opts \\ []) do
     target_format = normalize_format(target_format)
+    orientation = normalize_orientation(Keyword.get(opts, :orientation, "original"))
 
     with :ok <- validate_target_format(target_format),
+         :ok <- validate_orientation(orientation),
          :ok <- ensure_source_exists(source_path),
          :ok <- ensure_source_has_video_stream(source_path),
          {:ok, output_dir} <- ensure_output_dir(opts),
-         {:ok, command, args, output_path} <- command_for(source_path, output_dir, target_format),
+         {:ok, command, args, output_path} <-
+           command_for(source_path, output_dir, target_format, orientation),
          {_, 0} <- System.cmd(command, args, stderr_to_stdout: true) do
       {:ok,
        %{
@@ -44,10 +51,22 @@ defmodule RapidTools.VideoConverter do
     |> String.downcase()
   end
 
+  defp normalize_orientation(orientation) do
+    orientation
+    |> to_string()
+    |> String.trim()
+    |> String.downcase()
+  end
+
   defp validate_target_format(target_format) when target_format in @supported_formats, do: :ok
 
   defp validate_target_format(target_format),
     do: {:error, {:unsupported_target_format, target_format}}
+
+  defp validate_orientation(orientation) when orientation in @orientations, do: :ok
+
+  defp validate_orientation(orientation),
+    do: {:error, {:unsupported_orientation, orientation}}
 
   defp ensure_source_exists(source_path) do
     if File.exists?(source_path), do: :ok, else: {:error, :source_file_not_found}
@@ -99,7 +118,7 @@ defmodule RapidTools.VideoConverter do
     Path.join(System.tmp_dir!(), "rapid_tools_video_conversions")
   end
 
-  defp command_for(source_path, output_dir, target_format) do
+  defp command_for(source_path, output_dir, target_format, orientation) do
     case System.find_executable("ffmpeg") do
       nil ->
         {:error, :ffmpeg_not_found}
@@ -111,16 +130,124 @@ defmodule RapidTools.VideoConverter do
             "#{Path.rootname(Path.basename(source_path))}.#{target_format}"
           )
 
-        args = [
-          "-y",
-          "-i",
-          source_path,
-          "-movflags",
-          "+faststart",
-          output_path
-        ]
+        filter = orientation_filter(orientation, source_path)
+
+        args =
+          [
+            "-y",
+            "-noautorotate",
+            "-i",
+            source_path
+          ] ++
+            filter_args(filter) ++
+            [
+              "-movflags",
+              "+faststart",
+              output_path
+            ]
 
         {:ok, command, args, output_path}
+    end
+  end
+
+  defp filter_args(nil), do: []
+  defp filter_args(filter), do: ["-vf", filter]
+
+  defp orientation_filter("original", _source_path), do: nil
+
+  defp orientation_filter("square", _source_path) do
+    "crop=min(iw\\,ih):min(iw\\,ih):(iw-min(iw\\,ih))/2:(ih-min(iw\\,ih))/2"
+  end
+
+  defp orientation_filter(orientation, source_path)
+       when orientation in ["landscape", "portrait"] do
+    case get_video_dimensions(source_path) do
+      nil -> nil
+      {width, height} -> maybe_transpose(orientation, width, height, source_path)
+    end
+  end
+
+  defp orientation_filter(_orientation, _source_path), do: nil
+
+  defp maybe_transpose("landscape", width, height, source_path) do
+    {eff_width, eff_height} = effective_dimensions(width, height, source_path)
+    if eff_height > eff_width, do: "transpose=1", else: nil
+  end
+
+  defp maybe_transpose("portrait", width, height, source_path) do
+    {eff_width, eff_height} = effective_dimensions(width, height, source_path)
+    if eff_width > eff_height, do: "transpose=2", else: nil
+  end
+
+  defp effective_dimensions(width, height, source_path) do
+    case get_video_rotation(source_path) do
+      rotation when rotation in [90, 270, -90, -270] -> {height, width}
+      _ -> {width, height}
+    end
+  end
+
+  defp get_video_dimensions(source_path) do
+    case System.find_executable("ffprobe") do
+      nil ->
+        nil
+
+      command ->
+        args = [
+          "-v",
+          "error",
+          "-select_streams",
+          "v:0",
+          "-show_entries",
+          "stream=width,height",
+          "-of",
+          "csv=p=0",
+          source_path
+        ]
+
+        case System.cmd(command, args, stderr_to_stdout: true) do
+          {output, 0} -> parse_dimensions(output)
+          _ -> nil
+        end
+    end
+  end
+
+  defp parse_dimensions(output) do
+    case String.trim(output) |> String.split(",") do
+      [w, h] -> {String.to_integer(w), String.to_integer(h)}
+      _ -> nil
+    end
+  end
+
+  defp get_video_rotation(source_path) do
+    case System.find_executable("ffprobe") do
+      nil ->
+        0
+
+      command ->
+        args = [
+          "-v",
+          "error",
+          "-select_streams",
+          "v:0",
+          "-show_entries",
+          "stream_side_data=rotation",
+          "-of",
+          "default=nw=1:nk=1",
+          source_path
+        ]
+
+        case System.cmd(command, args, stderr_to_stdout: true) do
+          {"", 0} -> 0
+          {output, 0} -> parse_rotation(output)
+          _ -> 0
+        end
+    end
+  end
+
+  defp parse_rotation(output) do
+    case Integer.parse(String.trim(output)) do
+      {rotation, _} -> rotation
+      :error -> 0
     end
   end
 end

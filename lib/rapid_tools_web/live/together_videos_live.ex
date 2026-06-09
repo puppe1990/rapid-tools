@@ -17,7 +17,10 @@ defmodule RapidToolsWeb.TogetherVideosLive do
 
     form =
       to_form(
-        %{"target_format" => default_target_format()},
+        %{
+          "target_format" => default_target_format(),
+          "orientation" => default_orientation()
+        },
         as: :conversion
       )
 
@@ -25,6 +28,7 @@ defmodule RapidToolsWeb.TogetherVideosLive do
      socket
      |> assign(:current_locale, locale)
      |> assign(:formats, VideoJoiner.supported_formats())
+     |> assign(:orientations, VideoJoiner.supported_orientations())
      |> assign(:tools, ToolNavigation.tools("together-videos"))
      |> assign(:form, form)
      |> assign(:result, nil)
@@ -74,7 +78,10 @@ defmodule RapidToolsWeb.TogetherVideosLive do
   end
 
   @impl true
-  def handle_event("join", %{"conversion" => %{"target_format" => target_format}}, socket) do
+  def handle_event("join", %{"conversion" => conversion_params}, socket) do
+    target_format = conversion_params["target_format"]
+    orientation = conversion_params["orientation"] || default_orientation()
+
     case uploaded_entries(socket, :video) do
       {[], []} ->
         {:noreply,
@@ -88,11 +95,11 @@ defmodule RapidToolsWeb.TogetherVideosLive do
          put_flash(socket, :error, gettext("Selecione pelo menos dois videos para unir."))}
 
       _ ->
-        {:noreply, join_uploads(socket, target_format)}
+        {:noreply, join_uploads(socket, target_format, orientation)}
     end
   end
 
-  defp join_uploads(socket, target_format) do
+  defp join_uploads(socket, target_format, orientation) do
     output_dir =
       Path.join(
         System.tmp_dir!(),
@@ -112,7 +119,10 @@ defmodule RapidToolsWeb.TogetherVideosLive do
       end)
       |> order_source_paths(ordered_refs)
 
-    case VideoJoiner.join(source_paths, target_format, output_dir: output_dir) do
+    case VideoJoiner.join(source_paths, target_format,
+           output_dir: output_dir,
+           orientation: orientation
+         ) do
       {:ok, result} ->
         store_entry = %{
           path: result.output_path,
@@ -144,6 +154,14 @@ defmodule RapidToolsWeb.TogetherVideosLive do
   end
 
   defp default_target_format, do: "mp4"
+
+  defp default_orientation, do: "original"
+
+  defp orientation_label("original"), do: gettext("Manter original")
+  defp orientation_label("landscape"), do: gettext("Paisagem")
+  defp orientation_label("portrait"), do: gettext("Retrato")
+  defp orientation_label("square"), do: gettext("Quadrado")
+  defp orientation_label(other), do: other
 
   defp completed_upload_count(entries) do
     Enum.count(entries, &(&1.progress == 100))
@@ -404,6 +422,15 @@ defmodule RapidToolsWeb.TogetherVideosLive do
                       id="together-videos-target-format"
                       label={gettext("Formato final")}
                       options={Enum.map(@formats, &{String.upcase(&1), &1})}
+                      class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-pink-400"
+                    />
+
+                    <.input
+                      field={@form[:orientation]}
+                      type="select"
+                      id="together-videos-orientation"
+                      label={gettext("Orientacao do video")}
+                      options={Enum.map(@orientations, &{orientation_label(&1), &1})}
                       class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-pink-400"
                     />
 

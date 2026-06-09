@@ -1,6 +1,6 @@
 let ToolSearch = {
   mounted() {
-    const nav = document.querySelector("[aria-label='Tools']")
+    const nav = document.querySelector("#tool-nav")
     this.el.querySelector("input").addEventListener("input", (e) => {
       const query = e.target.value.toLowerCase().trim()
       const items = nav ? nav.querySelectorAll("[data-search-text]") : []

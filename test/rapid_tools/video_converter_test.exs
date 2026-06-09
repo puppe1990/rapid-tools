@@ -8,6 +8,10 @@ defmodule RapidTools.VideoConverterTest do
     assert VideoConverter.supported_formats() == ~w(mp4 mov webm mkv avi)
   end
 
+  test "supported_orientations/0 exposes orientation options" do
+    assert VideoConverter.supported_orientations() == ~w(original landscape portrait square)
+  end
+
   test "convert/2 converts a video into the target format" do
     source_path = ImageFixtures.tiny_mp4_path!("source-for-webm.mp4")
     output_dir = ImageFixtures.temp_dir!("webm-conversion")
@@ -19,12 +23,37 @@ defmodule RapidTools.VideoConverterTest do
     assert File.exists?(result.output_path)
   end
 
-  test "convert/2 rejects unsupported target formats" do
+  test "convert/3 applies orientation filter" do
+    source_path = ImageFixtures.tiny_mp4_path!("source-for-square.mp4")
+    output_dir = ImageFixtures.temp_dir!("square-conversion")
+
+    assert {:ok, result} =
+             VideoConverter.convert(source_path, "mp4",
+               output_dir: output_dir,
+               orientation: "square"
+             )
+
+    assert result.target_format == "mp4"
+    assert File.exists?(result.output_path)
+  end
+
+  test "convert/3 rejects unsupported target formats" do
     source_path = ImageFixtures.tiny_mp4_path!("source-for-flv.mp4")
     output_dir = ImageFixtures.temp_dir!("flv-conversion")
 
     assert {:error, {:unsupported_target_format, "flv"}} =
              VideoConverter.convert(source_path, "flv", output_dir: output_dir)
+  end
+
+  test "convert/3 rejects unsupported orientations" do
+    source_path = ImageFixtures.tiny_mp4_path!("source-for-bad-orientation.mp4")
+    output_dir = ImageFixtures.temp_dir!("bad-orientation-conversion")
+
+    assert {:error, {:unsupported_orientation, "diagonal"}} =
+             VideoConverter.convert(source_path, "mp4",
+               output_dir: output_dir,
+               orientation: "diagonal"
+             )
   end
 
   test "convert/2 rejects mp4 files without a video stream" do
