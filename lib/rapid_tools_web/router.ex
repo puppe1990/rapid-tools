@@ -29,6 +29,7 @@ defmodule RapidToolsWeb.Router do
     live "/together-audios", TogetherAudiosLive
     live "/together-videos", TogetherVideosLive
     live "/images-to-video", ImagesToVideoLive
+    live "/qr-reader", QrReaderLive
     get "/downloads/batches/:id", DownloadController, :batch
     get "/downloads/:id", DownloadController, :show
     post "/locale/switch", LocaleController, :switch

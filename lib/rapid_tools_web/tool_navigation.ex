@@ -148,6 +148,18 @@ defmodule RapidToolsWeb.ToolNavigation do
         dot_class: "bg-teal-500",
         name_class: "text-teal-800",
         blurb_class: "text-teal-700/80"
+      },
+      %{
+        key: "qr-reader",
+        name: gettext("QR Reader"),
+        blurb: gettext("Decode QR codes from images or camera"),
+        current: current == "qr-reader",
+        path: ~p"/qr-reader",
+        current_class: "border-lime-300 bg-lime-50 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]",
+        idle_class: "border-slate-200 bg-white hover:border-lime-200 hover:bg-lime-50/40",
+        dot_class: "bg-lime-500",
+        name_class: "text-lime-800",
+        blurb_class: "text-lime-700/80"
       }
     ]
   end
