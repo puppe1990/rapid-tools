@@ -91,7 +91,7 @@ defmodule RapidTools.AudioConverter do
 
   defp codec_args("mp3"), do: ["-c:a", "libmp3lame"]
   defp codec_args("wav"), do: ["-c:a", "pcm_s16le"]
-  defp codec_args("ogg"), do: ["-c:a", "libvorbis"]
+  defp codec_args("ogg"), do: ["-c:a", "libopus"]
   defp codec_args("aac"), do: ["-c:a", "aac"]
   defp codec_args("flac"), do: ["-c:a", "flac"]
 end

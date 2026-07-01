@@ -13,6 +13,7 @@ This repository contains `RapidTools`, a Phoenix LiveView application for batch 
 The app currently supports:
 
 - Image conversion via ImageMagick: `png`, `jpg`, `webp`, `heic`, `avif`, `enc`
+- QR reading at `/qr-reader` via upload (`zbarimg`) and camera (`jsQR`)
 - Video conversion via `ffmpeg`: `mp4`, `mov`, `webm`, `mkv`, `avi`
 - Audio conversion via `ffmpeg`: `mp3`, `wav`, `ogg`, `aac`, `flac`
 
@@ -38,6 +39,8 @@ The app currently supports:
 
 - `ffmpeg` is required for video and audio conversion and related tests
 - `magick` or `convert` from ImageMagick is required for image conversion and image fixture generation
+- `zbarimg` from zbar is required for upload-based QR decoding and related tests
+- `qrencode` is required to generate QR fixtures in tests
 
 ## Phoenix and LiveView conventions
 

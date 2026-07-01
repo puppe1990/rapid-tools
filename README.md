@@ -19,6 +19,7 @@ RapidTools is a Phoenix LiveView app for batch media workflows including convers
 - Together audios at `/together-audios`
 - Together videos at `/together-videos`
 - Images to video at `/images-to-video`
+- QR reader at `/qr-reader`
 
 ## Supported formats
 
@@ -88,6 +89,11 @@ RapidTools is a Phoenix LiveView app for batch media workflows including convers
 - Output: `MP4`, `GIF`
 - Configurable interval between frames
 
+### QR reader input/output
+
+- Upload input: `JPG`, `JPEG`, `PNG`, `WEBP` (decoded on the server with `zbarimg`)
+- Camera input: live browser scan (decoded locally with `jsQR`)
+
 ## Features
 
 - Batch upload and conversion per tool
@@ -106,6 +112,8 @@ RapidTools is a Phoenix LiveView app for batch media workflows including convers
 - Elixir and Erlang compatible with the versions in `mix.exs`
 - `ffmpeg` installed locally for audio and video conversion
 - ImageMagick installed locally as `magick` or `convert` for image conversion
+- `zbar` installed locally as `zbarimg` for upload-based QR decoding
+- `qrencode` for generating QR fixtures in tests
 
 ## Development
 
@@ -152,4 +160,6 @@ mix test test/rapid_tools/document_converter_test.exs
 mix test test/rapid_tools_web/live/document_converter_live_test.exs
 mix test test/rapid_tools/audio_joiner_test.exs
 mix test test/rapid_tools_web/live/together_audios_live_test.exs
+mix test test/rapid_tools/qr_reader_test.exs
+mix test test/rapid_tools_web/live/qr_reader_live_test.exs
 ```
