@@ -420,6 +420,23 @@ defmodule RapidTools.TestSupport.ImageFixtures do
     path
   end
 
+  def qr_png_path!(payload \\ "https://rapid.tools/qr-test", name \\ "qr.png") do
+    dir = Path.join(System.tmp_dir!(), "rapid_tools_test_fixtures")
+    File.mkdir_p!(dir)
+
+    path = Path.join(dir, name)
+
+    case System.find_executable("qrencode") do
+      nil ->
+        raise "qrencode is required to build QR test fixtures"
+
+      command ->
+        {_, 0} = System.cmd(command, ["-o", path, payload], stderr_to_stdout: true)
+    end
+
+    path
+  end
+
   def tiny_ogg_path!(name \\ "tiny.ogg") do
     dir = Path.join(System.tmp_dir!(), "rapid_tools_test_fixtures")
     File.mkdir_p!(dir)
