@@ -458,7 +458,7 @@ defmodule RapidTools.TestSupport.ImageFixtures do
               "-i",
               "sine=frequency=660:duration=1",
               "-c:a",
-              "libvorbis",
+              "libopus",
               path
             ],
             stderr_to_stdout: true
