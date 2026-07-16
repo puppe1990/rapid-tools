@@ -56,4 +56,13 @@ defmodule RapidTools.ImageConverterTest do
     assert {:error, {:unsupported_target_format, "txt"}} =
              ImageConverter.convert(source_path, "txt", output_dir: output_dir)
   end
+
+  test "convert/2 returns an error when the source file is missing instead of raising" do
+    output_dir = ImageFixtures.temp_dir!("missing-source-conversion")
+
+    assert {:error, :source_file_not_found} =
+             ImageConverter.convert("/tmp/definitely-missing-rapid-tools.png", "png",
+               output_dir: output_dir
+             )
+  end
 end

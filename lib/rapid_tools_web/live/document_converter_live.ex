@@ -138,7 +138,7 @@ defmodule RapidToolsWeb.DocumentConverterLive do
         )
 
       :error ->
-        put_flash(socket, :error, gettext("O documento nao pode ser convertido."))
+        put_flash(socket, :error, conversion_error_message(results, mode))
     end
   end
 
@@ -206,6 +206,28 @@ defmodule RapidToolsWeb.DocumentConverterLive do
       ext = entry.client_name |> Path.extname() |> String.downcase()
       if ext in allowed_extensions, do: [], else: [entry.client_name]
     end)
+  end
+
+  defp conversion_error_message(results, mode) do
+    case results do
+      [{:error, :imagemagick_not_found}] ->
+        gettext(
+          "ImageMagick nao foi encontrado no servidor. Instale magick ou convert para converter PDFs em imagens."
+        )
+
+      [{:error, {:conversion_failed, _}}] when mode in ["pdf_to_png", "pdf_to_jpg"] ->
+        gettext(
+          "O PDF nao pode ser renderizado. Confirme se o Ghostscript esta instalado e se o arquivo nao esta protegido por senha."
+        )
+
+      [{:error, :document_extractor_unavailable}] ->
+        gettext(
+          "A extracao de documentos nao esta disponivel neste servidor. Use PDF to PNG ou PDF to JPG para exportar paginas como imagem."
+        )
+
+      _ ->
+        gettext("O documento nao pode ser convertido.")
+    end
   end
 
   defp success_message("pdf_to_png", count),

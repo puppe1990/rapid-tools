@@ -58,6 +58,19 @@ defmodule RapidToolsWeb.PhotosToPdfLive do
   end
 
   @impl true
+  def handle_event("clear-uploads", _params, socket) do
+    socket =
+      Enum.reduce(socket.assigns.uploads.image.entries, socket, fn entry, acc ->
+        cancel_upload(acc, :image, entry.ref)
+      end)
+
+    {:noreply,
+     socket
+     |> assign(:image_order, [])
+     |> assign(:upload_input_version, socket.assigns.upload_input_version + 1)}
+  end
+
+  @impl true
   def handle_event("build-pdf", _params, socket) do
     case uploaded_entries(socket, :image) do
       {[], []} ->
@@ -315,8 +328,17 @@ defmodule RapidToolsWeb.PhotosToPdfLive do
                         id="photos-to-pdf-upload-list"
                         class="mt-4 max-h-[22rem] space-y-2 overflow-y-auto pr-1"
                       >
-                        <div class="sticky top-0 z-10 rounded-2xl border border-sky-100 bg-sky-50/95 px-4 py-3 text-sm font-medium text-sky-900 backdrop-blur">
-                          {upload_summary(@uploads.image.entries)}
+                        <div class="sticky top-0 z-10 flex items-center justify-between gap-3 rounded-2xl border border-sky-100 bg-sky-50/95 px-4 py-3 text-sm font-medium text-sky-900 backdrop-blur">
+                          <span>{upload_summary(@uploads.image.entries)}</span>
+                          <button
+                            :if={@uploads.image.entries != []}
+                            type="button"
+                            id="clear-upload-list"
+                            phx-click="clear-uploads"
+                            class="inline-flex shrink-0 items-center justify-center rounded-full border border-sky-200 bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-sky-700 transition hover:border-sky-300 hover:bg-sky-100"
+                          >
+                            {gettext("Limpar uploads")}
+                          </button>
                         </div>
                         <p class="px-4 text-xs font-medium uppercase tracking-[0.24em] text-sky-700">
                           {gettext("Reorder the queue with the arrows to define the PDF page order.")}
