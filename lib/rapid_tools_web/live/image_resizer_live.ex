@@ -1,12 +1,14 @@
 defmodule RapidToolsWeb.ImageResizerLive do
   use RapidToolsWeb, :live_view
 
+  alias Phoenix.LiveView.UploadConfig
   alias RapidTools.ConversionStore
   alias RapidTools.ImageResizer
   alias RapidTools.ZipArchive
   alias RapidToolsWeb.ToolNavigation
 
-  @image_accept ~w(.jpg .jpeg .png .webp .heic .avif)
+  @image_accept ~w(.jpg .jpeg .png .webp .heic .avif image/jpeg image/png image/webp image/heic image/avif)
+  @max_image_upload_size 40_000_000
   @presets %{
     "instagram_post" => %{label: "Instagram Post", width: 1080, height: 1080},
     "instagram_story" => %{label: "Instagram Story", width: 1080, height: 1920},
@@ -30,25 +32,61 @@ defmodule RapidToolsWeb.ImageResizerLive do
      |> assign(:presets, @presets)
      |> assign(:results, [])
      |> assign(:batch_download_path, nil)
+     |> assign(:upload_issue, nil)
+     |> assign(:currently_resizing, nil)
+     |> assign(:processing_queue, [])
+     |> assign(:processing_total, 0)
      |> assign(:form, to_form(default_form_params(), as: :resize))
      |> assign(:my_path, "/image-resizer")
-     |> allow_upload(:image, accept: @image_accept, max_entries: 10, auto_upload: true)}
+     |> allow_upload(:image,
+       accept: @image_accept,
+       max_entries: 10,
+       max_file_size: @max_image_upload_size,
+       auto_upload: true
+     )}
   end
 
   @impl true
   def handle_event("validate", %{"resize" => resize_params}, socket) do
-    {:noreply, assign(socket, :form, to_form(apply_preset(resize_params), as: :resize))}
+    {:noreply,
+     socket
+     |> assign(:form, to_form(apply_preset(resize_params), as: :resize))
+     |> maybe_clear_upload_issue()}
   end
 
   @impl true
   def handle_event("cancel-upload", %{"ref" => ref}, socket) do
-    {:noreply, cancel_upload(socket, :image, ref)}
+    {:noreply, socket |> cancel_upload(:image, ref) |> maybe_clear_upload_issue()}
+  end
+
+  @impl true
+  def handle_event("clear-uploads", _params, socket) do
+    socket =
+      Enum.reduce(socket.assigns.uploads.image.entries, socket, fn entry, acc ->
+        cancel_upload(acc, :image, entry.ref)
+      end)
+
+    {:noreply, maybe_clear_upload_issue(socket)}
   end
 
   @impl true
   def handle_event("resize", %{"resize" => resize_params}, socket) do
-    params = apply_preset(resize_params)
+    if processing?(socket.assigns.currently_resizing) do
+      {:noreply,
+       put_flash(socket, :error, gettext("Aguarde o redimensionamento atual terminar."))}
+    else
+      params = apply_preset(resize_params)
 
+      socket
+      |> assign(:form, to_form(params, as: :resize))
+      |> reconcile_image_uploads()
+      |> continue_resize(params)
+    end
+  end
+
+  defp continue_resize({:error, socket}, _params), do: {:noreply, socket}
+
+  defp continue_resize({:ok, socket}, params) do
     case uploaded_entries(socket, :image) do
       {[], []} ->
         {:noreply,
@@ -63,45 +101,138 @@ defmodule RapidToolsWeb.ImageResizerLive do
          put_flash(socket, :error, gettext("Aguarde o upload terminar antes de redimensionar."))}
 
       _ ->
-        {:noreply, resize_uploads(assign(socket, :form, to_form(params, as: :resize)), params)}
+        {:noreply, start_resize(socket, params)}
     end
   end
 
-  defp resize_uploads(socket, %{
+  @impl true
+  def handle_info({:begin_image_resize, staged_entries, params, results}, socket) do
+    case staged_entries do
+      [] ->
+        {:noreply, finish_resize(socket, Enum.reverse(results))}
+
+      [entry | rest] ->
+        send(self(), {:run_image_resize, entry, rest, params, results})
+        {:noreply, assign(socket, :currently_resizing, entry.client_name)}
+    end
+  end
+
+  @impl true
+  def handle_info({:run_image_resize, entry, rest, params, results}, socket) do
+    result = resize_staged_entry(entry, params)
+    send(self(), {:begin_image_resize, rest, params, [result | results]})
+    {:noreply, socket}
+  end
+
+  defp start_resize(socket, params) do
+    case stage_uploaded_entries(socket) do
+      {:ok, []} ->
+        put_flash(
+          socket,
+          :error,
+          gettext("Selecione ao menos uma imagem antes de redimensionar.")
+        )
+
+      {:ok, staged_entries} ->
+        send(self(), {:begin_image_resize, staged_entries, params, []})
+
+        socket
+        |> assign(:results, [])
+        |> assign(:batch_download_path, nil)
+        |> assign(:upload_issue, nil)
+        |> assign(:processing_queue, Enum.map(staged_entries, & &1.client_name))
+        |> assign(:processing_total, length(staged_entries))
+
+      {:error, socket} ->
+        socket
+    end
+  end
+
+  defp stage_uploaded_entries(socket) do
+    staged_entries =
+      consume_uploaded_entries(socket, :image, fn meta, entry ->
+        stage_single_upload(meta, entry)
+      end)
+
+    case Enum.split_with(staged_entries, &match?(%{source_path: _}, &1)) do
+      {good, []} ->
+        {:ok, good}
+
+      {_good, _bad} ->
+        {:error, staging_error_socket(socket)}
+    end
+  catch
+    kind, reason ->
+      require Logger
+      Logger.error("image resizer staging failed: #{inspect({kind, reason})}")
+      {:error, staging_error_socket(socket)}
+  end
+
+  defp stage_single_upload(%{path: path}, entry) do
+    output_dir =
+      Path.join(System.tmp_dir!(), "rapid_tools_live/#{System.unique_integer([:positive])}")
+
+    source_path = Path.join(output_dir, safe_client_name(entry.client_name))
+
+    with :ok <- File.mkdir_p(output_dir),
+         :ok <- File.cp(path, source_path) do
+      {:ok,
+       %{
+         source_path: source_path,
+         client_name: entry.client_name,
+         output_dir: output_dir
+       }}
+    else
+      {:error, reason} -> {:ok, {:stage_error, reason}}
+    end
+  end
+
+  defp staging_error_socket(socket) do
+    socket
+    |> assign(:upload_issue, lost_upload_message())
+    |> put_flash(:error, lost_upload_message())
+  end
+
+  defp resize_staged_entry(entry, %{
          "width" => width,
          "height" => height,
          "fit" => fit,
          "target_format" => target_format
        }) do
-    results =
-      consume_uploaded_entries(socket, :image, fn %{path: path}, entry ->
-        output_dir =
-          Path.join(System.tmp_dir!(), "rapid_tools_live/#{System.unique_integer([:positive])}")
+    case ImageResizer.resize(entry.source_path, width, height,
+           fit: fit,
+           target_format: target_format,
+           output_dir: entry.output_dir
+         ) do
+      {:ok, result} ->
+        store_entry = %{
+          path: result.output_path,
+          filename: result.filename,
+          media_type: result.media_type
+        }
 
-        File.mkdir_p!(output_dir)
+        case ConversionStore.put(store_entry) do
+          {:ok, id} ->
+            {:ok, Map.put(result, :download_path, ~p"/downloads/#{id}")}
 
-        source_path = Path.join(output_dir, entry.client_name)
-        File.cp!(path, source_path)
-
-        case ImageResizer.resize(source_path, width, height,
-               fit: fit,
-               target_format: target_format,
-               output_dir: output_dir
-             ) do
-          {:ok, result} ->
-            store_entry = %{
-              path: result.output_path,
-              filename: result.filename,
-              media_type: result.media_type
-            }
-
-            {:ok, id} = ConversionStore.put(store_entry)
-            {:ok, {:ok, Map.put(result, :download_path, ~p"/downloads/#{id}")}}
-
-          {:error, reason} ->
-            {:ok, {:error, reason}}
+          other ->
+            {:error, {:store_failed, other}}
         end
-      end)
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  rescue
+    error ->
+      {:error, {:resize_exception, Exception.message(error)}}
+  end
+
+  defp finish_resize(socket, results) do
+    socket =
+      socket
+      |> assign(:currently_resizing, nil)
+      |> assign(:processing_queue, [])
+      |> assign(:processing_total, 0)
 
     case successful_batch_results(results) do
       {:ok, successful_results} ->
@@ -113,8 +244,45 @@ defmodule RapidToolsWeb.ImageResizerLive do
         )
 
       :error ->
-        put_flash(socket, :error, gettext("As imagens nao puderam ser redimensionadas."))
+        put_flash(socket, :error, resize_error_message(results))
     end
+  end
+
+  defp reconcile_image_uploads(socket) do
+    stale_refs = stale_image_upload_refs(socket)
+
+    if stale_refs == [] do
+      {:ok, socket}
+    else
+      {:error,
+       socket
+       |> assign(:upload_issue, lost_upload_message())
+       |> put_flash(:error, lost_upload_message())}
+    end
+  end
+
+  defp stale_image_upload_refs(socket) do
+    conf = socket.assigns.uploads.image
+
+    for entry <- conf.entries,
+        pid = UploadConfig.entry_pid(conf, entry),
+        is_pid(pid),
+        not Process.alive?(pid),
+        do: entry.ref
+  end
+
+  defp maybe_clear_upload_issue(socket) do
+    if socket.assigns.uploads.image.entries == [] do
+      assign(socket, :upload_issue, nil)
+    else
+      socket
+    end
+  end
+
+  defp lost_upload_message do
+    gettext(
+      "O upload desta imagem foi perdido antes do redimensionamento. Envie o arquivo novamente."
+    )
   end
 
   defp successful_batch_results(converted) when is_list(converted) do
@@ -128,6 +296,25 @@ defmodule RapidToolsWeb.ImageResizerLive do
 
   defp successful_batch_results(_), do: :error
 
+  defp resize_error_message(results) do
+    reasons = for {:error, reason} <- results, do: reason
+
+    cond do
+      :imagemagick_not_found in reasons ->
+        gettext(
+          "O redimensionador de imagens nao esta disponivel no servidor no momento. Tente novamente mais tarde."
+        )
+
+      Enum.any?(reasons, &match?({:resize_failed, _}, &1)) ->
+        gettext(
+          "Nao foi possivel redimensionar uma ou mais imagens. Verifique se os arquivos nao estao corrompidos e tente novamente."
+        )
+
+      true ->
+        gettext("As imagens nao puderam ser redimensionadas.")
+    end
+  end
+
   defp build_batch_response(socket, successful_results, success_message, zip_error_message) do
     batch_entries =
       Enum.map(successful_results, fn result ->
@@ -138,24 +325,39 @@ defmodule RapidToolsWeb.ImageResizerLive do
         }
       end)
 
-    {:ok, batch_id} = ConversionStore.put_batch(batch_entries)
-
-    case ZipArchive.build(batch_id, batch_entries) do
-      {:ok, zip_entry} ->
-        {:ok, zip_id} = ConversionStore.put(zip_entry)
-
-        socket
-        |> assign(:results, successful_results)
-        |> assign(:batch_download_path, ~p"/downloads/#{zip_id}")
-        |> put_flash(:info, success_message)
-
+    with {:ok, batch_id} <- ConversionStore.put_batch(batch_entries),
+         {:ok, zip_entry} <- ZipArchive.build(batch_id, batch_entries),
+         {:ok, zip_id} <- ConversionStore.put(zip_entry) do
+      socket
+      |> assign(:results, successful_results)
+      |> assign(:batch_download_path, ~p"/downloads/#{zip_id}")
+      |> put_flash(:info, success_message)
+    else
       {:error, _reason} ->
         socket
         |> assign(:results, successful_results)
         |> assign(:batch_download_path, nil)
         |> put_flash(:error, zip_error_message)
+
+      _other ->
+        socket
+        |> assign(:results, successful_results)
+        |> assign(:batch_download_path, nil)
+        |> put_flash(:info, success_message)
     end
   end
+
+  defp safe_client_name(name) when is_binary(name) do
+    name
+    |> Path.basename()
+    |> String.replace(~r/[\x00-\x1F\x7F]/, "_")
+    |> case do
+      "" -> "image"
+      safe -> safe
+    end
+  end
+
+  defp safe_client_name(_), do: "image"
 
   defp default_form_params do
     %{
@@ -181,11 +383,47 @@ defmodule RapidToolsWeb.ImageResizerLive do
     end
   end
 
-  defp completed_upload_count(entries), do: Enum.count(entries, &(&1.progress == 100))
-  defp upload_in_progress?(entries), do: Enum.any?(entries, &(&1.progress < 100))
+  defp completed_upload_count(entries),
+    do: Enum.count(entries, &(&1.progress == 100 && &1.valid?))
 
-  defp upload_status_message(entries) do
+  defp upload_in_progress?(entries), do: Enum.any?(entries, &(&1.progress < 100 && &1.valid?))
+  defp processing?(currently_resizing), do: currently_resizing != nil
+
+  defp entries_with_errors?(entries) do
+    Enum.any?(entries, &(not &1.valid?))
+  end
+
+  defp max_upload_mb, do: div(@max_image_upload_size, 1_000_000)
+
+  defp upload_error_message(:too_large),
+    do:
+      gettext(
+        "This file is too large. Maximum size is %{max_mb} MB.",
+        max_mb: max_upload_mb()
+      )
+
+  defp upload_error_message(:not_accepted),
+    do: gettext("Format not accepted. Upload JPG, JPEG, PNG, WEBP, HEIC, or AVIF.")
+
+  defp upload_error_message(:too_many_files),
+    do: gettext("You selected more files than allowed.")
+
+  defp upload_error_message(:external_client_failure),
+    do: gettext("The browser could not upload this file. Try again.")
+
+  defp upload_error_message(_error), do: gettext("Could not upload this file.")
+
+  defp upload_status_message(entries, currently_resizing, upload_issue) do
     cond do
+      is_binary(upload_issue) ->
+        upload_issue
+
+      processing?(currently_resizing) ->
+        gettext("Resizing %{filename}. Please wait a moment.", filename: currently_resizing)
+
+      entries_with_errors?(entries) ->
+        gettext("Some uploads failed. Remove the errored files or try smaller images.")
+
       entries == [] ->
         gettext("Selecione imagens para preparar tamanhos prontos para web e social.")
 
@@ -197,13 +435,26 @@ defmodule RapidToolsWeb.ImageResizerLive do
     end
   end
 
-  defp upload_summary(entries) do
+  defp upload_summary(entries, currently_resizing, processing_queue) do
     total = length(entries)
     completed = completed_upload_count(entries)
+    errored = Enum.count(entries, &(not &1.valid?))
 
     cond do
+      processing?(currently_resizing) ->
+        gettext("Resizing image %{current} of %{total}",
+          current: processing_position(currently_resizing, processing_queue),
+          total: length(processing_queue)
+        )
+
       total == 0 ->
         gettext("Nenhuma imagem selecionada ainda.")
+
+      errored > 0 ->
+        gettext("%{errored} of %{total} uploads need attention.",
+          errored: errored,
+          total: total
+        )
 
       upload_in_progress?(entries) ->
         gettext(
@@ -217,6 +468,34 @@ defmodule RapidToolsWeb.ImageResizerLive do
           count: total
         )
     end
+  end
+
+  defp processing_position(currently_resizing, processing_queue) do
+    case Enum.find_index(processing_queue, &(&1 == currently_resizing)) do
+      nil -> 0
+      index -> index + 1
+    end
+  end
+
+  defp queue_item_status(name, currently_resizing, processing_queue) do
+    current_index = Enum.find_index(processing_queue, &(&1 == currently_resizing))
+    name_index = Enum.find_index(processing_queue, &(&1 == name))
+
+    cond do
+      name == currently_resizing ->
+        :resizing
+
+      is_integer(current_index) and is_integer(name_index) and name_index < current_index ->
+        :done
+
+      true ->
+        :waiting
+    end
+  end
+
+  defp can_submit?(entries, currently_resizing) do
+    entries != [] and not upload_in_progress?(entries) and not entries_with_errors?(entries) and
+      not processing?(currently_resizing)
   end
 
   @impl true
@@ -267,6 +546,20 @@ defmodule RapidToolsWeb.ImageResizerLive do
                     phx-submit="resize"
                     class="space-y-6"
                   >
+                    <div class="pointer-events-none absolute inset-0 z-10 hidden items-center justify-center rounded-[2rem] bg-white/80 backdrop-blur-sm phx-submit-loading:flex">
+                      <div class="flex items-center gap-3 rounded-full border border-cyan-200 bg-white px-5 py-3 shadow-lg">
+                        <span class="inline-block size-5 animate-spin rounded-full border-2 border-cyan-200 border-t-cyan-600" />
+                        <div>
+                          <p class="text-sm font-semibold text-slate-950">
+                            {gettext("Resizing images")}
+                          </p>
+                          <p class="text-xs text-slate-500">
+                            {gettext("This can take a few seconds.")}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
                     <div
                       id="image-resizer-drop-zone"
                       phx-drop-target={@uploads.image.ref}
@@ -282,34 +575,145 @@ defmodule RapidToolsWeb.ImageResizerLive do
                           class="block w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 shadow-sm transition file:mr-4 file:rounded-xl file:border-0 file:bg-slate-950 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:border-cyan-300"
                         />
                         <p class="text-sm text-slate-500">
-                          {gettext("Entradas aceitas: JPG, JPEG, PNG, WEBP, HEIC e AVIF.")}
+                          {gettext(
+                            "Entradas aceitas: JPG, JPEG, PNG, WEBP, HEIC e AVIF. Ate %{max_mb} MB por imagem.",
+                            max_mb: max_upload_mb()
+                          )}
+                        </p>
+                        <p
+                          :if={@upload_issue}
+                          class="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900"
+                        >
+                          {@upload_issue}
                         </p>
                       </div>
 
                       <div
-                        id="image-resizer-upload-list"
+                        :if={@currently_resizing}
+                        id="image-resizer-currently-resizing"
+                        class="mt-4 rounded-[1.5rem] border border-cyan-200 bg-cyan-100/80 p-4 text-cyan-950 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]"
+                      >
+                        <div class="flex items-start gap-3">
+                          <span class="mt-1 inline-block size-4 animate-spin rounded-full border-2 border-cyan-300 border-t-cyan-700" />
+                          <div class="min-w-0 flex-1">
+                            <p class="text-xs font-semibold uppercase tracking-[0.28em] text-cyan-700">
+                              {gettext("Resizing now")}
+                            </p>
+                            <p class="mt-2 truncate text-base font-semibold text-slate-950">
+                              {@currently_resizing}
+                            </p>
+                            <p class="mt-2 text-sm text-cyan-800">
+                              {gettext("Image %{current} of %{total}",
+                                current: processing_position(@currently_resizing, @processing_queue),
+                                total: @processing_total
+                              )}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div
+                        :if={@processing_queue != []}
+                        id="image-resizer-processing-queue"
                         class="mt-4 max-h-[22rem] space-y-2 overflow-y-auto pr-1"
                       >
                         <div class="sticky top-0 z-10 rounded-2xl border border-cyan-100 bg-cyan-50/95 px-4 py-3 text-sm font-medium text-cyan-900 backdrop-blur">
-                          {upload_summary(@uploads.image.entries)}
+                          {upload_summary(
+                            @uploads.image.entries,
+                            @currently_resizing,
+                            @processing_queue
+                          )}
+                        </div>
+                        <div
+                          :for={name <- @processing_queue}
+                          class={[
+                            "flex items-center gap-3 rounded-2xl border px-4 py-3 text-sm",
+                            if(name == @currently_resizing,
+                              do: "border-cyan-300 bg-cyan-50 text-cyan-950",
+                              else: "border-slate-200 bg-white text-slate-700"
+                            )
+                          ]}
+                        >
+                          <div class="min-w-0 flex-1">
+                            <p class="truncate font-medium">{name}</p>
+                          </div>
+                          <span class="text-xs uppercase tracking-[0.2em] text-slate-400">
+                            <%= case queue_item_status(
+                                  name,
+                                  @currently_resizing,
+                                  @processing_queue
+                                ) do %>
+                              <% :resizing -> %>
+                                {gettext("resizing")}
+                              <% :waiting -> %>
+                                {gettext("waiting")}
+                              <% :done -> %>
+                                {gettext("done")}
+                            <% end %>
+                          </span>
+                        </div>
+                      </div>
+
+                      <div
+                        :if={@processing_queue == []}
+                        id="image-resizer-upload-list"
+                        class="mt-4 max-h-[22rem] space-y-2 overflow-y-auto pr-1"
+                      >
+                        <div class="sticky top-0 z-10 flex items-center justify-between gap-3 rounded-2xl border border-cyan-100 bg-cyan-50/95 px-4 py-3 text-sm font-medium text-cyan-900 backdrop-blur">
+                          <span>
+                            {upload_summary(
+                              @uploads.image.entries,
+                              @currently_resizing,
+                              @processing_queue
+                            )}
+                          </span>
+                          <button
+                            :if={@uploads.image.entries != []}
+                            type="button"
+                            id="clear-upload-list"
+                            phx-click="clear-uploads"
+                            class="inline-flex shrink-0 items-center justify-center rounded-full border border-cyan-200 bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-cyan-700 transition hover:border-cyan-300 hover:bg-cyan-100"
+                          >
+                            {gettext("Limpar uploads")}
+                          </button>
                         </div>
                         <div
                           :for={entry <- @uploads.image.entries}
-                          class="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700"
+                          class={[
+                            "flex items-center gap-3 rounded-2xl border px-4 py-3 text-sm",
+                            if(entry.valid?,
+                              do: "border-slate-200 bg-white text-slate-700",
+                              else: "border-rose-200 bg-rose-50 text-rose-900"
+                            )
+                          ]}
                         >
                           <div class="min-w-0 flex-1 pr-4">
                             <p class="truncate font-medium">{entry.client_name}</p>
                             <div class="mt-2 h-2 rounded-full bg-slate-100">
                               <div
-                                class="h-2 rounded-full bg-cyan-500 transition-all"
-                                style={"width: #{entry.progress}%"}
+                                class={[
+                                  "h-2 rounded-full transition-all",
+                                  if(entry.valid?, do: "bg-cyan-500", else: "bg-rose-400")
+                                ]}
+                                style={"width: #{if entry.valid?, do: entry.progress, else: 100}%"}
                               />
                             </div>
+                            <p
+                              :for={error <- upload_errors(@uploads.image, entry)}
+                              class="mt-2 text-xs font-medium text-rose-600"
+                            >
+                              {upload_error_message(error)}
+                            </p>
                           </div>
                           <span class="text-xs uppercase tracking-[0.2em] text-slate-400">
-                            {if entry.progress == 100,
-                              do: gettext("pronto"),
-                              else: "#{entry.progress}%"}
+                            <%= cond do %>
+                              <% not entry.valid? -> %>
+                                {gettext("error")}
+                              <% entry.progress == 100 -> %>
+                                {gettext("pronto")}
+                              <% true -> %>
+                                {entry.progress}%
+                            <% end %>
                           </span>
                           <button
                             type="button"
@@ -358,22 +762,24 @@ defmodule RapidToolsWeb.ImageResizerLive do
                       type="submit"
                       id="image-resize-button"
                       phx-disable-with={gettext("Generating images...")}
-                      disabled={
-                        @uploads.image.entries == [] || upload_in_progress?(@uploads.image.entries)
-                      }
+                      disabled={not can_submit?(@uploads.image.entries, @currently_resizing)}
                       class="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-cyan-700 disabled:cursor-wait disabled:opacity-90"
                     >
                       <span>{gettext("Gerar imagens redimensionadas")}</span>
                     </button>
 
-                    <p class="text-sm text-slate-500">
-                      {upload_status_message(@uploads.image.entries)}
+                    <p id="image-resizer-status" class="text-sm text-slate-500">
+                      {upload_status_message(
+                        @uploads.image.entries,
+                        @currently_resizing,
+                        @upload_issue
+                      )}
                     </p>
                   </.form>
                 </div>
 
                 <aside class="rounded-[2rem] border border-white/70 bg-slate-950 p-6 text-white shadow-[0_24px_60px_rgba(15,23,42,0.16)]">
-                  <div :if={@results != []} class="space-y-4">
+                  <div :if={@results != []} id="resized-results" class="space-y-4">
                     <p class="text-sm font-semibold uppercase tracking-[0.25em] text-cyan-300">
                       {gettext("%{count} images ready", count: length(@results))}
                     </p>
