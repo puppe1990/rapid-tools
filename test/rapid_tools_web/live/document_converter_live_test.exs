@@ -117,6 +117,32 @@ defmodule RapidToolsWeb.DocumentConverterLiveTest do
     assert rendered_upload =~ "1 files in queue. 1/1 finished so far."
   end
 
+  test "converts a PDF to PNG pages", %{conn: conn} do
+    source_path = ImageFixtures.tiny_pdf_path!("document-live-pdf-to-png.pdf")
+    {:ok, view, _html} = live(conn, ~p"/document-converter")
+
+    upload =
+      file_input(view, "#document-converter-form", :document, [
+        %{
+          last_modified: 1_711_000_000_000,
+          name: "sample.pdf",
+          content: File.read!(source_path),
+          type: "application/pdf"
+        }
+      ])
+
+    render_upload(upload, "sample.pdf")
+
+    rendered =
+      view
+      |> form("#document-converter-form", conversion: %{mode: "pdf_to_png"})
+      |> render_submit()
+
+    assert rendered =~ "pages converted"
+    assert rendered =~ "sample-00.png"
+    assert has_element?(view, "a[href*=\"/downloads/\"]", "Download ZIP package")
+  end
+
   defp with_document_converter_capabilities(opts, fun) do
     original = Application.get_env(:rapid_tools, :document_converter_capabilities)
 

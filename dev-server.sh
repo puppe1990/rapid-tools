@@ -7,6 +7,8 @@ START_PORT="${PORT:-4000}"
 MAX_PORT_TRIES="${MAX_PORT_TRIES:-50}"
 MIX_ENV="${MIX_ENV:-dev}"
 
+mix deps.get
+
 port="$START_PORT"
 attempt=0
 
