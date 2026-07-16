@@ -20,7 +20,7 @@ defmodule RapidTools.ImageConverter do
          :ok <- ensure_source_exists(source_path),
          {:ok, output_dir} <- ensure_output_dir(opts),
          {:ok, command, args, output_path} <- command_for(source_path, output_dir, target_format),
-         {_, 0} <- System.cmd(command, args, stderr_to_stdout: true) do
+         :ok <- run_conversion(command, args) do
       {:ok,
        %{
          output_path: output_path,
@@ -28,13 +28,20 @@ defmodule RapidTools.ImageConverter do
          media_type: Map.fetch!(@media_types, target_format),
          target_format: target_format
        }}
-    else
-      {:error, _} = error ->
-        error
+    end
+  end
+
+  defp run_conversion(command, args) do
+    case System.cmd(command, args, stderr_to_stdout: true) do
+      {_output, 0} ->
+        :ok
 
       {_output, exit_code} ->
         {:error, {:conversion_failed, exit_code}}
     end
+  rescue
+    error ->
+      {:error, {:conversion_exception, Exception.message(error)}}
   end
 
   defp normalize_format(format) do

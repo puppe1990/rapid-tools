@@ -1,12 +1,14 @@
 defmodule RapidToolsWeb.ImageConverterLive do
   use RapidToolsWeb, :live_view
 
+  alias Phoenix.LiveView.UploadConfig
   alias RapidTools.ConversionStore
   alias RapidTools.ImageConverter
   alias RapidTools.ZipArchive
   alias RapidToolsWeb.ToolNavigation
 
   @image_accept ~w(.jpg .jpeg .png .webp .heic .avif .enc)
+  @max_image_upload_size 40_000_000
 
   @impl true
   def mount(_params, session, socket) do
@@ -29,18 +31,30 @@ defmodule RapidToolsWeb.ImageConverterLive do
      |> assign(:form, form)
      |> assign(:results, [])
      |> assign(:batch_download_path, nil)
+     |> assign(:upload_issue, nil)
+     |> assign(:currently_converting, nil)
+     |> assign(:processing_queue, [])
+     |> assign(:processing_total, 0)
      |> assign(:my_path, "/")
-     |> allow_upload(:image, accept: @image_accept, max_entries: 10, auto_upload: true)}
+     |> allow_upload(:image,
+       accept: @image_accept,
+       max_entries: 10,
+       max_file_size: @max_image_upload_size,
+       auto_upload: true
+     )}
   end
 
   @impl true
   def handle_event("validate", %{"conversion" => conversion_params}, socket) do
-    {:noreply, assign(socket, :form, to_form(conversion_params, as: :conversion))}
+    {:noreply,
+     socket
+     |> assign(:form, to_form(conversion_params, as: :conversion))
+     |> maybe_clear_upload_issue()}
   end
 
   @impl true
   def handle_event("cancel-upload", %{"ref" => ref}, socket) do
-    {:noreply, cancel_upload(socket, :image, ref)}
+    {:noreply, socket |> cancel_upload(:image, ref) |> maybe_clear_upload_issue()}
   end
 
   @impl true
@@ -50,7 +64,7 @@ defmodule RapidToolsWeb.ImageConverterLive do
         cancel_upload(acc, :image, entry.ref)
       end)
 
-    {:noreply, socket}
+    {:noreply, maybe_clear_upload_issue(socket)}
   end
 
   @impl true
@@ -65,6 +79,18 @@ defmodule RapidToolsWeb.ImageConverterLive do
 
   @impl true
   def handle_event("convert", %{"conversion" => %{"target_format" => target_format}}, socket) do
+    if processing?(socket.assigns.currently_converting) do
+      {:noreply, put_flash(socket, :error, gettext("Aguarde a conversao atual terminar."))}
+    else
+      socket
+      |> reconcile_image_uploads()
+      |> continue_convert(target_format)
+    end
+  end
+
+  defp continue_convert({:error, socket}, _target_format), do: {:noreply, socket}
+
+  defp continue_convert({:ok, socket}, target_format) do
     case uploaded_entries(socket, :image) do
       {[], []} ->
         {:noreply,
@@ -75,48 +101,145 @@ defmodule RapidToolsWeb.ImageConverterLive do
          put_flash(socket, :error, gettext("Aguarde o upload terminar antes de converter."))}
 
       _ ->
-        {:noreply, convert_upload(socket, target_format)}
+        {:noreply, start_conversion(socket, target_format)}
     end
   end
 
-  defp convert_upload(socket, target_format) do
-    results =
-      consume_uploaded_entries(socket, :image, fn %{path: path}, entry ->
-        output_dir =
-          Path.join(
-            System.tmp_dir!(),
-            "rapid_tools_live/#{System.unique_integer([:positive])}"
-          )
+  @impl true
+  def handle_info(
+        {:begin_image_conversion, staged_entries, target_format, results},
+        socket
+      ) do
+    case staged_entries do
+      [] ->
+        {:noreply, finish_conversion(socket, Enum.reverse(results))}
 
-        File.mkdir_p!(output_dir)
+      [entry | rest] ->
+        send(self(), {:run_image_conversion, entry, rest, target_format, results})
 
-        source_path = Path.join(output_dir, entry.client_name)
-        File.cp!(path, source_path)
+        {:noreply,
+         socket
+         |> assign(:currently_converting, entry.client_name)
+         |> assign(:processing_queue, Enum.map([entry | rest], & &1.client_name))}
+    end
+  end
 
-        case ImageConverter.convert(source_path, target_format, output_dir: output_dir) do
-          {:ok, result} ->
-            store_entry = %{
-              path: result.output_path,
-              filename: result.filename,
-              media_type: result.media_type
-            }
+  @impl true
+  def handle_info(
+        {:run_image_conversion, entry, rest, target_format, results},
+        socket
+      ) do
+    result = convert_staged_entry(entry, target_format)
+    send(self(), {:begin_image_conversion, rest, target_format, [result | results]})
+    {:noreply, socket}
+  end
 
-            {:ok, id} = ConversionStore.put(store_entry)
+  defp start_conversion(socket, target_format) do
+    case stage_uploaded_entries(socket) do
+      {:ok, []} ->
+        put_flash(socket, :error, gettext("Selecione ao menos uma imagem antes de converter."))
 
-            {:ok,
-             {:ok,
-              %{
-                download_path: ~p"/downloads/#{id}",
-                output_path: result.output_path,
-                media_type: result.media_type,
-                filename: result.filename,
-                target_format: result.target_format
-              }}}
+      {:ok, staged_entries} ->
+        send(self(), {:begin_image_conversion, staged_entries, target_format, []})
 
-          {:error, reason} ->
-            {:ok, {:error, reason}}
-        end
+        socket
+        |> assign(:results, [])
+        |> assign(:batch_download_path, nil)
+        |> assign(:upload_issue, nil)
+        |> assign(:processing_total, length(staged_entries))
+        |> assign(:form, to_form(%{"target_format" => target_format}, as: :conversion))
+
+      {:error, socket} ->
+        socket
+    end
+  end
+
+  defp stage_uploaded_entries(socket) do
+    staged_entries =
+      consume_uploaded_entries(socket, :image, fn meta, entry ->
+        stage_single_upload(meta, entry)
       end)
+
+    case Enum.split_with(staged_entries, &match?(%{source_path: _}, &1)) do
+      {good, []} ->
+        {:ok, good}
+
+      {_good, _bad} ->
+        {:error, staging_error_socket(socket)}
+    end
+  catch
+    kind, reason ->
+      require Logger
+      Logger.error("image converter staging failed: #{inspect({kind, reason})}")
+      {:error, staging_error_socket(socket)}
+  end
+
+  defp stage_single_upload(%{path: path}, entry) do
+    output_dir =
+      Path.join(
+        System.tmp_dir!(),
+        "rapid_tools_live/#{System.unique_integer([:positive])}"
+      )
+
+    source_path = Path.join(output_dir, safe_client_name(entry.client_name))
+
+    with :ok <- File.mkdir_p(output_dir),
+         :ok <- File.cp(path, source_path) do
+      {:ok,
+       %{
+         source_path: source_path,
+         client_name: entry.client_name,
+         output_dir: output_dir
+       }}
+    else
+      {:error, reason} -> {:ok, {:stage_error, reason}}
+    end
+  end
+
+  defp staging_error_socket(socket) do
+    socket
+    |> assign(:upload_issue, lost_upload_message())
+    |> put_flash(:error, lost_upload_message())
+  end
+
+  defp convert_staged_entry(entry, target_format) do
+    case ImageConverter.convert(entry.source_path, target_format, output_dir: entry.output_dir) do
+      {:ok, result} ->
+        store_entry = %{
+          path: result.output_path,
+          filename: result.filename,
+          media_type: result.media_type
+        }
+
+        case ConversionStore.put(store_entry) do
+          {:ok, id} ->
+            {:ok,
+             %{
+               download_path: ~p"/downloads/#{id}",
+               output_path: result.output_path,
+               media_type: result.media_type,
+               filename: result.filename,
+               target_format: result.target_format
+             }}
+
+          other ->
+            {:error, {:store_failed, other}}
+        end
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  rescue
+    error ->
+      {:error, {:conversion_exception, Exception.message(error)}}
+  end
+
+  defp finish_conversion(socket, results) do
+    socket =
+      socket
+      |> assign(:currently_converting, nil)
+      |> assign(:processing_queue, [])
+      |> assign(:processing_total, 0)
 
     case successful_batch_results(results) do
       {:ok, successful_results} ->
@@ -128,8 +251,43 @@ defmodule RapidToolsWeb.ImageConverterLive do
         )
 
       :error ->
-        put_flash(socket, :error, gettext("A imagem nao pode ser convertida."))
+        put_flash(socket, :error, conversion_error_message(results))
     end
+  end
+
+  defp reconcile_image_uploads(socket) do
+    stale_refs = stale_image_upload_refs(socket)
+
+    if stale_refs == [] do
+      {:ok, socket}
+    else
+      {:error,
+       socket
+       |> assign(:upload_issue, lost_upload_message())
+       |> put_flash(:error, lost_upload_message())}
+    end
+  end
+
+  defp stale_image_upload_refs(socket) do
+    conf = socket.assigns.uploads.image
+
+    for entry <- conf.entries,
+        pid = UploadConfig.entry_pid(conf, entry),
+        is_pid(pid),
+        not Process.alive?(pid),
+        do: entry.ref
+  end
+
+  defp maybe_clear_upload_issue(socket) do
+    if socket.assigns.uploads.image.entries == [] do
+      assign(socket, :upload_issue, nil)
+    else
+      socket
+    end
+  end
+
+  defp lost_upload_message do
+    gettext("O upload desta imagem foi perdido antes da conversao. Envie o arquivo novamente.")
   end
 
   defp successful_batch_results(converted) when is_list(converted) do
@@ -143,6 +301,28 @@ defmodule RapidToolsWeb.ImageConverterLive do
 
   defp successful_batch_results(_), do: :error
 
+  defp conversion_error_message(results) do
+    reasons = for {:error, reason} <- results, do: reason
+
+    cond do
+      :imagemagick_not_found in reasons ->
+        gettext(
+          "O conversor de imagens nao esta disponivel no servidor no momento. Tente novamente mais tarde."
+        )
+
+      Enum.any?(reasons, &match?({:unsupported_target_format, _}, &1)) ->
+        gettext("Formato de destino nao suportado. Escolha PNG, JPG, WEBP, HEIC, AVIF ou ENC.")
+
+      Enum.any?(reasons, &match?({:conversion_failed, _}, &1)) ->
+        gettext(
+          "Nao foi possivel converter uma ou mais imagens. Verifique se os arquivos nao estao corrompidos e tente outro formato."
+        )
+
+      true ->
+        gettext("A imagem nao pode ser convertida.")
+    end
+  end
+
   defp build_batch_response(socket, successful_results, success_message, zip_error_message) do
     batch_entries =
       Enum.map(successful_results, fn result ->
@@ -153,24 +333,39 @@ defmodule RapidToolsWeb.ImageConverterLive do
         }
       end)
 
-    {:ok, batch_id} = ConversionStore.put_batch(batch_entries)
-
-    case ZipArchive.build(batch_id, batch_entries) do
-      {:ok, zip_entry} ->
-        {:ok, zip_id} = ConversionStore.put(zip_entry)
-
-        socket
-        |> assign(:results, successful_results)
-        |> assign(:batch_download_path, ~p"/downloads/#{zip_id}")
-        |> put_flash(:info, success_message)
-
+    with {:ok, batch_id} <- ConversionStore.put_batch(batch_entries),
+         {:ok, zip_entry} <- ZipArchive.build(batch_id, batch_entries),
+         {:ok, zip_id} <- ConversionStore.put(zip_entry) do
+      socket
+      |> assign(:results, successful_results)
+      |> assign(:batch_download_path, ~p"/downloads/#{zip_id}")
+      |> put_flash(:info, success_message)
+    else
       {:error, _reason} ->
         socket
         |> assign(:results, successful_results)
         |> assign(:batch_download_path, nil)
         |> put_flash(:error, zip_error_message)
+
+      _other ->
+        socket
+        |> assign(:results, successful_results)
+        |> assign(:batch_download_path, nil)
+        |> put_flash(:info, success_message)
     end
   end
+
+  defp safe_client_name(name) when is_binary(name) do
+    name
+    |> Path.basename()
+    |> String.replace(~r/[\x00-\x1F\x7F]/, "_")
+    |> case do
+      "" -> "image"
+      safe -> safe
+    end
+  end
+
+  defp safe_client_name(_), do: "image"
 
   defp default_target_format, do: "png"
 
@@ -182,8 +377,16 @@ defmodule RapidToolsWeb.ImageConverterLive do
     Enum.any?(entries, &(&1.progress < 100))
   end
 
-  defp upload_status_message(entries) do
+  defp processing?(currently_converting), do: currently_converting != nil
+
+  defp upload_status_message(entries, currently_converting, upload_issue) do
     cond do
+      is_binary(upload_issue) ->
+        upload_issue
+
+      processing?(currently_converting) ->
+        gettext("Conversao em andamento. Acompanhe qual arquivo esta sendo processado agora.")
+
       entries == [] ->
         gettext("Selecione uma ou mais imagens para habilitar a conversao.")
 
@@ -195,11 +398,16 @@ defmodule RapidToolsWeb.ImageConverterLive do
     end
   end
 
-  defp upload_summary(entries) do
+  defp upload_summary(entries, currently_converting) do
     total = length(entries)
     completed = completed_upload_count(entries)
 
     cond do
+      processing?(currently_converting) ->
+        gettext(
+          "Fila enviada para conversao. A imagem atual aparece com loader e o restante fica na sequencia."
+        )
+
       total == 0 ->
         gettext("Nenhuma imagem selecionada ainda.")
 
@@ -214,6 +422,16 @@ defmodule RapidToolsWeb.ImageConverterLive do
         gettext("%{count} images selected. All of them appear in this scrollable list.",
           count: total
         )
+    end
+  end
+
+  defp processing_position(assigns) do
+    queue_count = length(assigns.processing_queue)
+
+    if assigns.processing_total > 0 and queue_count > 0 do
+      assigns.processing_total - queue_count + 1
+    else
+      0
     end
   end
 
@@ -265,15 +483,32 @@ defmodule RapidToolsWeb.ImageConverterLive do
                     phx-submit="convert"
                     class="space-y-6"
                   >
-                    <div class="pointer-events-none absolute inset-0 z-10 hidden items-center justify-center rounded-[2rem] bg-white/80 backdrop-blur-sm phx-submit-loading:flex">
+                    <div class={[
+                      "pointer-events-none absolute inset-0 z-10 items-center justify-center rounded-[2rem] bg-white/80 backdrop-blur-sm",
+                      if(processing?(@currently_converting),
+                        do: "flex",
+                        else: "hidden phx-submit-loading:flex"
+                      )
+                    ]}>
                       <div class="flex items-center gap-3 rounded-full border border-orange-200 bg-white px-5 py-3 shadow-lg">
                         <span class="inline-block size-5 animate-spin rounded-full border-2 border-orange-200 border-t-orange-600" />
                         <div>
                           <p class="text-sm font-semibold text-slate-950">
-                            {gettext("Convertendo imagens")}
+                            <%= if @currently_converting do %>
+                              {gettext("Convertendo")}: {@currently_converting}
+                            <% else %>
+                              {gettext("Convertendo imagens")}
+                            <% end %>
                           </p>
                           <p class="text-xs text-slate-500">
-                            {gettext("Isso pode levar alguns segundos.")}
+                            <%= if @currently_converting && @processing_total > 0 do %>
+                              {gettext("%{current} of %{total}",
+                                current: processing_position(assigns),
+                                total: @processing_total
+                              )}
+                            <% else %>
+                              {gettext("Isso pode levar alguns segundos.")}
+                            <% end %>
                           </p>
                         </div>
                       </div>
@@ -303,9 +538,11 @@ defmodule RapidToolsWeb.ImageConverterLive do
                         class="mt-4 max-h-[22rem] space-y-2 overflow-y-auto pr-1"
                       >
                         <div class="sticky top-0 z-10 flex items-center justify-between gap-3 rounded-2xl border border-orange-100 bg-orange-50/95 px-4 py-3 text-sm font-medium text-orange-900 backdrop-blur">
-                          <span>{upload_summary(@uploads.image.entries)}</span>
+                          <span>{upload_summary(@uploads.image.entries, @currently_converting)}</span>
                           <button
-                            :if={@uploads.image.entries != []}
+                            :if={
+                              @uploads.image.entries != [] and not processing?(@currently_converting)
+                            }
                             type="button"
                             id="clear-upload-list"
                             phx-click="clear-uploads"
@@ -338,8 +575,9 @@ defmodule RapidToolsWeb.ImageConverterLive do
                             type="button"
                             phx-click="cancel-upload"
                             phx-value-ref={entry.ref}
+                            disabled={processing?(@currently_converting)}
                             aria-label={gettext("Remove %{filename}", filename: entry.client_name)}
-                            class="inline-flex size-8 shrink-0 items-center justify-center rounded-full border border-slate-200 text-sm font-bold text-slate-500 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600"
+                            class="inline-flex size-8 shrink-0 items-center justify-center rounded-full border border-slate-200 text-sm font-bold text-slate-500 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-40"
                           >
                             X
                           </button>
@@ -361,7 +599,8 @@ defmodule RapidToolsWeb.ImageConverterLive do
                       id="image-convert-button"
                       phx-disable-with={gettext("Converting images...")}
                       disabled={
-                        @uploads.image.entries == [] || upload_in_progress?(@uploads.image.entries)
+                        @uploads.image.entries == [] || upload_in_progress?(@uploads.image.entries) ||
+                          processing?(@currently_converting)
                       }
                       class="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-orange-600 disabled:cursor-wait disabled:opacity-90"
                     >
@@ -370,7 +609,11 @@ defmodule RapidToolsWeb.ImageConverterLive do
                     </button>
 
                     <p id="image-converter-status" class="text-sm text-slate-500">
-                      {upload_status_message(@uploads.image.entries)}
+                      {upload_status_message(
+                        @uploads.image.entries,
+                        @currently_converting,
+                        @upload_issue
+                      )}
                     </p>
                   </.form>
                 </div>

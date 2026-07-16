@@ -3,13 +3,27 @@ defmodule RapidToolsWeb.ImageConverterLiveTest do
 
   alias RapidTools.TestSupport.ImageFixtures
 
+  defp eventually_render_including(view, expected, attempts \\ 20)
+
+  defp eventually_render_including(view, _expected, 1), do: render(view)
+
+  defp eventually_render_including(view, expected, attempts) do
+    html = render(view)
+
+    if html =~ expected do
+      html
+    else
+      Process.sleep(50)
+      eventually_render_including(view, expected, attempts - 1)
+    end
+  end
+
   test "renders the converter interface", %{conn: conn} do
     {:ok, view, html} = live(conn, ~p"/")
 
     assert has_element?(view, "form#converter-form")
     assert has_element?(view, "#image-convert-button")
     assert has_element?(view, "#image-upload-list")
-    assert has_element?(view, "#converter-form .phx-submit-loading\\:flex")
     assert has_element?(view, "a[href=\"/\"]", "Image Converter")
     assert has_element?(view, "a[href=\"/image-resizer\"]", "Image Resizer")
     assert has_element?(view, "a[href=\"/video-converter\"]", "Video Converter")
@@ -68,6 +82,32 @@ defmodule RapidToolsWeb.ImageConverterLiveTest do
     assert rendered_upload =~ "2 images in queue. 1/2 finished so far"
   end
 
+  test "converts uploaded images asynchronously without crashing the live view", %{conn: conn} do
+    source_path = ImageFixtures.tiny_png_path!("live-async-convert-source.png")
+    {:ok, view, _html} = live(conn, ~p"/")
+
+    upload =
+      file_input(view, "#converter-form", :image, [
+        %{
+          last_modified: 1_711_000_000_000,
+          name: "async-source.png",
+          content: File.read!(source_path),
+          type: "image/png"
+        }
+      ])
+
+    render_upload(upload, "async-source.png")
+
+    view
+    |> form("#converter-form", conversion: %{target_format: "jpg"})
+    |> render_submit()
+
+    html = eventually_render_including(view, "converted-results")
+    assert html =~ "async-source.jpg"
+    assert has_element?(view, "#converted-results")
+    refute has_element?(view, "#server-error:not([hidden])")
+  end
+
   test "clearing uploads keeps converted results intact", %{conn: conn} do
     source_path = ImageFixtures.tiny_png_path!("live-clear-uploads-source.png")
     {:ok, view, _html} = live(conn, ~p"/")
@@ -88,6 +128,7 @@ defmodule RapidToolsWeb.ImageConverterLiveTest do
     |> form("#converter-form", conversion: %{target_format: "jpg"})
     |> render_submit()
 
+    eventually_render_including(view, "converted-results")
     assert has_element?(view, "#converted-results")
     assert has_element?(view, "#clear-converted-results")
 
@@ -151,6 +192,7 @@ defmodule RapidToolsWeb.ImageConverterLiveTest do
     |> form("#converter-form", conversion: %{target_format: "jpg"})
     |> render_submit()
 
+    eventually_render_including(view, "converted-results")
     assert has_element?(view, "#converted-results")
     assert has_element?(view, "#clear-converted-results")
 
