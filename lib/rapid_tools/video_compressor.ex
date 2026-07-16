@@ -26,7 +26,7 @@ defmodule RapidTools.VideoCompressor do
          {:ok, output_dir} <- ensure_output_dir(opts),
          {:ok, command, args, output_path} <-
            command_for(source_path, output_dir, preset, max_resolution, mute),
-         {_, 0} <- System.cmd(command, args, stderr_to_stdout: true) do
+         :ok <- run_compression(command, args) do
       {:ok,
        %{
          output_path: output_path,
@@ -36,13 +36,20 @@ defmodule RapidTools.VideoCompressor do
          preset: preset,
          max_resolution: max_resolution
        }}
-    else
-      {:error, _} = error ->
-        error
+    end
+  end
+
+  defp run_compression(command, args) do
+    case System.cmd(command, args, stderr_to_stdout: true) do
+      {_output, 0} ->
+        :ok
 
       {_output, exit_code} ->
         {:error, {:compression_failed, exit_code}}
     end
+  rescue
+    error ->
+      {:error, {:compression_exception, Exception.message(error)}}
   end
 
   defp normalize_value(value) do
