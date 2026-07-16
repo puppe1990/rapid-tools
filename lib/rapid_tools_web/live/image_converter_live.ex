@@ -117,10 +117,7 @@ defmodule RapidToolsWeb.ImageConverterLive do
       [entry | rest] ->
         send(self(), {:run_image_conversion, entry, rest, target_format, results})
 
-        {:noreply,
-         socket
-         |> assign(:currently_converting, entry.client_name)
-         |> assign(:processing_queue, Enum.map([entry | rest], & &1.client_name))}
+        {:noreply, assign(socket, :currently_converting, entry.client_name)}
     end
   end
 
@@ -146,6 +143,7 @@ defmodule RapidToolsWeb.ImageConverterLive do
         |> assign(:results, [])
         |> assign(:batch_download_path, nil)
         |> assign(:upload_issue, nil)
+        |> assign(:processing_queue, Enum.map(staged_entries, & &1.client_name))
         |> assign(:processing_total, length(staged_entries))
         |> assign(:form, to_form(%{"target_format" => target_format}, as: :conversion))
 
@@ -385,7 +383,7 @@ defmodule RapidToolsWeb.ImageConverterLive do
         upload_issue
 
       processing?(currently_converting) ->
-        gettext("Conversao em andamento. Acompanhe qual arquivo esta sendo processado agora.")
+        gettext("Converting %{filename}. Please wait a moment.", filename: currently_converting)
 
       entries == [] ->
         gettext("Selecione uma ou mais imagens para habilitar a conversao.")
@@ -398,14 +396,15 @@ defmodule RapidToolsWeb.ImageConverterLive do
     end
   end
 
-  defp upload_summary(entries, currently_converting) do
+  defp upload_summary(entries, currently_converting, processing_queue) do
     total = length(entries)
     completed = completed_upload_count(entries)
 
     cond do
       processing?(currently_converting) ->
-        gettext(
-          "Fila enviada para conversao. A imagem atual aparece com loader e o restante fica na sequencia."
+        gettext("Converting image %{current} of %{total}",
+          current: processing_position(currently_converting, processing_queue),
+          total: length(processing_queue)
         )
 
       total == 0 ->
@@ -425,13 +424,26 @@ defmodule RapidToolsWeb.ImageConverterLive do
     end
   end
 
-  defp processing_position(assigns) do
-    queue_count = length(assigns.processing_queue)
+  defp processing_position(currently_converting, processing_queue) do
+    case Enum.find_index(processing_queue, &(&1 == currently_converting)) do
+      nil -> 0
+      index -> index + 1
+    end
+  end
 
-    if assigns.processing_total > 0 and queue_count > 0 do
-      assigns.processing_total - queue_count + 1
-    else
-      0
+  defp queue_item_status(name, currently_converting, processing_queue) do
+    current_index = Enum.find_index(processing_queue, &(&1 == currently_converting))
+    name_index = Enum.find_index(processing_queue, &(&1 == name))
+
+    cond do
+      name == currently_converting ->
+        :converting
+
+      is_integer(current_index) and is_integer(name_index) and name_index < current_index ->
+        :done
+
+      true ->
+        :waiting
     end
   end
 
@@ -483,32 +495,15 @@ defmodule RapidToolsWeb.ImageConverterLive do
                     phx-submit="convert"
                     class="space-y-6"
                   >
-                    <div class={[
-                      "pointer-events-none absolute inset-0 z-10 items-center justify-center rounded-[2rem] bg-white/80 backdrop-blur-sm",
-                      if(processing?(@currently_converting),
-                        do: "flex",
-                        else: "hidden phx-submit-loading:flex"
-                      )
-                    ]}>
+                    <div class="pointer-events-none absolute inset-0 z-10 hidden items-center justify-center rounded-[2rem] bg-white/80 backdrop-blur-sm phx-submit-loading:flex">
                       <div class="flex items-center gap-3 rounded-full border border-orange-200 bg-white px-5 py-3 shadow-lg">
                         <span class="inline-block size-5 animate-spin rounded-full border-2 border-orange-200 border-t-orange-600" />
                         <div>
                           <p class="text-sm font-semibold text-slate-950">
-                            <%= if @currently_converting do %>
-                              {gettext("Convertendo")}: {@currently_converting}
-                            <% else %>
-                              {gettext("Convertendo imagens")}
-                            <% end %>
+                            {gettext("Convertendo imagens")}
                           </p>
                           <p class="text-xs text-slate-500">
-                            <%= if @currently_converting && @processing_total > 0 do %>
-                              {gettext("%{current} of %{total}",
-                                current: processing_position(assigns),
-                                total: @processing_total
-                              )}
-                            <% else %>
-                              {gettext("Isso pode levar alguns segundos.")}
-                            <% end %>
+                            {gettext("Isso pode levar alguns segundos.")}
                           </p>
                         </div>
                       </div>
@@ -526,7 +521,8 @@ defmodule RapidToolsWeb.ImageConverterLive do
                         <.live_file_input
                           upload={@uploads.image}
                           id="image-upload"
-                          class="block w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 shadow-sm transition file:mr-4 file:rounded-xl file:border-0 file:bg-slate-950 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:border-orange-300"
+                          class="block w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 shadow-sm transition file:mr-4 file:rounded-xl file:border-0 file:bg-slate-950 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:border-orange-300 disabled:cursor-not-allowed disabled:opacity-60"
+                          disabled={processing?(@currently_converting)}
                         />
                         <p class="text-sm text-slate-500">
                           {gettext("Entradas aceitas: JPG, JPEG, PNG, WEBP, HEIC, AVIF e ENC.")}
@@ -534,15 +530,83 @@ defmodule RapidToolsWeb.ImageConverterLive do
                       </div>
 
                       <div
+                        :if={@currently_converting}
+                        id="image-currently-converting"
+                        class="mt-4 rounded-[1.5rem] border border-orange-200 bg-orange-100/80 p-4 text-orange-950 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]"
+                      >
+                        <div class="flex items-start gap-3">
+                          <span class="mt-1 inline-block size-4 animate-spin rounded-full border-2 border-orange-300 border-t-orange-700" />
+                          <div class="min-w-0 flex-1">
+                            <p class="text-xs font-semibold uppercase tracking-[0.28em] text-orange-700">
+                              {gettext("Converting now")}
+                            </p>
+                            <p class="mt-2 truncate text-base font-semibold text-slate-950">
+                              {@currently_converting}
+                            </p>
+                            <p class="mt-2 text-sm text-orange-800">
+                              {gettext("Image %{current} of %{total}",
+                                current:
+                                  processing_position(@currently_converting, @processing_queue),
+                                total: @processing_total
+                              )}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div
+                        :if={@processing_queue != []}
+                        id="image-processing-queue"
+                        class="mt-4 max-h-[22rem] space-y-2 overflow-y-auto pr-1"
+                      >
+                        <div class="sticky top-0 z-10 rounded-2xl border border-orange-100 bg-orange-50/95 px-4 py-3 text-sm font-medium text-orange-900 backdrop-blur">
+                          {upload_summary(
+                            @uploads.image.entries,
+                            @currently_converting,
+                            @processing_queue
+                          )}
+                        </div>
+                        <div
+                          :for={name <- @processing_queue}
+                          class={[
+                            "flex items-center gap-3 rounded-2xl border px-4 py-3 text-sm",
+                            if(name == @currently_converting,
+                              do: "border-orange-300 bg-orange-50 text-orange-950",
+                              else: "border-slate-200 bg-white text-slate-700"
+                            )
+                          ]}
+                        >
+                          <div class="min-w-0 flex-1">
+                            <p class="truncate font-medium">{name}</p>
+                          </div>
+                          <span class="text-xs uppercase tracking-[0.2em] text-slate-400">
+                            <%= case queue_item_status(name, @currently_converting, @processing_queue) do %>
+                              <% :converting -> %>
+                                {gettext("converting")}
+                              <% :waiting -> %>
+                                {gettext("waiting")}
+                              <% :done -> %>
+                                {gettext("done")}
+                            <% end %>
+                          </span>
+                        </div>
+                      </div>
+
+                      <div
+                        :if={@processing_queue == []}
                         id="image-upload-list"
                         class="mt-4 max-h-[22rem] space-y-2 overflow-y-auto pr-1"
                       >
                         <div class="sticky top-0 z-10 flex items-center justify-between gap-3 rounded-2xl border border-orange-100 bg-orange-50/95 px-4 py-3 text-sm font-medium text-orange-900 backdrop-blur">
-                          <span>{upload_summary(@uploads.image.entries, @currently_converting)}</span>
+                          <span>
+                            {upload_summary(
+                              @uploads.image.entries,
+                              @currently_converting,
+                              @processing_queue
+                            )}
+                          </span>
                           <button
-                            :if={
-                              @uploads.image.entries != [] and not processing?(@currently_converting)
-                            }
+                            :if={@uploads.image.entries != []}
                             type="button"
                             id="clear-upload-list"
                             phx-click="clear-uploads"
@@ -575,9 +639,8 @@ defmodule RapidToolsWeb.ImageConverterLive do
                             type="button"
                             phx-click="cancel-upload"
                             phx-value-ref={entry.ref}
-                            disabled={processing?(@currently_converting)}
                             aria-label={gettext("Remove %{filename}", filename: entry.client_name)}
-                            class="inline-flex size-8 shrink-0 items-center justify-center rounded-full border border-slate-200 text-sm font-bold text-slate-500 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-40"
+                            class="inline-flex size-8 shrink-0 items-center justify-center rounded-full border border-slate-200 text-sm font-bold text-slate-500 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600"
                           >
                             X
                           </button>
