@@ -108,6 +108,16 @@ defmodule RapidToolsWeb.ImageConverterLiveTest do
     refute has_element?(view, "#server-error:not([hidden])")
   end
 
+  test "does not expose internal loader jargon in conversion feedback", %{conn: conn} do
+    {:ok, _view, html} = live(conn, ~p"/")
+
+    assert html =~ "Converting images"
+    assert html =~ "This can take a few seconds."
+    refute html =~ "Fila enviada para conversao"
+    refute html =~ "aparece com loader"
+    refute html =~ "fica na sequencia"
+  end
+
   test "clearing uploads keeps converted results intact", %{conn: conn} do
     source_path = ImageFixtures.tiny_png_path!("live-clear-uploads-source.png")
     {:ok, view, _html} = live(conn, ~p"/")
