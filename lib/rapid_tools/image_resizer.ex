@@ -31,7 +31,7 @@ defmodule RapidTools.ImageResizer do
          {:ok, output_dir} <- ensure_output_dir(opts),
          {:ok, command, args, output_path, actual_format} <-
            command_for(source_path, output_dir, width, height, fit, target_format),
-         {_, 0} <- System.cmd(command, args, stderr_to_stdout: true) do
+         :ok <- run_resize(command, args) do
       {:ok,
        %{
          output_path: output_path,
@@ -42,13 +42,20 @@ defmodule RapidTools.ImageResizer do
          height: height,
          fit: fit
        }}
-    else
-      {:error, _} = error ->
-        error
+    end
+  end
+
+  defp run_resize(command, args) do
+    case System.cmd(command, args, stderr_to_stdout: true) do
+      {_output, 0} ->
+        :ok
 
       {_output, exit_code} ->
         {:error, {:resize_failed, exit_code}}
     end
+  rescue
+    error ->
+      {:error, {:resize_exception, Exception.message(error)}}
   end
 
   defp normalize_format(format) do
