@@ -1,6 +1,7 @@
 defmodule RapidToolsWeb.VideoCompressorLive do
   use RapidToolsWeb, :live_view
 
+  alias Phoenix.LiveView.UploadConfig
   alias RapidTools.ConversionStore
   alias RapidTools.VideoCompressor
   alias RapidTools.ZipArchive
@@ -22,6 +23,10 @@ defmodule RapidToolsWeb.VideoCompressorLive do
      |> assign(:tools, ToolNavigation.tools("video-compressor"))
      |> assign(:results, [])
      |> assign(:batch_download_path, nil)
+     |> assign(:upload_issue, nil)
+     |> assign(:currently_compressing, nil)
+     |> assign(:processing_queue, [])
+     |> assign(:processing_total, 0)
      |> assign(:form, to_form(default_form_params(), as: :compression))
      |> assign(:my_path, "/video-compressor")
      |> allow_upload(:video,
@@ -35,18 +40,33 @@ defmodule RapidToolsWeb.VideoCompressorLive do
   @impl true
   def handle_event("validate", %{"compression" => params}, socket) do
     {:noreply,
-     assign(socket, :form, to_form(Map.merge(default_form_params(), params), as: :compression))}
+     socket
+     |> assign(:form, to_form(Map.merge(default_form_params(), params), as: :compression))
+     |> maybe_clear_upload_issue()}
   end
 
   @impl true
   def handle_event("cancel-upload", %{"ref" => ref}, socket) do
-    {:noreply, cancel_upload(socket, :video, ref)}
+    {:noreply, socket |> cancel_upload(:video, ref) |> maybe_clear_upload_issue()}
   end
 
   @impl true
   def handle_event("compress", %{"compression" => params}, socket) do
-    params = Map.merge(default_form_params(), params)
+    if processing?(socket.assigns.currently_compressing) do
+      {:noreply, put_flash(socket, :error, gettext("Aguarde a compressao atual terminar."))}
+    else
+      params = Map.merge(default_form_params(), params)
 
+      socket
+      |> assign(:form, to_form(params, as: :compression))
+      |> reconcile_video_uploads()
+      |> continue_compress(params)
+    end
+  end
+
+  defp continue_compress({:error, socket}, _params), do: {:noreply, socket}
+
+  defp continue_compress({:ok, socket}, params) do
     case uploaded_entries(socket, :video) do
       {[], []} ->
         {:noreply,
@@ -57,46 +77,160 @@ defmodule RapidToolsWeb.VideoCompressorLive do
          put_flash(socket, :error, gettext("Aguarde o upload terminar antes de comprimir."))}
 
       _ ->
-        {:noreply,
-         compress_uploads(assign(socket, :form, to_form(params, as: :compression)), params)}
+        {:noreply, start_compression(socket, params)}
     end
   end
 
-  defp compress_uploads(socket, %{
+  @impl true
+  def handle_info({:begin_video_compression, staged_entries, params, results}, socket) do
+    case staged_entries do
+      [] ->
+        {:noreply, finish_compression(socket, Enum.reverse(results))}
+
+      [entry | rest] ->
+        send(self(), {:run_video_compression, entry, rest, params, results})
+
+        {:noreply,
+         socket
+         |> assign(:currently_compressing, entry.client_name)
+         |> assign(:processing_queue, Enum.map([entry | rest], & &1.client_name))}
+    end
+  end
+
+  @impl true
+  def handle_info({:run_video_compression, entry, rest, params, results}, socket) do
+    lv = self()
+
+    # Keep the LiveView free for WebSocket heartbeats while ffmpeg runs.
+    # Blocking the LV process on long re-encodes drops the socket in production.
+    Task.start(fn ->
+      result =
+        try do
+          compress_staged_entry(entry, params)
+        rescue
+          error ->
+            {:error, {:compression_exception, Exception.message(error)}}
+        catch
+          kind, reason ->
+            {:error, {:compression_crash, {kind, inspect(reason)}}}
+        end
+
+      send(lv, {:video_compression_done, result, rest, params, results})
+    end)
+
+    {:noreply, socket}
+  end
+
+  @impl true
+  def handle_info({:video_compression_done, result, rest, params, results}, socket) do
+    send(self(), {:begin_video_compression, rest, params, [result | results]})
+    {:noreply, socket}
+  end
+
+  defp start_compression(socket, params) do
+    case stage_uploaded_entries(socket) do
+      {:ok, []} ->
+        put_flash(socket, :error, gettext("Selecione ao menos um video antes de comprimir."))
+
+      {:ok, staged_entries} ->
+        send(self(), {:begin_video_compression, staged_entries, params, []})
+
+        socket
+        |> assign(:results, [])
+        |> assign(:batch_download_path, nil)
+        |> assign(:upload_issue, nil)
+        |> assign(:processing_total, length(staged_entries))
+
+      {:error, socket} ->
+        socket
+    end
+  end
+
+  defp stage_uploaded_entries(socket) do
+    staged_entries =
+      consume_uploaded_entries(socket, :video, fn meta, entry ->
+        stage_single_upload(meta, entry)
+      end)
+
+    case Enum.split_with(staged_entries, &match?(%{source_path: _}, &1)) do
+      {good, []} ->
+        {:ok, good}
+
+      {_good, _bad} ->
+        {:error, staging_error_socket(socket)}
+    end
+  catch
+    kind, reason ->
+      require Logger
+      Logger.error("video compressor staging failed: #{inspect({kind, reason})}")
+      {:error, staging_error_socket(socket)}
+  end
+
+  defp stage_single_upload(%{path: path}, entry) do
+    output_dir =
+      Path.join(System.tmp_dir!(), "rapid_tools_live/#{System.unique_integer([:positive])}")
+
+    source_path = Path.join(output_dir, safe_client_name(entry.client_name))
+
+    with :ok <- File.mkdir_p(output_dir),
+         :ok <- File.cp(path, source_path) do
+      {:ok,
+       %{
+         source_path: source_path,
+         client_name: entry.client_name,
+         output_dir: output_dir
+       }}
+    else
+      {:error, reason} -> {:ok, {:stage_error, reason}}
+    end
+  end
+
+  defp staging_error_socket(socket) do
+    socket
+    |> assign(:upload_issue, lost_upload_message())
+    |> put_flash(:error, lost_upload_message())
+  end
+
+  defp compress_staged_entry(entry, %{
          "preset" => preset,
          "max_resolution" => max_resolution,
          "mute" => mute
        }) do
-    results =
-      consume_uploaded_entries(socket, :video, fn %{path: path}, entry ->
-        output_dir =
-          Path.join(System.tmp_dir!(), "rapid_tools_live/#{System.unique_integer([:positive])}")
+    case VideoCompressor.compress(entry.source_path,
+           preset: preset,
+           max_resolution: max_resolution,
+           mute: mute in ["true", true],
+           output_dir: entry.output_dir
+         ) do
+      {:ok, result} ->
+        store_entry = %{
+          path: result.output_path,
+          filename: result.filename,
+          media_type: result.media_type
+        }
 
-        File.mkdir_p!(output_dir)
+        case ConversionStore.put(store_entry) do
+          {:ok, id} ->
+            {:ok, Map.put(result, :download_path, ~p"/downloads/#{id}")}
 
-        source_path = Path.join(output_dir, entry.client_name)
-        File.cp!(path, source_path)
-
-        case VideoCompressor.compress(source_path,
-               preset: preset,
-               max_resolution: max_resolution,
-               mute: mute in ["true", true],
-               output_dir: output_dir
-             ) do
-          {:ok, result} ->
-            store_entry = %{
-              path: result.output_path,
-              filename: result.filename,
-              media_type: result.media_type
-            }
-
-            {:ok, id} = ConversionStore.put(store_entry)
-            {:ok, {:ok, Map.put(result, :download_path, ~p"/downloads/#{id}")}}
-
-          {:error, reason} ->
-            {:ok, {:error, reason}}
+          other ->
+            {:error, {:store_failed, other}}
         end
-      end)
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  rescue
+    error ->
+      {:error, {:compression_exception, Exception.message(error)}}
+  end
+
+  defp finish_compression(socket, results) do
+    socket =
+      socket
+      |> assign(:currently_compressing, nil)
+      |> assign(:processing_queue, [])
+      |> assign(:processing_total, 0)
 
     case successful_batch_results(results) do
       {:ok, successful_results} ->
@@ -108,8 +242,43 @@ defmodule RapidToolsWeb.VideoCompressorLive do
         )
 
       :error ->
-        put_flash(socket, :error, gettext("Os videos nao puderam ser comprimidos."))
+        put_flash(socket, :error, compression_error_message(results))
     end
+  end
+
+  defp reconcile_video_uploads(socket) do
+    stale_refs = stale_video_upload_refs(socket)
+
+    if stale_refs == [] do
+      {:ok, socket}
+    else
+      {:error,
+       socket
+       |> assign(:upload_issue, lost_upload_message())
+       |> put_flash(:error, lost_upload_message())}
+    end
+  end
+
+  defp stale_video_upload_refs(socket) do
+    conf = socket.assigns.uploads.video
+
+    for entry <- conf.entries,
+        pid = UploadConfig.entry_pid(conf, entry),
+        is_pid(pid),
+        not Process.alive?(pid),
+        do: entry.ref
+  end
+
+  defp maybe_clear_upload_issue(socket) do
+    if socket.assigns.uploads.video.entries == [] do
+      assign(socket, :upload_issue, nil)
+    else
+      socket
+    end
+  end
+
+  defp lost_upload_message do
+    gettext("O upload deste video foi perdido antes da compressao. Envie o arquivo novamente.")
   end
 
   defp successful_batch_results(converted) when is_list(converted) do
@@ -123,6 +292,18 @@ defmodule RapidToolsWeb.VideoCompressorLive do
 
   defp successful_batch_results(_), do: :error
 
+  defp compression_error_message([{:error, :ffmpeg_not_found}]),
+    do: gettext("FFmpeg nao esta disponivel no servidor. Tente novamente mais tarde.")
+
+  defp compression_error_message([{:error, {:compression_failed, _}}]),
+    do:
+      gettext(
+        "Nao foi possivel comprimir este video. Confirme se o arquivo nao esta corrompido e tente novamente."
+      )
+
+  defp compression_error_message(_results),
+    do: gettext("Os videos nao puderam ser comprimidos.")
+
   defp build_batch_response(socket, successful_results, success_message, zip_error_message) do
     batch_entries =
       Enum.map(successful_results, fn result ->
@@ -133,18 +314,15 @@ defmodule RapidToolsWeb.VideoCompressorLive do
         }
       end)
 
-    {:ok, batch_id} = ConversionStore.put_batch(batch_entries)
-
-    case ZipArchive.build(batch_id, batch_entries) do
-      {:ok, zip_entry} ->
-        {:ok, zip_id} = ConversionStore.put(zip_entry)
-
-        socket
-        |> assign(:results, successful_results)
-        |> assign(:batch_download_path, ~p"/downloads/#{zip_id}")
-        |> put_flash(:info, success_message)
-
-      {:error, _reason} ->
+    with {:ok, batch_id} <- ConversionStore.put_batch(batch_entries),
+         {:ok, zip_entry} <- ZipArchive.build(batch_id, batch_entries),
+         {:ok, zip_id} <- ConversionStore.put(zip_entry) do
+      socket
+      |> assign(:results, successful_results)
+      |> assign(:batch_download_path, ~p"/downloads/#{zip_id}")
+      |> put_flash(:info, success_message)
+    else
+      _ ->
         socket
         |> assign(:results, successful_results)
         |> assign(:batch_download_path, nil)
@@ -156,14 +334,42 @@ defmodule RapidToolsWeb.VideoCompressorLive do
     %{"preset" => "balanced", "max_resolution" => "original", "mute" => "false"}
   end
 
+  defp safe_client_name(name) when is_binary(name) do
+    name
+    |> Path.basename()
+    |> String.replace(~r/[\x00-\x1F\x7F]/, "_")
+    |> case do
+      "" -> "video"
+      safe -> safe
+    end
+  end
+
+  defp safe_client_name(_), do: "video"
+
   defp completed_upload_count(entries), do: Enum.count(entries, &(&1.progress == 100))
   defp upload_in_progress?(entries), do: Enum.any?(entries, &(&1.progress < 100))
+  defp processing?(currently_compressing), do: currently_compressing != nil
 
-  defp upload_summary(entries) do
+  defp processing_position(assigns) do
+    queue_count = length(assigns.processing_queue)
+
+    if assigns.processing_total > 0 and queue_count > 0 do
+      assigns.processing_total - queue_count + 1
+    else
+      0
+    end
+  end
+
+  defp upload_summary(entries, currently_compressing) do
     total = length(entries)
     completed = completed_upload_count(entries)
 
     cond do
+      processing?(currently_compressing) ->
+        gettext(
+          "Fila enviada para compressao. O video atual aparece com loader e o restante fica na sequencia."
+        )
+
       total == 0 ->
         gettext("Nenhum video selecionado ainda.")
 
@@ -181,8 +387,14 @@ defmodule RapidToolsWeb.VideoCompressorLive do
     end
   end
 
-  defp upload_status_message(entries) do
+  defp upload_status_message(entries, currently_compressing, upload_issue) do
     cond do
+      upload_issue ->
+        upload_issue
+
+      processing?(currently_compressing) ->
+        gettext("Compressao em andamento. Acompanhe qual arquivo esta sendo processado agora.")
+
       entries == [] ->
         gettext("Selecione videos para reduzir tamanho sem sair do navegador.")
 
@@ -279,11 +491,35 @@ defmodule RapidToolsWeb.VideoCompressorLive do
                       </div>
 
                       <div
+                        :if={@currently_compressing}
+                        id="video-currently-compressing"
+                        class="mt-4 rounded-2xl border border-rose-200 bg-white px-4 py-3"
+                      >
+                        <div class="flex items-center gap-3">
+                          <span class="loading loading-spinner loading-sm text-rose-600"></span>
+                          <div class="min-w-0">
+                            <p class="text-sm font-semibold text-slate-900">
+                              {gettext("Comprimindo agora")}
+                            </p>
+                            <p class="truncate text-sm text-slate-600">
+                              {@currently_compressing}
+                            </p>
+                            <p class="mt-1 text-xs text-slate-500">
+                              {gettext("%{current} of %{total} videos",
+                                current: processing_position(assigns),
+                                total: @processing_total
+                              )}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div
                         id="video-compressor-upload-list"
                         class="mt-4 max-h-[22rem] space-y-2 overflow-y-auto pr-1"
                       >
                         <div class="sticky top-0 z-10 rounded-2xl border border-rose-100 bg-rose-50/95 px-4 py-3 text-sm font-medium text-rose-900 backdrop-blur">
-                          {upload_summary(@uploads.video.entries)}
+                          {upload_summary(@uploads.video.entries, @currently_compressing)}
                         </div>
                         <div
                           :for={entry <- @uploads.video.entries}
@@ -313,8 +549,9 @@ defmodule RapidToolsWeb.VideoCompressorLive do
                             type="button"
                             phx-click="cancel-upload"
                             phx-value-ref={entry.ref}
+                            disabled={processing?(@currently_compressing)}
                             aria-label={gettext("Remove %{filename}", filename: entry.client_name)}
-                            class="inline-flex size-8 shrink-0 items-center justify-center rounded-full border border-slate-200 text-sm font-bold text-slate-500 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600"
+                            class="inline-flex size-8 shrink-0 items-center justify-center rounded-full border border-slate-200 text-sm font-bold text-slate-500 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-50"
                           >
                             X
                           </button>
@@ -362,15 +599,21 @@ defmodule RapidToolsWeb.VideoCompressorLive do
                       id="video-compress-button"
                       phx-disable-with={gettext("Compressing videos...")}
                       disabled={
-                        @uploads.video.entries == [] || upload_in_progress?(@uploads.video.entries)
+                        @uploads.video.entries == [] ||
+                          upload_in_progress?(@uploads.video.entries) ||
+                          processing?(@currently_compressing)
                       }
                       class="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-rose-700 disabled:cursor-wait disabled:opacity-90"
                     >
                       <span>{gettext("Comprimir videos")}</span>
                     </button>
 
-                    <p class="text-sm text-slate-500">
-                      {upload_status_message(@uploads.video.entries)}
+                    <p id="video-compressor-status" class="text-sm text-slate-500">
+                      {upload_status_message(
+                        @uploads.video.entries,
+                        @currently_compressing,
+                        @upload_issue
+                      )}
                     </p>
                   </.form>
                 </div>

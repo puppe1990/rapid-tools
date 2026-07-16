@@ -306,6 +306,9 @@ msgstr "Converting"
 msgid "Convertendo agora"
 msgstr "Converting now"
 
+msgid "Comprimindo agora"
+msgstr "Compressing now"
+
 #: lib/rapid_tools_web/live/audio_converter_live.ex:252
 #, elixir-autogen, elixir-format
 msgid "Convertendo audio"
@@ -705,6 +708,9 @@ msgstr "The browser could not upload this file. Please try again."
 #, elixir-autogen, elixir-format
 msgid "O upload deste video foi perdido antes da conversao. Envie o arquivo novamente."
 msgstr "This video upload was lost before conversion. Upload the file again."
+
+msgid "O upload deste video foi perdido antes da compressao. Envie o arquivo novamente."
+msgstr "This video upload was lost before compression. Upload the file again."
 
 #: lib/rapid_tools_web/live/extract_audio_live.ex:237
 #, elixir-autogen, elixir-format
