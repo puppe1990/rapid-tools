@@ -47,10 +47,13 @@ defmodule RapidToolsWeb.ImageResizerLive do
   end
 
   @impl true
-  def handle_event("validate", %{"resize" => resize_params}, socket) do
+  def handle_event("validate", params, socket) do
+    resize_params = Map.get(params, "resize", %{})
+    changed_field = form_changed_field(params)
+
     {:noreply,
      socket
-     |> assign(:form, to_form(apply_preset(resize_params), as: :resize))
+     |> assign(:form, to_form(apply_preset(resize_params, changed_field), as: :resize))
      |> maybe_clear_upload_issue()}
   end
 
@@ -75,7 +78,10 @@ defmodule RapidToolsWeb.ImageResizerLive do
       {:noreply,
        put_flash(socket, :error, gettext("Aguarde o redimensionamento atual terminar."))}
     else
-      params = apply_preset(resize_params)
+      # On submit, keep the dimensions shown in the form. If they no longer match the
+      # selected named preset, treat the request as custom so 400x400 is not overwritten
+      # by Instagram Post (1080x1080), etc.
+      params = apply_preset(resize_params, nil)
 
       socket
       |> assign(:form, to_form(params, as: :resize))
@@ -369,17 +375,49 @@ defmodule RapidToolsWeb.ImageResizerLive do
     }
   end
 
-  defp apply_preset(params) do
+  defp form_changed_field(%{"_target" => ["resize", field | _]}) when is_binary(field), do: field
+  defp form_changed_field(_), do: nil
+
+  # Resolves form params so named presets fill dimensions, but typed width/height win.
+  # changed_field is the form control that triggered phx-change (`"preset"`, `"width"`, ...),
+  # or nil on submit.
+  defp apply_preset(params, changed_field) do
+    params = Map.merge(default_form_params(), params)
     preset = Map.get(params, "preset", "instagram_post")
     preset_config = Map.get(@presets, preset, @presets["custom"])
 
-    if preset == "custom" do
-      Map.merge(default_form_params(), params)
-    else
-      params
-      |> Map.merge(default_form_params())
-      |> Map.put("width", Integer.to_string(preset_config.width))
-      |> Map.put("height", Integer.to_string(preset_config.height))
+    cond do
+      preset == "custom" ->
+        params
+
+      changed_field == "preset" ->
+        params
+        |> Map.put("width", Integer.to_string(preset_config.width))
+        |> Map.put("height", Integer.to_string(preset_config.height))
+
+      changed_field in ["width", "height"] ->
+        Map.put(params, "preset", "custom")
+
+      dimensions_match_preset?(params, preset_config) ->
+        params
+        |> Map.put("width", Integer.to_string(preset_config.width))
+        |> Map.put("height", Integer.to_string(preset_config.height))
+
+      true ->
+        # Submit (or other field change) with dimensions that no longer match the named
+        # preset: keep the typed size and mark as custom.
+        Map.put(params, "preset", "custom")
+    end
+  end
+
+  defp dimensions_match_preset?(params, %{width: width, height: height}) do
+    parse_dimension(params["width"]) == width and parse_dimension(params["height"]) == height
+  end
+
+  defp parse_dimension(value) do
+    case Integer.parse(to_string(value || "")) do
+      {dimension, ""} -> dimension
+      _ -> nil
     end
   end
 
