@@ -91,6 +91,82 @@ defmodule RapidToolsWeb.ImageResizerLiveTest do
     assert has_element?(view, "#resized-results")
   end
 
+  test "uses typed dimensions even when a named preset is still selected", %{conn: conn} do
+    source_path = ImageFixtures.tiny_png_path!("resizer-custom-dims.png")
+    {:ok, view, _html} = live(conn, ~p"/image-resizer")
+
+    upload =
+      file_input(view, "#image-resizer-form", :image, [
+        %{
+          last_modified: 1_711_000_000_000,
+          name: "product.png",
+          content: File.read!(source_path),
+          type: "image/png"
+        }
+      ])
+
+    render_upload(upload, "product.png")
+
+    # Same situation as the bug report: Instagram Post selected, but user typed 400x400.
+    view
+    |> form("#image-resizer-form",
+      resize: %{
+        preset: "instagram_post",
+        width: "400",
+        height: "400",
+        fit: "cover",
+        target_format: "original"
+      }
+    )
+    |> render_submit()
+
+    html = eventually_render_including(view, "resized-results")
+    assert html =~ "product-400x400.png"
+    assert html =~ "400 x 400"
+    refute html =~ "1080 x 1080"
+  end
+
+  test "switching preset fills the matching dimensions", %{conn: conn} do
+    {:ok, view, _html} = live(conn, ~p"/image-resizer")
+
+    html =
+      view
+      |> form("#image-resizer-form",
+        resize: %{
+          preset: "instagram_story",
+          width: "1080",
+          height: "1080",
+          fit: "contain",
+          target_format: "original"
+        }
+      )
+      |> render_change(%{"_target" => ["resize", "preset"]})
+
+    assert html =~ ~s(value="1080")
+    assert html =~ ~s(value="1920")
+    assert html =~ ~s(value="instagram_story")
+  end
+
+  test "editing width while a named preset is selected switches to custom", %{conn: conn} do
+    {:ok, view, _html} = live(conn, ~p"/image-resizer")
+
+    html =
+      view
+      |> form("#image-resizer-form",
+        resize: %{
+          preset: "instagram_post",
+          width: "400",
+          height: "1080",
+          fit: "cover",
+          target_format: "original"
+        }
+      )
+      |> render_change(%{"_target" => ["resize", "width"]})
+
+    assert html =~ ~s(value="custom")
+    assert html =~ ~s(value="400")
+  end
+
   test "surfaces not-accepted upload errors instead of appearing stuck", %{conn: conn} do
     {:ok, view, _html} = live(conn, ~p"/image-resizer")
 
