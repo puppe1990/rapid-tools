@@ -27,6 +27,7 @@ defmodule RapidToolsWeb.ImagesToVideoLive do
      |> assign(:tools, ToolNavigation.tools("images-to-video"))
      |> assign(:form, form)
      |> assign(:result, nil)
+     |> assign(:converting, false)
      |> assign(:image_order, [])
      |> assign(:my_path, "/images-to-video")
      |> allow_upload(:image, accept: @image_accept, max_entries: 100, auto_upload: true)}
@@ -69,24 +70,51 @@ defmodule RapidToolsWeb.ImagesToVideoLive do
 
   @impl true
   def handle_event("convert", %{"conversion" => conversion_params}, socket) do
-    target_format = conversion_params["target_format"] || default_target_format()
-    interval = parse_interval(conversion_params["interval"])
+    if socket.assigns.converting do
+      {:noreply, socket}
+    else
+      target_format = conversion_params["target_format"] || default_target_format()
+      interval = parse_interval(conversion_params["interval"])
 
-    case uploaded_entries(socket, :image) do
-      {[], []} ->
-        {:noreply,
-         put_flash(socket, :error, gettext("Select at least one image to create a video."))}
+      case uploaded_entries(socket, :image) do
+        {[], []} ->
+          {:noreply,
+           put_flash(socket, :error, gettext("Select at least one image to create a video."))}
 
-      {_completed, [_ | _]} ->
-        {:noreply,
-         put_flash(socket, :error, gettext("Wait for the upload to finish before converting."))}
+        {_completed, [_ | _]} ->
+          {:noreply,
+           put_flash(socket, :error, gettext("Wait for the upload to finish before converting."))}
 
-      {completed, []} ->
-        {:noreply, convert_uploads(socket, completed, target_format, interval)}
+        {_completed, []} ->
+          {:noreply, start_convert(socket, target_format, interval)}
+      end
     end
   end
 
-  defp convert_uploads(socket, _completed_entries, target_format, interval) do
+  @impl true
+  def handle_info({:images_to_video_done, outcome}, socket) do
+    socket = assign(socket, :converting, false)
+
+    case outcome do
+      {:ok, result} ->
+        {:noreply,
+         socket
+         |> assign(:result, result)
+         |> put_flash(
+           :info,
+           gettext("%{count} images converted successfully.", count: result.source_count)
+         )}
+
+      {:error, :not_enough_source_files} ->
+        {:noreply,
+         put_flash(socket, :error, gettext("Select at least one image to create a video."))}
+
+      {:error, _reason} ->
+        {:noreply, put_flash(socket, :error, gettext("The images could not be converted."))}
+    end
+  end
+
+  defp start_convert(socket, target_format, interval) do
     output_dir =
       Path.join(
         System.tmp_dir!(),
@@ -106,6 +134,37 @@ defmodule RapidToolsWeb.ImagesToVideoLive do
       end)
       |> order_source_paths(ordered_refs)
 
+    if source_paths == [] do
+      put_flash(socket, :error, gettext("Select at least one image to create a video."))
+    else
+      lv = self()
+      source_count = length(source_paths)
+
+      # Keep the LiveView free for WebSocket heartbeats while ffmpeg runs.
+      # Blocking the LV process on long encodes drops the socket in production.
+      Task.start(fn ->
+        outcome =
+          try do
+            run_images_to_video(source_paths, target_format, interval, output_dir, source_count)
+          rescue
+            error ->
+              {:error, {:conversion_exception, Exception.message(error)}}
+          catch
+            kind, reason ->
+              {:error, {:conversion_crash, {kind, inspect(reason)}}}
+          end
+
+        send(lv, {:images_to_video_done, outcome})
+      end)
+
+      socket
+      |> assign(:converting, true)
+      |> assign(:result, nil)
+      |> assign(:image_order, [])
+    end
+  end
+
+  defp run_images_to_video(source_paths, target_format, interval, output_dir, source_count) do
     case ImagesToVideoConverter.convert(source_paths, target_format,
            output_dir: output_dir,
            interval: interval
@@ -119,25 +178,15 @@ defmodule RapidToolsWeb.ImagesToVideoLive do
 
         {:ok, id} = ConversionStore.put(store_entry)
 
-        result =
-          Map.merge(result, %{
-            download_path: ~p"/downloads/#{id}",
-            source_count: length(source_paths),
-            interval: interval
-          })
+        {:ok,
+         Map.merge(result, %{
+           download_path: ~p"/downloads/#{id}",
+           source_count: source_count,
+           interval: interval
+         })}
 
-        socket
-        |> assign(:result, result)
-        |> put_flash(
-          :info,
-          gettext("%{count} images converted successfully.", count: length(source_paths))
-        )
-
-      {:error, :not_enough_source_files} ->
-        put_flash(socket, :error, gettext("Select at least one image to create a video."))
-
-      {:error, _reason} ->
-        put_flash(socket, :error, gettext("The images could not be converted."))
+      {:error, _} = error ->
+        error
     end
   end
 
@@ -164,8 +213,11 @@ defmodule RapidToolsWeb.ImagesToVideoLive do
     completed_upload_count(entries) >= 1
   end
 
-  defp upload_status_message(entries) do
+  defp upload_status_message(entries, converting) do
     cond do
+      converting ->
+        gettext("Creating video. Please wait a moment.")
+
       entries == [] ->
         gettext("Select at least one image to enable conversion.")
 
@@ -177,11 +229,14 @@ defmodule RapidToolsWeb.ImagesToVideoLive do
     end
   end
 
-  defp upload_summary(entries) do
+  defp upload_summary(entries, converting) do
     total = length(entries)
     completed = completed_upload_count(entries)
 
     cond do
+      converting ->
+        gettext("Building the video from the image sequence. This can take a few seconds.")
+
       total == 0 ->
         gettext("No images selected yet.")
 
@@ -296,7 +351,10 @@ defmodule RapidToolsWeb.ImagesToVideoLive do
                     phx-submit="convert"
                     class="space-y-6"
                   >
-                    <div class="pointer-events-none absolute inset-0 z-10 hidden items-center justify-center rounded-[2rem] bg-white/80 backdrop-blur-sm phx-submit-loading:flex">
+                    <div class={[
+                      "pointer-events-none absolute inset-0 z-10 items-center justify-center rounded-[2rem] bg-white/80 backdrop-blur-sm",
+                      if(@converting, do: "flex", else: "hidden phx-submit-loading:flex")
+                    ]}>
                       <div class="flex items-center gap-3 rounded-full border border-teal-200 bg-white px-5 py-3 shadow-lg">
                         <span class="inline-block size-5 animate-spin rounded-full border-2 border-teal-200 border-t-teal-600" />
                         <div>
@@ -337,7 +395,7 @@ defmodule RapidToolsWeb.ImagesToVideoLive do
                         class="mt-4 max-h-[22rem] space-y-2 overflow-y-auto pr-1"
                       >
                         <div class="sticky top-0 z-10 rounded-2xl border border-teal-100 bg-teal-50/95 px-4 py-3 text-sm font-medium text-teal-900 backdrop-blur">
-                          {upload_summary(@uploads.image.entries)}
+                          {upload_summary(@uploads.image.entries, @converting)}
                         </div>
                         <p class="px-4 text-xs font-medium uppercase tracking-[0.24em] text-teal-700">
                           {gettext(
@@ -430,12 +488,18 @@ defmodule RapidToolsWeb.ImagesToVideoLive do
                       id="images-to-video-button"
                       phx-disable-with={gettext("Creating video...")}
                       disabled={
-                        !enough_completed_uploads?(@uploads.image.entries) ||
+                        @converting || !enough_completed_uploads?(@uploads.image.entries) ||
                           upload_in_progress?(@uploads.image.entries)
                       }
                       class="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-teal-600 disabled:cursor-wait disabled:opacity-90"
                     >
-                      <span class="inline-block size-4 animate-spin rounded-full border-2 border-white/30 border-t-white opacity-0 phx-submit-loading:opacity-100" />
+                      <span class={[
+                        "inline-block size-4 animate-spin rounded-full border-2 border-white/30 border-t-white",
+                        if(@converting,
+                          do: "opacity-100",
+                          else: "opacity-0 phx-submit-loading:opacity-100"
+                        )
+                      ]} />
                       <span>{gettext("Create video")}</span>
                     </button>
 
@@ -443,7 +507,7 @@ defmodule RapidToolsWeb.ImagesToVideoLive do
                       id="images-to-video-status"
                       class="text-sm text-slate-500"
                     >
-                      {upload_status_message(@uploads.image.entries)}
+                      {upload_status_message(@uploads.image.entries, @converting)}
                     </p>
                   </.form>
                 </div>

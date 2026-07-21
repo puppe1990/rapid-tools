@@ -101,7 +101,30 @@ defmodule RapidToolsWeb.ExtractAudioLive do
 
   @impl true
   def handle_info({:run_audio_extraction, entry, rest, target_format, results}, socket) do
-    result = extract_staged_entry(entry, target_format)
+    lv = self()
+
+    # Keep the LiveView free for WebSocket heartbeats while ffmpeg runs.
+    # Blocking the LV process on long extractions drops the socket in production.
+    Task.start(fn ->
+      result =
+        try do
+          extract_staged_entry(entry, target_format)
+        rescue
+          error ->
+            {:error, {:extraction_exception, Exception.message(error)}}
+        catch
+          kind, reason ->
+            {:error, {:extraction_crash, {kind, inspect(reason)}}}
+        end
+
+      send(lv, {:audio_extraction_done, result, rest, target_format, results})
+    end)
+
+    {:noreply, socket}
+  end
+
+  @impl true
+  def handle_info({:audio_extraction_done, result, rest, target_format, results}, socket) do
     send(self(), {:begin_audio_extraction, rest, target_format, [result | results]})
     {:noreply, socket}
   end
