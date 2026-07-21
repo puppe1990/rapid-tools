@@ -32,6 +32,7 @@ defmodule RapidToolsWeb.TogetherVideosLive do
      |> assign(:tools, ToolNavigation.tools("together-videos"))
      |> assign(:form, form)
      |> assign(:result, nil)
+     |> assign(:joining, false)
      |> assign(:video_order, [])
      |> assign(:my_path, "/together-videos")
      |> allow_upload(:video,
@@ -79,27 +80,57 @@ defmodule RapidToolsWeb.TogetherVideosLive do
 
   @impl true
   def handle_event("join", %{"conversion" => conversion_params}, socket) do
-    target_format = conversion_params["target_format"]
-    orientation = conversion_params["orientation"] || default_orientation()
+    if socket.assigns.joining do
+      {:noreply, socket}
+    else
+      target_format = conversion_params["target_format"]
+      orientation = conversion_params["orientation"] || default_orientation()
 
-    case uploaded_entries(socket, :video) do
-      {[], []} ->
-        {:noreply,
-         put_flash(socket, :error, gettext("Selecione pelo menos dois videos para unir."))}
+      case uploaded_entries(socket, :video) do
+        {[], []} ->
+          {:noreply,
+           put_flash(socket, :error, gettext("Selecione pelo menos dois videos para unir."))}
 
-      {_completed, [_ | _]} ->
-        {:noreply, put_flash(socket, :error, gettext("Aguarde o upload terminar antes de unir."))}
+        {_completed, [_ | _]} ->
+          {:noreply,
+           put_flash(socket, :error, gettext("Aguarde o upload terminar antes de unir."))}
 
-      {completed, []} when length(completed) < 2 ->
-        {:noreply,
-         put_flash(socket, :error, gettext("Selecione pelo menos dois videos para unir."))}
+        {completed, []} when length(completed) < 2 ->
+          {:noreply,
+           put_flash(socket, :error, gettext("Selecione pelo menos dois videos para unir."))}
 
-      _ ->
-        {:noreply, join_uploads(socket, target_format, orientation)}
+        _ ->
+          {:noreply, start_join(socket, target_format, orientation)}
+      end
     end
   end
 
-  defp join_uploads(socket, target_format, orientation) do
+  @impl true
+  def handle_info({:video_join_done, outcome}, socket) do
+    socket = assign(socket, :joining, false)
+
+    case outcome do
+      {:ok, joined_result} ->
+        {:noreply,
+         socket
+         |> assign(:result, joined_result)
+         |> put_flash(
+           :info,
+           gettext("%{count} video files joined successfully.",
+             count: joined_result.source_count
+           )
+         )}
+
+      {:error, :not_enough_source_files} ->
+        {:noreply,
+         put_flash(socket, :error, gettext("Selecione pelo menos dois videos para unir."))}
+
+      {:error, _reason} ->
+        {:noreply, put_flash(socket, :error, gettext("Os videos nao puderam ser unidos."))}
+    end
+  end
+
+  defp start_join(socket, target_format, orientation) do
     output_dir =
       Path.join(
         System.tmp_dir!(),
@@ -119,6 +150,37 @@ defmodule RapidToolsWeb.TogetherVideosLive do
       end)
       |> order_source_paths(ordered_refs)
 
+    if length(source_paths) < 2 do
+      put_flash(socket, :error, gettext("Selecione pelo menos dois videos para unir."))
+    else
+      lv = self()
+      source_count = length(source_paths)
+
+      # Keep the LiveView free for WebSocket heartbeats while ffmpeg runs.
+      # Blocking the LV process on long joins drops the socket in production.
+      Task.start(fn ->
+        outcome =
+          try do
+            run_video_join(source_paths, target_format, orientation, output_dir, source_count)
+          rescue
+            error ->
+              {:error, {:join_exception, Exception.message(error)}}
+          catch
+            kind, reason ->
+              {:error, {:join_crash, {kind, inspect(reason)}}}
+          end
+
+        send(lv, {:video_join_done, outcome})
+      end)
+
+      socket
+      |> assign(:joining, true)
+      |> assign(:result, nil)
+      |> assign(:video_order, [])
+    end
+  end
+
+  defp run_video_join(source_paths, target_format, orientation, output_dir, source_count) do
     case VideoJoiner.join(source_paths, target_format,
            output_dir: output_dir,
            orientation: orientation
@@ -132,24 +194,14 @@ defmodule RapidToolsWeb.TogetherVideosLive do
 
         {:ok, id} = ConversionStore.put(store_entry)
 
-        joined_result =
-          Map.merge(result, %{
-            download_path: ~p"/downloads/#{id}",
-            source_count: length(source_paths)
-          })
+        {:ok,
+         Map.merge(result, %{
+           download_path: ~p"/downloads/#{id}",
+           source_count: source_count
+         })}
 
-        socket
-        |> assign(:result, joined_result)
-        |> put_flash(
-          :info,
-          gettext("%{count} video files joined successfully.", count: length(source_paths))
-        )
-
-      {:error, :not_enough_source_files} ->
-        put_flash(socket, :error, gettext("Selecione pelo menos dois videos para unir."))
-
-      {:error, _reason} ->
-        put_flash(socket, :error, gettext("Os videos nao puderam ser unidos."))
+      {:error, _} = error ->
+        error
     end
   end
 
@@ -175,8 +227,11 @@ defmodule RapidToolsWeb.TogetherVideosLive do
     completed_upload_count(entries) >= 2
   end
 
-  defp upload_status_message(entries) do
+  defp upload_status_message(entries, joining) do
     cond do
+      joining ->
+        gettext("Uniao em andamento. Aguarde o arquivo final ser gerado.")
+
       entries == [] ->
         gettext("Selecione pelo menos dois videos para habilitar a uniao.")
 
@@ -191,11 +246,14 @@ defmodule RapidToolsWeb.TogetherVideosLive do
     end
   end
 
-  defp upload_summary(entries) do
+  defp upload_summary(entries, joining) do
     total = length(entries)
     completed = completed_upload_count(entries)
 
     cond do
+      joining ->
+        gettext("Unindo videos na ordem da fila. Isso pode levar alguns segundos.")
+
       total == 0 ->
         gettext("Nenhum video selecionado ainda.")
 
@@ -306,7 +364,10 @@ defmodule RapidToolsWeb.TogetherVideosLive do
                     phx-submit="join"
                     class="space-y-6"
                   >
-                    <div class="pointer-events-none absolute inset-0 z-10 hidden items-center justify-center rounded-[2rem] bg-white/80 backdrop-blur-sm phx-submit-loading:flex">
+                    <div class={[
+                      "pointer-events-none absolute inset-0 z-10 items-center justify-center rounded-[2rem] bg-white/80 backdrop-blur-sm",
+                      if(@joining, do: "flex", else: "hidden phx-submit-loading:flex")
+                    ]}>
                       <div class="flex items-center gap-3 rounded-full border border-pink-200 bg-white px-5 py-3 shadow-lg">
                         <span class="inline-block size-5 animate-spin rounded-full border-2 border-pink-200 border-t-pink-600" />
                         <div>
@@ -349,7 +410,7 @@ defmodule RapidToolsWeb.TogetherVideosLive do
                         class="mt-4 max-h-[22rem] space-y-2 overflow-y-auto pr-1"
                       >
                         <div class="sticky top-0 z-10 rounded-2xl border border-pink-100 bg-pink-50/95 px-4 py-3 text-sm font-medium text-pink-900 backdrop-blur">
-                          {upload_summary(@uploads.video.entries)}
+                          {upload_summary(@uploads.video.entries, @joining)}
                         </div>
                         <p class="px-4 text-xs font-medium uppercase tracking-[0.24em] text-pink-700">
                           {gettext(
@@ -439,12 +500,18 @@ defmodule RapidToolsWeb.TogetherVideosLive do
                       id="together-videos-button"
                       phx-disable-with={gettext("Joining video files...")}
                       disabled={
-                        !enough_completed_uploads?(@uploads.video.entries) ||
+                        @joining || !enough_completed_uploads?(@uploads.video.entries) ||
                           upload_in_progress?(@uploads.video.entries)
                       }
                       class="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-pink-600 disabled:cursor-wait disabled:opacity-90"
                     >
-                      <span class="inline-block size-4 animate-spin rounded-full border-2 border-white/30 border-t-white opacity-0 phx-submit-loading:opacity-100" />
+                      <span class={[
+                        "inline-block size-4 animate-spin rounded-full border-2 border-white/30 border-t-white",
+                        if(@joining,
+                          do: "opacity-100",
+                          else: "opacity-0 phx-submit-loading:opacity-100"
+                        )
+                      ]} />
                       <span>{gettext("Juntar videos")}</span>
                     </button>
 
@@ -452,7 +519,7 @@ defmodule RapidToolsWeb.TogetherVideosLive do
                       id="together-videos-status"
                       class="text-sm text-slate-500"
                     >
-                      {upload_status_message(@uploads.video.entries)}
+                      {upload_status_message(@uploads.video.entries, @joining)}
                     </p>
                   </.form>
                 </div>

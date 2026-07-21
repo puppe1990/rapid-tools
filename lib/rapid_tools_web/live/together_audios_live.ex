@@ -27,6 +27,7 @@ defmodule RapidToolsWeb.TogetherAudiosLive do
      |> assign(:tools, ToolNavigation.tools("together-audios"))
      |> assign(:form, form)
      |> assign(:result, nil)
+     |> assign(:joining, false)
      |> assign(:audio_order, [])
      |> assign(:my_path, "/together-audios")
      |> allow_upload(:audio, accept: @audio_accept, max_entries: 100, auto_upload: true)}
@@ -69,24 +70,54 @@ defmodule RapidToolsWeb.TogetherAudiosLive do
 
   @impl true
   def handle_event("join", %{"conversion" => %{"target_format" => target_format}}, socket) do
-    case uploaded_entries(socket, :audio) do
-      {[], []} ->
-        {:noreply,
-         put_flash(socket, :error, gettext("Selecione pelo menos dois audios para unir."))}
+    if socket.assigns.joining do
+      {:noreply, socket}
+    else
+      case uploaded_entries(socket, :audio) do
+        {[], []} ->
+          {:noreply,
+           put_flash(socket, :error, gettext("Selecione pelo menos dois audios para unir."))}
 
-      {_completed, [_ | _]} ->
-        {:noreply, put_flash(socket, :error, gettext("Aguarde o upload terminar antes de unir."))}
+        {_completed, [_ | _]} ->
+          {:noreply,
+           put_flash(socket, :error, gettext("Aguarde o upload terminar antes de unir."))}
 
-      {completed, []} when length(completed) < 2 ->
-        {:noreply,
-         put_flash(socket, :error, gettext("Selecione pelo menos dois audios para unir."))}
+        {completed, []} when length(completed) < 2 ->
+          {:noreply,
+           put_flash(socket, :error, gettext("Selecione pelo menos dois audios para unir."))}
 
-      _ ->
-        {:noreply, join_uploads(socket, target_format)}
+        _ ->
+          {:noreply, start_join(socket, target_format)}
+      end
     end
   end
 
-  defp join_uploads(socket, target_format) do
+  @impl true
+  def handle_info({:audio_join_done, outcome}, socket) do
+    socket = assign(socket, :joining, false)
+
+    case outcome do
+      {:ok, joined_result} ->
+        {:noreply,
+         socket
+         |> assign(:result, joined_result)
+         |> put_flash(
+           :info,
+           gettext("%{count} audio files joined successfully.",
+             count: joined_result.source_count
+           )
+         )}
+
+      {:error, :not_enough_source_files} ->
+        {:noreply,
+         put_flash(socket, :error, gettext("Selecione pelo menos dois audios para unir."))}
+
+      {:error, _reason} ->
+        {:noreply, put_flash(socket, :error, gettext("Os audios nao puderam ser unidos."))}
+    end
+  end
+
+  defp start_join(socket, target_format) do
     output_dir =
       Path.join(
         System.tmp_dir!(),
@@ -106,6 +137,37 @@ defmodule RapidToolsWeb.TogetherAudiosLive do
       end)
       |> order_source_paths(ordered_refs)
 
+    if length(source_paths) < 2 do
+      put_flash(socket, :error, gettext("Selecione pelo menos dois audios para unir."))
+    else
+      lv = self()
+      source_count = length(source_paths)
+
+      # Keep the LiveView free for WebSocket heartbeats while ffmpeg runs.
+      # Blocking the LV process on long joins drops the socket in production.
+      Task.start(fn ->
+        outcome =
+          try do
+            run_audio_join(source_paths, target_format, output_dir, source_count)
+          rescue
+            error ->
+              {:error, {:join_exception, Exception.message(error)}}
+          catch
+            kind, reason ->
+              {:error, {:join_crash, {kind, inspect(reason)}}}
+          end
+
+        send(lv, {:audio_join_done, outcome})
+      end)
+
+      socket
+      |> assign(:joining, true)
+      |> assign(:result, nil)
+      |> assign(:audio_order, [])
+    end
+  end
+
+  defp run_audio_join(source_paths, target_format, output_dir, source_count) do
     case AudioJoiner.join(source_paths, target_format, output_dir: output_dir) do
       {:ok, result} ->
         store_entry = %{
@@ -116,24 +178,14 @@ defmodule RapidToolsWeb.TogetherAudiosLive do
 
         {:ok, id} = ConversionStore.put(store_entry)
 
-        joined_result =
-          Map.merge(result, %{
-            download_path: ~p"/downloads/#{id}",
-            source_count: length(source_paths)
-          })
+        {:ok,
+         Map.merge(result, %{
+           download_path: ~p"/downloads/#{id}",
+           source_count: source_count
+         })}
 
-        socket
-        |> assign(:result, joined_result)
-        |> put_flash(
-          :info,
-          gettext("%{count} audio files joined successfully.", count: length(source_paths))
-        )
-
-      {:error, :not_enough_source_files} ->
-        put_flash(socket, :error, gettext("Selecione pelo menos dois audios para unir."))
-
-      {:error, _reason} ->
-        put_flash(socket, :error, gettext("Os audios nao puderam ser unidos."))
+      {:error, _} = error ->
+        error
     end
   end
 
@@ -151,8 +203,11 @@ defmodule RapidToolsWeb.TogetherAudiosLive do
     completed_upload_count(entries) >= 2
   end
 
-  defp upload_status_message(entries) do
+  defp upload_status_message(entries, joining) do
     cond do
+      joining ->
+        gettext("Uniao em andamento. Aguarde o arquivo final ser gerado.")
+
       entries == [] ->
         gettext("Selecione pelo menos dois audios para habilitar a uniao.")
 
@@ -167,11 +222,14 @@ defmodule RapidToolsWeb.TogetherAudiosLive do
     end
   end
 
-  defp upload_summary(entries) do
+  defp upload_summary(entries, joining) do
     total = length(entries)
     completed = completed_upload_count(entries)
 
     cond do
+      joining ->
+        gettext("Unindo audios na ordem da fila. Isso pode levar alguns segundos.")
+
       total == 0 ->
         gettext("Nenhum audio selecionado ainda.")
 
@@ -282,7 +340,10 @@ defmodule RapidToolsWeb.TogetherAudiosLive do
                     phx-submit="join"
                     class="space-y-6"
                   >
-                    <div class="pointer-events-none absolute inset-0 z-10 hidden items-center justify-center rounded-[2rem] bg-white/80 backdrop-blur-sm phx-submit-loading:flex">
+                    <div class={[
+                      "pointer-events-none absolute inset-0 z-10 items-center justify-center rounded-[2rem] bg-white/80 backdrop-blur-sm",
+                      if(@joining, do: "flex", else: "hidden phx-submit-loading:flex")
+                    ]}>
                       <div class="flex items-center gap-3 rounded-full border border-amber-200 bg-white px-5 py-3 shadow-lg">
                         <span class="inline-block size-5 animate-spin rounded-full border-2 border-amber-200 border-t-amber-600" />
                         <div>
@@ -325,7 +386,7 @@ defmodule RapidToolsWeb.TogetherAudiosLive do
                         class="mt-4 max-h-[22rem] space-y-2 overflow-y-auto pr-1"
                       >
                         <div class="sticky top-0 z-10 rounded-2xl border border-amber-100 bg-amber-50/95 px-4 py-3 text-sm font-medium text-amber-900 backdrop-blur">
-                          {upload_summary(@uploads.audio.entries)}
+                          {upload_summary(@uploads.audio.entries, @joining)}
                         </div>
                         <p class="px-4 text-xs font-medium uppercase tracking-[0.24em] text-amber-700">
                           {gettext(
@@ -406,12 +467,18 @@ defmodule RapidToolsWeb.TogetherAudiosLive do
                       id="together-audios-button"
                       phx-disable-with={gettext("Joining audio files...")}
                       disabled={
-                        !enough_completed_uploads?(@uploads.audio.entries) ||
+                        @joining || !enough_completed_uploads?(@uploads.audio.entries) ||
                           upload_in_progress?(@uploads.audio.entries)
                       }
                       class="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-amber-600 disabled:cursor-wait disabled:opacity-90"
                     >
-                      <span class="inline-block size-4 animate-spin rounded-full border-2 border-white/30 border-t-white opacity-0 phx-submit-loading:opacity-100" />
+                      <span class={[
+                        "inline-block size-4 animate-spin rounded-full border-2 border-white/30 border-t-white",
+                        if(@joining,
+                          do: "opacity-100",
+                          else: "opacity-0 phx-submit-loading:opacity-100"
+                        )
+                      ]} />
                       <span>{gettext("Juntar audios")}</span>
                     </button>
 
@@ -419,7 +486,7 @@ defmodule RapidToolsWeb.TogetherAudiosLive do
                       id="together-audios-status"
                       class="text-sm text-slate-500"
                     >
-                      {upload_status_message(@uploads.audio.entries)}
+                      {upload_status_message(@uploads.audio.entries, @joining)}
                     </p>
                   </.form>
                 </div>

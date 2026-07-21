@@ -105,6 +105,48 @@ defmodule RapidToolsWeb.TogetherVideosLiveTest do
     assert render(view) =~ "Select at least two video files to enable joining."
   end
 
+  test "applies async join results without dropping the LiveView", %{conn: conn} do
+    {:ok, view, _html} = live(conn, ~p"/together-videos")
+
+    :sys.replace_state(view.pid, fn state ->
+      socket = Phoenix.Component.assign(state.socket, :joining, true)
+      %{state | socket: socket}
+    end)
+
+    send(
+      view.pid,
+      {:video_join_done,
+       {:ok,
+        %{
+          filename: "clip-a.mp4",
+          target_format: "mp4",
+          source_count: 2,
+          download_path: "/downloads/test-join",
+          media_type: "video/mp4"
+        }}}
+    )
+
+    html = eventually_render_including(view, "video files joined successfully")
+    assert html =~ "video files joined successfully"
+    assert html =~ "clip-a.mp4"
+    assert html =~ "/downloads/test-join"
+  end
+
+  defp eventually_render_including(view, expected, attempts \\ 40)
+
+  defp eventually_render_including(view, _expected, 1), do: render(view)
+
+  defp eventually_render_including(view, expected, attempts) do
+    html = render(view)
+
+    if html =~ expected do
+      html
+    else
+      Process.sleep(50)
+      eventually_render_including(view, expected, attempts - 1)
+    end
+  end
+
   defp text_position(rendered, text) do
     case :binary.match(rendered, text) do
       {position, _length} -> position

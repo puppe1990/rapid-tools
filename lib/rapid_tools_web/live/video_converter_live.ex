@@ -110,8 +110,38 @@ defmodule RapidToolsWeb.VideoConverterLive do
         {:run_video_conversion, entry, rest, target_format, orientation, results},
         socket
       ) do
-    result = convert_staged_entry(entry, target_format, orientation)
-    send(self(), {:begin_video_conversion, rest, target_format, orientation, [result | results]})
+    lv = self()
+
+    # Keep the LiveView free for WebSocket heartbeats while ffmpeg runs.
+    # Blocking the LV process on long re-encodes drops the socket in production.
+    Task.start(fn ->
+      result =
+        try do
+          convert_staged_entry(entry, target_format, orientation)
+        rescue
+          error ->
+            {:error, {:conversion_exception, Exception.message(error)}}
+        catch
+          kind, reason ->
+            {:error, {:conversion_crash, {kind, inspect(reason)}}}
+        end
+
+      send(lv, {:video_conversion_done, result, rest, target_format, orientation, results})
+    end)
+
+    {:noreply, socket}
+  end
+
+  @impl true
+  def handle_info(
+        {:video_conversion_done, result, rest, target_format, orientation, results},
+        socket
+      ) do
+    send(
+      self(),
+      {:begin_video_conversion, rest, target_format, orientation, [result | results]}
+    )
+
     {:noreply, socket}
   end
 

@@ -3,6 +3,21 @@ defmodule RapidToolsWeb.ImagesToVideoLiveTest do
 
   alias RapidTools.TestSupport.ImageFixtures
 
+  defp eventually_render_including(view, expected, attempts \\ 40)
+
+  defp eventually_render_including(view, _expected, 1), do: render(view)
+
+  defp eventually_render_including(view, expected, attempts) do
+    html = render(view)
+
+    if html =~ expected do
+      html
+    else
+      Process.sleep(50)
+      eventually_render_including(view, expected, attempts - 1)
+    end
+  end
+
   test "renders the converter interface", %{conn: conn} do
     {:ok, view, html} = live(conn, ~p"/images-to-video")
 
@@ -99,6 +114,8 @@ defmodule RapidToolsWeb.ImagesToVideoLiveTest do
     )
     |> render_submit()
 
+    html = eventually_render_including(view, "images-to-video-result")
+    assert html =~ "images-to-video-result"
     assert has_element?(view, "#images-to-video-result")
     assert has_element?(view, "a[download]", "Download MP4")
   end
@@ -126,6 +143,8 @@ defmodule RapidToolsWeb.ImagesToVideoLiveTest do
     )
     |> render_submit()
 
+    html = eventually_render_including(view, "images-to-video-result")
+    assert html =~ "images-to-video-result"
     assert has_element?(view, "#images-to-video-result")
     assert has_element?(view, "a[download]", "Download GIF")
   end
